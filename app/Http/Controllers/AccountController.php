@@ -106,10 +106,10 @@ class AccountController extends Controller
                 Cookie::make(
                     'refresh_token',
                     $refreshToken,
-                    60 * 24 * 7, // 7 days
+                    $refresh_token_duration, // 7 days
                     null,
                     null,
-                    true,   // secure (HTTPS only)
+                    false,   // secure (HTTPS only)//To allow http during development, set to false. Change to true in production.
                     true,   // httpOnly
                     false,
                     'Strict'
@@ -126,7 +126,7 @@ class AccountController extends Controller
                 'token_type' => 'Bearer',
                 'expires_in' => $access_token_duration,
                 'user' => $user
-            ], 200);
+            ], 200)->withCookie('refresh_token', $refreshToken, $refresh_token_duration, null, null, false, true, false, 'Strict');
         } catch (Exception $e) {
             return response()->json([
                 'status' => false,
