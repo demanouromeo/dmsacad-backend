@@ -1,0 +1,242 @@
+SizedBox _createFormAndroid(BuildContext context) {
+    return SizedBox(
+      //width: currentWidth < gMaxMobileWidth ? 300 : 400,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Form(
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          key: formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: controlerName,
+                //initialValue: specialityName,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(gRaduisCircularVal),
+                  ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 30,
+                  ),
+                  hintText:
+                      AppLocalizations.of(context)!.speciality, //'Speciality',
+                  //prefixIcon: Icon(Icons.lock_rounded),
+                  prefixIcon: const Icon(Icons.input),
+                  //++++ password
+                  labelText: AppLocalizations.of(context)!.speciality,
+                  suffixIcon: IconButton(
+                    icon: const Icon(
+                      Icons.cancel,
+                      //size: 20,
+                    ),
+                    onPressed: () => setState(
+                      () {
+                        classeName = "";
+                        //debugPrint("Speciality: [$specialityName]");
+                        controlerName.clear();
+                        //controlerName.text = "";
+                      },
+                    ),
+                  ),
+                ),
+                onChanged: (str) => setState(() => classeName = str),
+                validator: (value2) => value2 != null &&
+                        (value2.isNotEmpty &&
+                            !validateString(value2, allowedCharacters3))
+                    ? AppLocalizations.of(context)!.wrongInput //'Wrong input'
+                    : null,
+              ),
+              const SizedBox(
+                height: 15,
+              ),
+              TextFormField(
+                controller: controlerDescription,
+                //initialValue: description,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(gRaduisCircularVal),
+                  ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 30,
+                  ),
+                  //++++ password
+                  hintText: AppLocalizations.of(context)!
+                      .description, //'Votre mot de passe',
+                  //prefixIcon: Icon(Icons.lock_rounded),
+                  prefixIcon: const Icon(Icons.description),
+                  //++++ password
+                  labelText: AppLocalizations.of(context)!.description,
+                  // this button is used to toggle the password visibility
+                  suffixIcon: IconButton(
+                    icon: const Icon(
+                      Icons.cancel,
+                      //size: 20,
+                    ),
+                    onPressed: () => setState(
+                      () {
+                        description = "";
+                        //debugPrint("Speciality: [$description]");
+                        controlerDescription.clear();
+                      },
+                    ),
+                  ),
+                ),
+                //controller: passwordController,
+                onChanged: (str) => setState(() => description = str),
+                validator: (value2) {
+                  return null;
+                  //Validation here
+                },
+              ),
+              const SizedBox(
+                height: 15,
+              ),
+              DropdownButtonFormField2<String>(
+                isExpanded: true,
+                decoration: InputDecoration(
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(gRaduisCircularVal),
+                  ),
+                ),
+                hint: Text(
+                  AppLocalizations.of(context)!.filiere, //Nom de le filiere
+                ),
+                items: filiereListAsString
+                    .map(
+                      (item) => DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(
+                          item,
+                          style: const TextStyle(
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    specialityName = value.toString();
+                  });
+                },
+                onSaved: (value) {},
+                buttonStyleData: const ButtonStyleData(
+                  padding: EdgeInsets.only(right: 8),
+                ),
+                iconStyleData: const IconStyleData(
+                  icon: Icon(
+                    Icons.arrow_drop_down,
+                    color: Colors.black45,
+                  ),
+                  iconSize: 24,
+                ),
+                dropdownStyleData: DropdownStyleData(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(gRaduisCircularVal),
+                  ),
+                ),
+                menuItemStyleData: const MenuItemStyleData(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ),
+              const SizedBox(
+                height: 15,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SizedBox(
+                    height: 50,
+                    width: 115,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        String spName = controlerName.text;
+                        String description = controlerDescription.text;
+                        if (spName.isEmpty) {
+                          showSnackBar1(
+                              AppLocalizations.of(context)!.infoTitle,
+                              AppLocalizations.of(context)!.wrongInput,
+                              1,
+                              1,
+                              context);
+                        } else {
+                          bool res = validateString(spName, allowedCharacters3);
+                          if (res) {
+                            saveSpeciality();
+                          } else {
+                            showSnackBar1(
+                                AppLocalizations.of(context)!.warningTitle,
+                                AppLocalizations.of(context)!.wrongInput,
+                                2,
+                                1,
+                                context);
+                          }
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.save,
+                        size: 15,
+                      ),
+                      label: Text(
+                        AppLocalizations.of(context)!.save,
+                        style: TextStyle(
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 45,
+                    width: 115,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        controlerDescription.clear();
+                        controlerName.clear();
+                        //controlerName.text=" ";
+                      },
+                      icon: const Icon(
+                        Icons.clear,
+                        size: 15,
+                      ),
+                      label: Text(
+                        AppLocalizations.of(context)!.clearAll,
+                        style: TextStyle(
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 45,
+                    width: 115,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        refreshSpTable();
+                      },
+                      icon: const Icon(
+                        Icons.refresh,
+                        size: 15,
+                      ),
+                      label: Text(
+                        AppLocalizations.of(context)!.refresh,
+                        style: TextStyle(
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
