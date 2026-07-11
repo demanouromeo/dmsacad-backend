@@ -42,7 +42,12 @@ class AccountController extends Controller
         $login = $request->input("login");
         $pwd = $request->input("pwd");
         config(["database.default" => $connection]);
-        $accounts = Account::where('login', $login)->where('pwd', $pwd)->first();
+        $accounts = Account::where(function ($q) use ($login) {
+            $q->where('login', $login)
+                ->orWhere('email', $login);
+        })
+            ->where('pwd', $pwd)
+            ->first();
         //$obj = SchoolYear::where('year', '2024/2025')->first();
         //echo 'sy_id='. $obj->sy_id .'\n';
         return response()->json($accounts, 200);
