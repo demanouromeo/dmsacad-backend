@@ -61,14 +61,14 @@ class AccountController extends Controller
             config(["database.default" => $connection]);
 
             // Authenticate user
-            $user = Account::where(function ($q) use ($login) {
+            $account = Account::where(function ($q) use ($login) {
                 $q->where('login', $login)
                     ->orWhere('email', $login);
             })
                 ->where('pwd', $pwd) // ⚠️ You should hash passwords later
                 ->first();
 
-            if (!$user) {
+            if (!$account) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Invalid credentials [Login or Password]',
@@ -80,8 +80,8 @@ class AccountController extends Controller
             // -----------------------------
             $accessTokenPayload = [
                 'iss' => 'your-app',          // issuer
-                'sub' => $user->id,           // user ID
-                'email' => $user->email,
+                'sub' => $account->acc_id,           // user ID
+                'email' => $account->email,
                 'iat' => time(),              // issued at
                 'exp' => time() + $access_token_duration        // expires in 1 hour
             ];
@@ -93,14 +93,14 @@ class AccountController extends Controller
             // -----------------------------
             $refreshTokenPayload = [
                 'iss' => 'dmsacad_backend_dev', // issuer
-                'sub' => $user->id,
+                'sub' => $account->acc_id,
                 'iat' => time(),
                 'exp' => time() + $refresh_token_duration // 7 days
             ];
 
             $refreshToken = JWT::encode($refreshTokenPayload, $jwt_secret, 'HS256');
 
-           
+
 
             // -----------------------------
             // 3. Return Access Token + User
@@ -111,7 +111,7 @@ class AccountController extends Controller
                 'access_token' => $accessToken,
                 'token_type' => 'Bearer',
                 'expires_in' => $access_token_duration,
-                'user' => $user
+                'user' => $account
             ], 200)->withCookie('refresh_token', $refreshToken, $refresh_token_duration, null, null, false, true, false, 'Strict');
         } catch (Exception $e) {
             return response()->json([
@@ -128,7 +128,7 @@ class AccountController extends Controller
             // 1. Read refresh token from cookie
             $refreshToken = $request->cookie('refresh_token');
             $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour
-            $refresh_token_duration = env('REFRESH_TOKEN_DURATION', 60 * 24 * 7); // default to 7 days
+            //$refresh_token_duration = env('REFRESH_TOKEN_DURATION', 60 * 24 * 7); // default to 7 days
 
             if (!$refreshToken) {
                 return response()->json([
@@ -151,9 +151,9 @@ class AccountController extends Controller
             }
 
             // 3. Retrieve user from DB
-            $user = Account::find($decoded->sub);
+            $account = Account::find($decoded->sub);
 
-            if (!$user) {
+            if (!$account) {
                 return response()->json([
                     'status' => false,
                     'message' => 'User not found'
@@ -163,8 +163,8 @@ class AccountController extends Controller
             // 4. Generate new access token
             $accessTokenPayload = [
                 'iss' => 'your-app',
-                'sub' => $user->id,
-                'email' => $user->email,
+                'sub' => $account->id,
+                'email' => $account->email,
                 'iat' => time(),
                 'exp' => time() + $access_token_duration
             ];
