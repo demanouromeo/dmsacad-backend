@@ -40,6 +40,7 @@ class AccountController extends Controller
 
     public function login(Request $request)
     {
+        echo "Hello from login function";
         try {
             $jwt_secret = env('JWT_SECRET');
             $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour
