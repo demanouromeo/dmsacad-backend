@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
-use App\Models\SchoolYear;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use Illuminate\Support\Facades\Cookie;
 
 class AccountController extends Controller
 {
@@ -38,30 +40,101 @@ class AccountController extends Controller
 
     public function login(Request $request)
     {
-        $data = $request->validate([
-            'login' => 'required|string',
-            'pwd' => 'required|string',
-            'connection' => 'required|string'
-        ]);
+        try {
+            $jwt_secret = env('JWT_SECRET');
+            $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour
+            $refresh_token_duration = env('REFRESH_TOKEN_DURATION', 60 * 24 * 7); // default to 7 days
 
-        $login = $data['login'];
-        $pwd = $data['pwd'];
-        $connection = $data['connection']; //is refused
-        //$connection = $request->input("connection");//Should be used instead of $data['connection'] if we don't need validation for the field to avoid validation issues
+            // Validate request
+            $data = $request->validate([
+                'login' => 'required|string',
+                'pwd' => 'required|string',
+                'connection' => 'required|string'
+            ]);
 
-        echo "Connection: " . $connection . " -- Login: " . $data['login'] . " -- Password: " . $data['pwd'];
+            $login = $data['login'];
+            $pwd = $data['pwd'];
+            $connection = $data['connection'];
 
-        config(["database.default" => $data['connection']]);
-        $accounts = Account::where(function ($q) use ($login) {
-            $q->where('login', $login)
-                ->orWhere('email', $login);
-        })
-            ->where('pwd', $data['pwd'])
-            ->first();
-        //$obj = SchoolYear::where('year', '2024/2025')->first();
-        //echo 'sy_id='. $obj->sy_id .'\n';
-        return response()->json($accounts, 200);
+            // Switch DB connection dynamically
+            config(["database.default" => $connection]);
+
+            // Authenticate user
+            $user = Account::where(function ($q) use ($login) {
+                $q->where('login', $login)
+                    ->orWhere('email', $login);
+            })
+                ->where('pwd', $pwd) // ⚠️ You should hash passwords later
+                ->first();
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid credentials [Login or Password]',
+                ], 401);
+            }
+
+            // -----------------------------
+            // 1. Generate Access Token (JWT)
+            // -----------------------------
+            $accessTokenPayload = [
+                'iss' => 'your-app',          // issuer
+                'sub' => $user->id,           // user ID
+                'email' => $user->email,
+                'iat' => time(),              // issued at
+                'exp' => time() + $access_token_duration        // expires in 1 hour
+            ];
+
+            $accessToken = JWT::encode($accessTokenPayload, $jwt_secret, 'HS256');
+
+            // -----------------------------
+            // 2. Generate Refresh Token
+            // -----------------------------
+            $refreshTokenPayload = [
+                'iss' => 'your-app',
+                'sub' => $user->id,
+                'iat' => time(),
+                'exp' => time() + $refresh_token_duration // 7 days
+            ];
+
+            $refreshToken = JWT::encode($refreshTokenPayload, $jwt_secret, 'HS256');
+
+
+            // Store refresh token in HttpOnly cookie
+            Cookie::queue(
+                Cookie::make(
+                    'refresh_token',
+                    $refreshToken,
+                    60 * 24 * 7, // 7 days
+                    null,
+                    null,
+                    true,   // secure (HTTPS only)
+                    true,   // httpOnly
+                    false,
+                    'Strict'
+                )
+            );
+
+            // -----------------------------
+            // 3. Return Access Token + User
+            // -----------------------------
+            return response()->json([
+                'status' => true,
+                'message' => 'Login successful',
+                'access_token' => $accessToken,
+                'token_type' => 'Bearer',
+                'expires_in' => $access_token_duration,
+                'user' => $user
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Login failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
+
 
     public function allAccounts($connection)
     {

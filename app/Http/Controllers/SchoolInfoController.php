@@ -24,15 +24,15 @@ class SchoolInfoController extends Controller
             "CETIC_DE_BOGO",
             "CETIC_DE_DARGALA",
             "CETIC_DE_DOUBANE",
-            "CETIC_DE_GADOUA", 
+            "CETIC_DE_GADOUA",
             //"CETIC_DE_GODOLA",
             "CETIC_DE_MAKARY",
             "COLLEGE_DE_LA_FRATERNITE",
             "COLBIPPOLFOSH",
             "ENIEG_DE_GUIDER",
-            "ENIEG_BILINGUE_DE_MAROUA", 
+            "ENIEG_BILINGUE_DE_MAROUA",
             "GBHS_MINAWAO",
-            "GBTHS_MEWOULOU", 
+            "GBTHS_MEWOULOU",
             "LB_BOGO",
             //"LB_GUISSA",
             //"LB_KARTOUA",
@@ -48,7 +48,7 @@ class SchoolInfoController extends Controller
             "LT_MINDIF",
             "LT_MORA",
             "LYCEE_DE_BALAZA_ALCALI",
-            "LYCEE_CLASSIQUE_DE_MAROUA", 
+            "LYCEE_CLASSIQUE_DE_MAROUA",
             //"LYCEE_DE_BIDZAR",
             "LYCEE_DE_DOGBA",
             "LYCEE_DE_DOMO",
@@ -71,21 +71,21 @@ class SchoolInfoController extends Controller
             //"LYCEE_DE_MESKINE",
             "LYCEE_DE_MOKIO",
             "LYCEE_DE_PITOA",
-            "LYCEE_DE_WAZA", 
+            "LYCEE_DE_WAZA",
             "TEST",
             "TEST_PLAY"
         );
-     
+
         //echo "<br/>".count($schools )."<br/>";
         //response()->json($schools, 200);
         return response()->json($schools, 200);
     }
-    
+
     public function getClassificationParam(Request $request)
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -99,7 +99,7 @@ class SchoolInfoController extends Controller
             return response()->json([], 300); //ERROR OCCURS
         }
     }
-    
+
     public function allSchoolConfig(Request $request)
     {
         $connection = $request->input("connection");
@@ -112,22 +112,21 @@ class SchoolInfoController extends Controller
             //$config = BasicSchoolConfig::where('sy_id', '=', $sy_id)->get();
             $config = BasicSchoolConfig::all();
             //$config = BasicSchoolConfig::where('sy_id', '=', $sy_id)->first();
-            return response()->json($config, 200); 
+            return response()->json($config, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
             return response()->json([], 300); //ERROR OCCURS
         }
     }
-    
+
     public function getSchoolYearID(Request $request)
     {
         $year = $request->input('year');
         $connection = $request->input('connection');
         config(["database.default" => $connection]);
         return MyHelper::getSchoolYearID($year);
-         
-    } 
-    
+    }
+
     public function saveSchoolInfo(Request $request)
     {
         $request->validate([
@@ -236,11 +235,11 @@ class SchoolInfoController extends Controller
                 $conf->del_regionale_fr = $del_regionale_fr;
                 $conf->del_regionale_en = $del_regionale_en;
                 $conf->del_dept_fr = $del_dept_fr;
-                $conf->del_dept_en = $del_dept_en;                
+                $conf->del_dept_en = $del_dept_en;
                 //echo "[$phone1]<br/>";
                 if (empty($phone1) || $phone1 == "null") {
                     $conf->phone1 = 0;
-                }else{
+                } else {
                     $conf->phone1 = $phone1;
                 }
                 $conf->email = $email;
