@@ -38,15 +38,25 @@ class AccountController extends Controller
 
     public function login(Request $request)
     {
-        $connection = $request->input("connection");
-        $login = $request->input("login");
-        $pwd = $request->input("pwd");
-        config(["database.default" => $connection]);
+        $data = $request->validate([
+            'login' => 'required|string',
+            'pwd' => 'required|string',
+            'connection' => 'required|string'
+        ]);
+
+        $login = $data['login'];
+        $pwd = $data['pwd'];
+        $connection = $data['connection']; //is refused
+        //$connection = $request->input("connection");//Should be used instead of $data['connection'] if we don't need validation for the field to avoid validation issues
+
+        echo "Connection: " . $connection . " -- Login: " . $data['login'] . " -- Password: " . $data['pwd'];
+
+        config(["database.default" => $data['connection']]);
         $accounts = Account::where(function ($q) use ($login) {
             $q->where('login', $login)
                 ->orWhere('email', $login);
         })
-            ->where('pwd', $pwd)
+            ->where('pwd', $data['pwd'])
             ->first();
         //$obj = SchoolYear::where('year', '2024/2025')->first();
         //echo 'sy_id='. $obj->sy_id .'\n';
