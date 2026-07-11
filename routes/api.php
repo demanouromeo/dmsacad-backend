@@ -37,7 +37,7 @@ Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
 
 
 //--------------------- SCHOOL CONFIG
-Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']);
+//Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']);
 Route::post('/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']);
 Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']);
 Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']);
@@ -52,7 +52,10 @@ Route::post('/accounts/connect', [AccountController::class, 'login']);
 Route::post('/accounts/refresh', [AccountController::class, 'refresh']);
 Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']);
 
-
+// 1. Routes protected by Sanctum (User must be logged in)
+Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
+    Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']);
+});
 
 
 //Route::get('/modules/filiere/{connection}/{year}/{nom_filiere}/{section}', [FiliereController::class, 'saveFiliere']);

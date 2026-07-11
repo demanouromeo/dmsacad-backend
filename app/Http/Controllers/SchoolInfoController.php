@@ -96,7 +96,7 @@ class SchoolInfoController extends Controller
             return response()->json($params, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS; 500 = Internal Server Error
         }
     }
 
@@ -107,15 +107,12 @@ class SchoolInfoController extends Controller
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year\n";
         try {
-            $sy = SchoolYear::where('year', $year)->first();
-            $sy_id = $sy->sy_id;
             //$config = BasicSchoolConfig::where('sy_id', '=', $sy_id)->get();
             $config = BasicSchoolConfig::all();
             //$config = BasicSchoolConfig::where('sy_id', '=', $sy_id)->first();
             return response()->json($config, 200);
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS; 500 = Internal Server Error
         }
     }
 

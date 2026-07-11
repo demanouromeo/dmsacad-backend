@@ -42,7 +42,6 @@ class AccountController extends Controller
 
     public function login(Request $request)
     {
-        echo "Hello from login function";
         try {
             $jwt_secret = env('JWT_SECRET');
             $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour or 3600 minutes
@@ -62,13 +61,24 @@ class AccountController extends Controller
             // Switch DB connection dynamically
             config(["database.default" => $connection]);
 
-            // Authenticate user
+            // Authenticate user ----------------------------------------------------------
             $account = Account::where(function ($q) use ($login) {
                 $q->where('login', $login)
                     ->orWhere('email', $login);
             })
                 ->where('pwd', $pwd) // ⚠️ You should hash passwords later
                 ->first();
+
+            /*--- Correction from claude
+            $account = Account::where(function ($q) use ($login) {
+                $q->where('login', $login)->orWhere('email', $login);
+            })->first();
+
+            if (!$account || !Hash::check($pwd, $account->pwd)) {
+                return response()->json(['status' => false, 'message' => 'Invalid credentials'], 401);
+            }
+            */
+
 
             if (!$account) {
                 return response()->json([
