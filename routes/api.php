@@ -32,23 +32,24 @@ Route::get('/test/prepareNewYear', [TestController::class, 'prepareNewYear']);
 Route::get('/test/deleteStudClasse', [TestController::class, 'deleteStudClasse']);
 Route::get('/test/deleteManyStudClasse', [TestController::class, 'deleteManyStudClasse']);
 Route::post('/test/deleteManyStudClassePOST', [TestController::class, 'deleteManyStudClassePOST']);
-Route::get('/test/alterStaff', [TestController::class, 'alterStaff']); 
-Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);  
+Route::get('/test/alterStaff', [TestController::class, 'alterStaff']);
+Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
 
 
 //--------------------- SCHOOL CONFIG
 Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']);
-Route::post('/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); 
-Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']); 
-Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); 
-Route::post('/modules/schoolConfig/upload', [SchoolInfoController::class, 'upload']); 
+Route::post('/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']);
+Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']);
+Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']);
+Route::post('/modules/schoolConfig/upload', [SchoolInfoController::class, 'upload']);
 Route::get('/modules/schoolConfig/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);
 Route::get('/modules/schoolConfig/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);
 
 
 //--------------------- ACCOUNTS
-Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']); 
-Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']); 
+Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']);
+Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']);
+Route::post('/accounts/connect', [AccountController::class, 'login']);
 
 
 
@@ -91,28 +92,28 @@ Route::get('/modules/classe/allClassesOfSubject', [ClasseController::class, 'all
 Route::get('/modules/classe/getAllClassesOfSubject', [ClasseController::class, 'getAllClassesOfSubject']);
 Route::get('/modules/classe/resetBasculement', [ClasseController::class, 'resetBasculement']);
 Route::get('/modules/classe/applyBasculement', [ClasseController::class, 'applyBasculement']);
-Route::post('/modules/classe/applyBasculementWithPOST', [ClasseController::class, 'applyBasculementWithPOST']); 
-Route::get('/modules/classe/removeBasculement', [ClasseController::class, 'removeBasculement']); 
-Route::post('/modules/classe/removeBasculementWithPOST', [ClasseController::class, 'removeBasculementWithPOST']); 
-Route::get('/modules/classe/saveChanges', [ClasseController::class, 'saveChanges']); 
-Route::post('/modules/classe/saveChangesWithPOST', [ClasseController::class, 'saveChangesWithPOST']); 
-Route::get('/modules/classe/basculerSpecial', [ClasseController::class, 'basculerSpecial']);  
-Route::get('/modules/classe/processRedoublants', [ClasseController::class, 'processRedoublants']);  
-Route::post('/modules/classe/processRedoublantsWithPOST', [ClasseController::class, 'processRedoublantsWithPOST']);  
-Route::get('/modules/classe/cancelAllBasculement', [ClasseController::class, 'cancelAllBasculement']);  
-Route::get('/modules/classe/allClasseOfSection', [ClasseController::class, 'allClasseOfSection']); 
+Route::post('/modules/classe/applyBasculementWithPOST', [ClasseController::class, 'applyBasculementWithPOST']);
+Route::get('/modules/classe/removeBasculement', [ClasseController::class, 'removeBasculement']);
+Route::post('/modules/classe/removeBasculementWithPOST', [ClasseController::class, 'removeBasculementWithPOST']);
+Route::get('/modules/classe/saveChanges', [ClasseController::class, 'saveChanges']);
+Route::post('/modules/classe/saveChangesWithPOST', [ClasseController::class, 'saveChangesWithPOST']);
+Route::get('/modules/classe/basculerSpecial', [ClasseController::class, 'basculerSpecial']);
+Route::get('/modules/classe/processRedoublants', [ClasseController::class, 'processRedoublants']);
+Route::post('/modules/classe/processRedoublantsWithPOST', [ClasseController::class, 'processRedoublantsWithPOST']);
+Route::get('/modules/classe/cancelAllBasculement', [ClasseController::class, 'cancelAllBasculement']);
+Route::get('/modules/classe/allClasseOfSection', [ClasseController::class, 'allClasseOfSection']);
 Route::get('/modules/classe/clearExclus', [ClasseController::class, 'clearExclus']);
-Route::post('/modules/classe/clearExclusWithPOST', [ClasseController::class, 'clearExclusWithPOST']); 
+Route::post('/modules/classe/clearExclusWithPOST', [ClasseController::class, 'clearExclusWithPOST']);
 Route::get('/modules/classe/updateApcLevel', [ClasseController::class, 'updateApcLevel']);
 
- 
+
 
 
 //--------------------- STAFF
 Route::get('/modules/staff/arrangeSG', [StaffController::class, 'arrangeSG']);
 Route::get('/modules/staff/allClassMastersOfYear', [StaffController::class, 'allClassMastersOfYear']);
 Route::get('/modules/staff/allSgOfYear', [StaffController::class, 'allSgOfYear']);
-Route::get('/modules/staff/saveStaff', [StaffController::class, 'saveStaff']); 
+Route::get('/modules/staff/saveStaff', [StaffController::class, 'saveStaff']);
 Route::get('/modules/staff/saveManyStaffs', [StaffController::class, 'saveManyStaffs']);
 Route::post('/modules/staff/saveManyStaffsWithPOST', [StaffController::class, 'saveManyStaffsWithPOST']);
 Route::get('/modules/staff/allStaffs1', [StaffController::class, 'allStaffs1']);
@@ -129,7 +130,7 @@ Route::post('/modules/staff/updateManyStaffsPOST', [StaffController::class, 'upd
 Route::post('/modules/staff/deleteManyStaffsWithPOST', [StaffController::class, 'deleteManyStaffsWithPOST']);
 Route::get('/modules/staff/teachFromAcc', [StaffController::class, 'teachFromAcc']);
 Route::get('/modules/staff/AllAttributionsOfSection', [StaffController::class, 'AllAttributionsOfSection']);
-Route::get('/modules/staff/subjectTaughtByaStaff2', [StaffController::class, 'subjectTaughtByaStaff2']); 
+Route::get('/modules/staff/subjectTaughtByaStaff2', [StaffController::class, 'subjectTaughtByaStaff2']);
 Route::get('/modules/staff/modifyStaff', [StaffController::class, 'modifyStaff']);
 Route::get('/modules/staff/batchAssignCourses', [StaffController::class, 'batchAssignCourses']);
 Route::get('/modules/staff/batchRemoveCourses', [StaffController::class, 'batchRemoveCourses']);
@@ -152,9 +153,9 @@ Route::get('/modules/subjects/deleteManySubjects', [SubjectController::class, 'd
 Route::get('/modules/subjects/saveManySubjects', [SubjectController::class, 'saveManySubjects']);
 Route::get('/modules/subjects/deleteAllSubjectsOfSectionAndYear', [SubjectController::class, 'deleteAllSubjectsOfSectionAndYear']);
 Route::get('/modules/subjects/subjectsNotOfClasse', [SubjectController::class, 'subjectsNotOfClasse']);
-Route::get('/modules/subjects/subjectOfClasse', [SubjectController::class, 'subjectOfClasse']); 
-Route::get('/modules/subjects/allSubjectOfClasse', [SubjectController::class, 'allSubjectOfClasse']); 
-Route::get('/modules/subjects/saveManySC', [SubjectController::class, 'saveManySC']); 
+Route::get('/modules/subjects/subjectOfClasse', [SubjectController::class, 'subjectOfClasse']);
+Route::get('/modules/subjects/allSubjectOfClasse', [SubjectController::class, 'allSubjectOfClasse']);
+Route::get('/modules/subjects/saveManySC', [SubjectController::class, 'saveManySC']);
 Route::get('/modules/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']);
 Route::get('/modules/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']);
 Route::get('/modules/subjects/allCompetences', [SubjectController::class, 'allCompetences']);
@@ -170,7 +171,7 @@ Route::get('/modules/subjects/subjectOfSection', [SubjectController::class, 'sub
 Route::post('/modules/subjects/deleteManySubjectsWithPOST', [SubjectController::class, 'deleteManySubjectsWithPOST']);
 Route::post('/modules/subjects/updateManySubjectsWithPOST', [SubjectController::class, 'updateManySubjectsWithPOST']);
 Route::post('/modules/subjects/saveManySubjectsWithPOST', [SubjectController::class, 'saveManySubjectsWithPOST']);
-Route::post('/modules/subjects/saveManySCWithPost', [SubjectController::class, 'saveManySCWithPost']); 
+Route::post('/modules/subjects/saveManySCWithPost', [SubjectController::class, 'saveManySCWithPost']);
 Route::post('/modules/subjects/saveManyAttricutionsWithPost', [SubjectController::class, 'saveManyAttricutionsWithPost']);
 Route::get('/modules/subjects/allCompetencesOfSection', [SubjectController::class, 'allCompetencesOfSection']);
 Route::get('/modules/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']);
@@ -227,8 +228,8 @@ Route::post('/modules/student/saveCompSeqMarksWithPOST2', [StudentController::cl
 Route::post('/modules/student/saveManyStudentsWithPOST2', [StudentController::class, 'saveManyStudentsWithPOST2']);
 Route::post('/modules/student/deleteManyStudentsWithPOST', [StudentController::class, 'deleteManyStudentsWithPOST']);
 Route::post('/modules/student/updatePromotionInfoWithPOST', [StudentController::class, 'updatePromotionInfoWithPOST']);
-Route::get('/modules/student/updateDismiss', [StudentController::class, 'updateDismiss']); 
-Route::get('/modules/student/updateSolvable', [StudentController::class, 'updateSolvable']); 
+Route::get('/modules/student/updateDismiss', [StudentController::class, 'updateDismiss']);
+Route::get('/modules/student/updateSolvable', [StudentController::class, 'updateSolvable']);
 Route::post('/modules/student/updateSolvablePOST', [StudentController::class, 'updateSolvablePOST']);
 Route::get('/modules/student/addStudentToRepeatList', [StudentController::class, 'addStudentToRepeatList']);
 Route::get('/modules/student/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
@@ -245,9 +246,9 @@ Route::post('/modules/student/uploadCompMarksWithPOST', [StudentController::clas
 
 //--------------------- SECTION
 Route::get('/modules/section/getSections', [SectionYearController::class, 'getSections']);
- 
 
- 
+
+
 
 
 
@@ -268,4 +269,3 @@ Route::get('/modules/lock/saveOrUpdateLocks', [LockController::class, 'saveOrUpd
 //--------------------- Patient
 Route::get('/modules/patient/allPatients', [TestController::class, 'allPatients']);
 Route::get('/modules/patient/savePatient', [TestController::class, 'savePatient']);
-

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 
 class AccountController extends Controller
 {
-    
+
     public function updateAccount(Request $request)
     {
         $connection = $request->input("connection");
@@ -19,27 +19,38 @@ class AccountController extends Controller
         $acc_id = $request->input("acc_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Nom_Filiere: $nom_filiere -- Section: $section";
-       
+
         try {
             $ref = Account::find($acc_id);
-            if(!is_null($ref)) {
+            if (!is_null($ref)) {
                 $ref->login = $login;
                 $ref->pwd = $pwd;
                 $ref->update();
                 echo "1";
-            }else{
-                echo "-1";//ACCOUNT NOT FOUND
+            } else {
+                echo "-1"; //ACCOUNT NOT FOUND
             }
-            
         } catch (Exception $e) {
             //echo '<br/>Message: ' .$e->getMessage();
             echo "-2"; //ERROR OCCURS
         }
     }
-    
+
+    public function login(Request $request)
+    {
+        $connection = $request->input("connection");
+        $login = $request->input("login");
+        $pwd = $request->input("pwd");
+        config(["database.default" => $connection]);
+        $accounts = Account::where('login', $login)->where('pwd', $pwd)->first();
+        //$obj = SchoolYear::where('year', '2024/2025')->first();
+        //echo 'sy_id='. $obj->sy_id .'\n';
+        return response()->json($accounts, 200);
+    }
+
     public function allAccounts($connection)
     {
-        config(["database.default"=> $connection]); 
+        config(["database.default" => $connection]);
         $accounts = Account::all();
         //$obj = SchoolYear::where('year', '2024/2025')->first();
         //echo 'sy_id='. $obj->sy_id .'\n';
@@ -55,8 +66,6 @@ class AccountController extends Controller
             'data' => $Accounts
         ], 200);*/
         return response()->json($Accounts, 200);
-
-
     }
 
     public function show($id)
