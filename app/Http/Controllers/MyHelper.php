@@ -27,15 +27,17 @@ class MyHelper extends Controller
     "abcdefghijklmnopqrstuvwxyz _-0123456789àâçéèêîôùûÀÂÇÉÈÊÎÔŒÙÛABCDEFGHIJKLMNOPQRSTUVWXYZ";
     public static $allowedsSubjectsChars =
     "abcdefghijklmnopqrstuvwxyz _-0123456789àâçéèêîôùûÀÂÇÉÈÊÎÔŒÙÛABCDEFGHIJKLMNOPQRSTUVWXYZ,/&.()'œ";
-    
-    public static function fetchStudentClasse1ereTle($sy_id){    
+
+    public static function fetchStudentClasse1ereTle($sy_id)
+    {
         $res = DB::select("SELECT*FROM student_classe WHERE student_classe.sy_id = $sy_id 
                 AND student_classe.classe_id IN(SELECT classe.classe_id FROM classe 
                     WHERE classe.level = 6 OR classe.level = 7);");
         return $res;
     }
 
-    public static function fetchStudentClasseByLevel($level, $sy_id){    
+    public static function fetchStudentClasseByLevel($level, $sy_id)
+    {
         $res = DB::select("SELECT*FROM student_classe WHERE student_classe.sy_id = $sy_id 
                 AND student_classe.classe_id IN(SELECT classe.classe_id FROM classe 
                     WHERE classe.level = $level);");
@@ -99,16 +101,16 @@ class MyHelper extends Controller
             if ($count == 0) {
                 //No refrences left ---> Delete PERMANETELY
                 try {
-                    $stud = Student::find($stud_id); 
-                    if (!is_null($stud)) {    
-                        $acc_id_tmp = $stud->acc_id;                     
+                    $stud = Student::find($stud_id);
+                    if (!is_null($stud)) {
+                        $acc_id_tmp = $stud->acc_id;
                         $stud->delete();
                     } else {
                         return -2; //Very bad student not found
                     }
 
                     //LET'S DELETE ALL THE RELETED ACCOUNTS
-                    if($acc_id_tmp != null){//if null then the student has no account
+                    if ($acc_id_tmp != null) { //if null then the student has no account
                         DB::select("DELETE FROM ACCOUNT WHERE acc_id = $acc_id_tmp");
                     }
                     return 1; //student deleted
@@ -127,7 +129,7 @@ class MyHelper extends Controller
             } catch (Exception $e) {
                 //throw $th;
             }
-            return 1; 
+            return 1;
         } catch (Exception $e) {
             echo '<br/>MyHelper.getSchoolYearID(): ERROR: ' . $e->getMessage() . '<br/>';
             return -1; //ERROR OCCURS, --> OP FAILED
@@ -202,7 +204,7 @@ class MyHelper extends Controller
                 //STAFF DELETED IN SCHOOL YEAR AND SECTION, BUT STILL HAVING REF IN OTHERS SCHOOL YEARS
                 //echo "\$count1: $count1 | \$count2: $count2 | \$count3: $count3";
             }
-            return 1; 
+            return 1;
         } catch (Exception $e) {
             echo '<br/>MyHelper.getSchoolYearID(): ERROR: ' . $e->getMessage() . '<br/>';
             return -1; //ERROR OCCURS, --> OP FAILED
@@ -1061,7 +1063,7 @@ class MyHelper extends Controller
             return -1; //ECHEC
         }
     }
- 
+
     public static function deleteClasses($sy_id, $section_id)
     {
         try {
@@ -1171,5 +1173,39 @@ class MyHelper extends Controller
             }
         }
         return true;
+    }
+
+    public static function findRole($type)
+    {
+        /*
+            1-superAdministrtateur | 
+            2-Top management (proviseur directeur ..) | 
+            3-SG | 
+            4-bursar | 
+            5-Teacher(Simple enseignant) | 
+            6-Parent | 
+            7-Student | 
+            8-Censeur
+        */
+        switch ($type) {
+            case 1:
+                return "ADMIN";
+            case 2:
+                return "TOP_MANAGEMENT";
+            case 3:
+                return "SG";
+            case 4:
+                return "BURSAR";
+            case 5:
+                return "TEACHER";
+            case 6:
+                return "PARENT";
+            case 7:
+                return "STUDENT";
+            case 8:
+                return "CENSEUR";
+            default:
+                return "Unknown";
+        } 
     }
 }

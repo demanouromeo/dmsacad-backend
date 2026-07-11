@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Administrateur;
+use App\Models\Staff;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -75,6 +77,30 @@ class AccountController extends Controller
                 ], 401);
             }
 
+            $role = MyHelper::findRole($account->type);
+            $user_name = "";
+            $user_id = 1;
+            if ($account->type == 1) { //ADMINISTRATOR 
+                $admin = Administrateur::where('acc_id', $account->acc_id)->first();
+                if (!$admin) {
+                    $user_name = "ADMINISTRATEUR"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
+                } else {
+                    $user_name = $admin->nom . ' ' . $admin->prenom;
+                    $user_name = trim($user_name);
+                    $user_id = $admin->admin_id;
+                }
+            } else { //CONNECTED USER  
+                $user_name = "NAME_CONNECTED_USER";
+                $staff = Staff::where('acc_id', $account->acc_id)->first();
+                if (!$staff) {
+                    $user_name = "PERSONNEL"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
+                } else {
+                    $user_name = $staff->name . ' ' . $staff->surname;
+                    $user_name = trim($user_name);
+                    $user_id = $staff->staff_id;
+                }
+            }
+
             // -----------------------------
             // 1. Generate Access Token (JWT)
             // -----------------------------
@@ -82,6 +108,9 @@ class AccountController extends Controller
                 'iss' => 'your-app',          // issuer
                 'sub' => $account->acc_id,           // user ID
                 'email' => $account->email,
+                'role' => $role, //"ROLE_CONNECTED_USER",
+                'name' => $user_name, //"NAME_CONNECTED_USER",
+                'user_id' => $user_id, //this represents the actual user id in the staff or admin table, not the account id
                 'iat' => time(),              // issued at
                 'exp' => time() + $access_token_duration        // expires in 1 hour
             ];
@@ -94,6 +123,9 @@ class AccountController extends Controller
             $refreshTokenPayload = [
                 'iss' => 'dmsacad_backend_dev', // issuer
                 'sub' => $account->acc_id,
+                'role' => $role, //"ROLE_CONNECTED_USER",
+                'name' => $user_name, //"NAME_CONNECTED_USER",
+                'user_id' => $user_id, //this represents the actual user id in the staff or admin table, not the account id
                 'iat' => time(),
                 'exp' => time() + $refresh_token_duration // 7 days
             ];
@@ -122,8 +154,30 @@ class AccountController extends Controller
         }
     }
 
+    /**
+     * To test this provide body as JSON example: {"connection": "mysql"}, or {"connection": "LY_MERI"}
+     * Provide the refresh token in the cookie named 'refresh_token'. Cookie option is available in Postman under the "Cookies" tab.
+     */
     public function refresh(Request $request)
     {
+        $connection = "";
+        $data = $request->validate([
+            'connection' => 'required|string'
+        ]);
+        $connection = $data['connection'];
+        try {
+            // Validate request
+            $data = $request->validate([
+                'connection' => 'required|string'
+            ]);
+            $connection = $data['connection'];
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'connection is required',
+            ], 401);
+        }
+
         try {
             // 1. Read refresh token from cookie
             $refreshToken = $request->cookie('refresh_token');
@@ -136,6 +190,9 @@ class AccountController extends Controller
                     'message' => 'Refresh token missing'
                 ], 401);
             }
+
+            // Switch DB connection dynamically
+            config(["database.default" => $connection]);
 
             // 2. Decode refresh token
             $jwt_secret = env('JWT_SECRET');
