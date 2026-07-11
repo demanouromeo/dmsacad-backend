@@ -48,8 +48,10 @@ Route::get('/modules/schoolConfig/getSchoolYearID', [SchoolInfoController::class
 
 //--------------------- ACCOUNTS
 Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']);
-Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']);
 Route::post('/accounts/connect', [AccountController::class, 'login']);
+Route::post('/accounts/refresh', [AccountController::class, 'refresh']);
+Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']);
+
 
 
 

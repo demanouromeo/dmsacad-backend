@@ -43,7 +43,7 @@ class AccountController extends Controller
         echo "Hello from login function";
         try {
             $jwt_secret = env('JWT_SECRET');
-            $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour
+            $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour or 3600 minutes
             $refresh_token_duration = env('REFRESH_TOKEN_DURATION', 60 * 24 * 7); // default to 7 days
 
             // Validate request
@@ -92,7 +92,7 @@ class AccountController extends Controller
             // 2. Generate Refresh Token
             // -----------------------------
             $refreshTokenPayload = [
-                'iss' => 'your-app',
+                'iss' => 'dmsacad_backend_dev', // issuer
                 'sub' => $user->id,
                 'iat' => time(),
                 'exp' => time() + $refresh_token_duration // 7 days
@@ -100,21 +100,7 @@ class AccountController extends Controller
 
             $refreshToken = JWT::encode($refreshTokenPayload, $jwt_secret, 'HS256');
 
-
-            // Store refresh token in HttpOnly cookie
-            Cookie::queue(
-                Cookie::make(
-                    'refresh_token',
-                    $refreshToken,
-                    $refresh_token_duration, // 7 days
-                    null,
-                    null,
-                    false,   // secure (HTTPS only)//To allow http during development, set to false. Change to true in production.
-                    true,   // httpOnly
-                    false,
-                    'Strict'
-                )
-            );
+           
 
             // -----------------------------
             // 3. Return Access Token + User
@@ -135,6 +121,73 @@ class AccountController extends Controller
             ], 500);
         }
     }
+
+    public function refresh(Request $request)
+    {
+        try {
+            // 1. Read refresh token from cookie
+            $refreshToken = $request->cookie('refresh_token');
+            $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour
+            $refresh_token_duration = env('REFRESH_TOKEN_DURATION', 60 * 24 * 7); // default to 7 days
+
+            if (!$refreshToken) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Refresh token missing'
+                ], 401);
+            }
+
+            // 2. Decode refresh token
+            $jwt_secret = env('JWT_SECRET');
+
+            try {
+                $decoded = JWT::decode($refreshToken, new Key($jwt_secret, 'HS256'));
+            } catch (Exception $e) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid or expired refresh token',
+                    'error' => $e->getMessage()
+                ], 401); //401 = Unauthorized
+            }
+
+            // 3. Retrieve user from DB
+            $user = Account::find($decoded->sub);
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found'
+                ], 404); //404 = Not Found
+            }
+
+            // 4. Generate new access token
+            $accessTokenPayload = [
+                'iss' => 'your-app',
+                'sub' => $user->id,
+                'email' => $user->email,
+                'iat' => time(),
+                'exp' => time() + $access_token_duration
+            ];
+
+            $newAccessToken = JWT::encode($accessTokenPayload, $jwt_secret, 'HS256');
+
+            // 5. Return new access token
+            return response()->json([
+                'status' => true,
+                'message' => 'Token refreshed successfully',
+                'access_token' => $newAccessToken,
+                'token_type' => 'Bearer',
+                'expires_in' => $access_token_duration
+            ], 200); //200 = OK
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Refresh failed',
+                'error' => $e->getMessage()
+            ], 500); //500 = Internal Server Error
+        }
+    }
+
 
 
     public function allAccounts($connection)
