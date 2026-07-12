@@ -126,53 +126,92 @@ class SchoolInfoController extends Controller
 
     public function saveSchoolInfo(Request $request)
     {
-        $request->validate([
-            'sy' => 'required',
-            'connection' => 'required',
-            'logo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'schoolName' => 'required', //schoolName FR
-            'schoolNamEN' => 'required',
-            'delRegionFR' => 'required',
-            'delRegionEN' => 'required',
-            'delDeptFR' => 'required',
-            'delDeptEN' => 'required',
-            'phone' => 'required',
-            'email' => 'required',
-            'pobox' => 'required',
-            'type' => 'required',
-            'signDate' => 'required',
-            'signPlace' => 'required',
-            'immt' => 'required',
-        ]);
-        //$sy = $request->input('sy');
+        try {
+            $request->validate([
+                'sy' => 'required',
+                'connection' => 'required',
+                'logo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                'schoolName' => 'required', //schoolName FR
+                'schoolNameEN' => 'required',
+                'delRegionFR' => 'required',
+                'delRegionEN' => 'required',
+                'delDeptFR' => 'required',
+                'delDeptEN' => 'required',
+                'phone' => 'required',
+                'email' => 'required|email',
+                'pobox' => 'required',
+                'type' => 'required|integer|min:1|max:20',
+                'signDate' => 'required',
+                'signPlace' => 'required',
+                'immt' => 'required',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+
+        $sy = $request->input('sy');
+        $sy_id = MyHelper::getSchoolYearID($sy);
         $connection = $request->input('connection');
         config(["database.default" => $connection]);
         $imageName = 'logo' . time() . '.' . $request->logo->extension();
-        $request->logo->move(public_path("images/$connection/logo"), $imageName);
+        try {
+            $request->logo->move(public_path("images/$connection/logo"), $imageName);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to upload logo: ' . $th->getMessage(),
+            ], 500);
+        }
 
-        $schoolConfig = new BasicSchoolConfig();
-        $obj = SchoolYear::where('year', $request->sy)->first();
-        $schoolConfig->sy_id = $obj->sy_id;
-        $schoolConfig->name_fr = $request->schoolName;
-        $schoolConfig->name_en = $request->schoolNameEN;
-        $schoolConfig->del_regionale_fr = $request->delRegionFR;
-        $schoolConfig->del_regionale_en = $request->delRegionEN;
-        $schoolConfig->del_dept_fr = $request->delDeptFR;
-        $schoolConfig->del_dept_en = $request->delDeptEN;
-        $schoolConfig->phone1 = $request->phone;
-        $schoolConfig->email = $request->email;
-        $schoolConfig->pobox = $request->pobox;
-        $schoolConfig->type = $request->type;
-        $schoolConfig->date_signature = $request->signDate;
-        $schoolConfig->lieu_signature = $request->signPlace;
-        $schoolConfig->school_matricule = $request->immt;
-        $schoolConfig->logo_path = "images/$connection/" . $imageName;
-        $query = $schoolConfig->save();
-        if ($query) {
-            echo "ConfigSaved";
+        $schoolConfig = BasicSchoolConfig::where('sy_id', '=', $sy_id)->first();
+        //echo "School Config: " . json_encode($schoolConfig) . "<br/>";
+        if (is_null($schoolConfig)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'School configuration year not found for the provided year: ' . $sy,
+            ], 404);
         } else {
-            echo "Not saved";
-            //Here we instead have to update
+            echo "CONFIG: $request->schoolNameEN\n";
+            $schoolConfig->sy_id = $sy_id;
+            $schoolConfig->name_fr = $request->schoolName;
+            $schoolConfig->name_en = $request->schoolNameEN;
+            $schoolConfig->del_regionale_fr = $request->delRegionFR;
+            $schoolConfig->del_regionale_en = $request->delRegionEN;
+            $schoolConfig->del_dept_fr = $request->delDeptFR;
+            $schoolConfig->del_dept_en = $request->delDeptEN;
+            $schoolConfig->phone1 = $request->phone;
+            $schoolConfig->email = $request->email;
+            $schoolConfig->pobox = $request->pobox;
+            $schoolConfig->type = $request->type;
+            $schoolConfig->date_signature = $request->signDate;
+            $schoolConfig->lieu_signature = $request->signPlace;
+            $schoolConfig->school_matricule = $request->immt;
+            $schoolConfig->logo_path = "images/$connection/" . $imageName;
+
+            try {
+                $query = $schoolConfig->update();
+                if ($query) {
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'School configuration successfully saved',
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Failed to save config. No Exception thrown, but save returned false.',
+                    ], 409); // 409 Conflict. Maybe the record already exists or some other conflict occurred.
+                }
+            } catch (\Throwable $th) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to save config: ' . $th->getMessage(),
+                ], 500);
+            }
         }
     }
 

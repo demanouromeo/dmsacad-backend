@@ -36,12 +36,23 @@ Route::post('/accounts/refresh', [AccountController::class, 'refresh']); //ok - 
 //******* ADMIN ROUTES 
 Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     //==> ON SCHOOL CONFIG
-    Route::post('/configs/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); //Not yet tested
+    Route::post('/configs/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); //ok. WORKs. Tested on Postman as post request. With Body tab --> The from-data. Logo image uploaded fro
     Route::get('/configs/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //ok
     Route::post('/configs/upload', [SchoolInfoController::class, 'upload']); //ok. I tested on POstman, Uploaded logo. I choose Body tab then --> form-data then key= image, value=choose file, other keys: connection and year. setting value for each.  
 
     //==> ON ACCOUNTS
     Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']); //ok
+
+    //==> ON FILIERE
+    Route::get('/filieres/saveFiliere', [FiliereController::class, 'saveFiliere']);
+    Route::get('/filieres/updateFiliere', [FiliereController::class, 'updateFiliere']);
+    Route::get('/filieres/updateManyFiliere', [FiliereController::class, 'updateManyFiliere']);
+    Route::get('/filieres/deleteManyFiliere', [FiliereController::class, 'deleteManyFiliere']);
+
+    //==> ON SPECIALITY
+    Route::get('/specialities/saveSpeciality', [SpecialityController::class, 'saveSpeciality']);
+    Route::get('/specialities/updateManySpecialities', [SpecialityController::class, 'updateManySpecialities']);
+    Route::get('/specialities/deleteManySpecialities', [SpecialityController::class, 'deleteManySpecialities']);
 });
 
 //******** ANY CONNECTED USER ROUTES
@@ -52,24 +63,22 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']); //ok
 
     //==> ON ACCOUNTS
-    Route::post('/accounts/updateAccountWithPOST', [AccountController::class, 'updateAccountWithPOST']); //Any user can update its account
+    Route::post('/accounts/updateAccountWithPOST', [AccountController::class, 'updateAccountWithPOST']); //ok. Any user can update its account
+
+    //==> ON FILIERE
+    Route::get('/filieres/allFilieres', [FiliereController::class, 'allFilieres']);
+
+    //==> ON SPECIALITY
+    Route::get('/specialities/allSpecialites', [SpecialityController::class, 'allSpecialites']);
+    Route::get('/specialities/allSpecialites2', [SpecialityController::class, 'allSpecialites2']);
 });
 
 
-//Route::get('/modules/filiere/{connection}/{year}/{nom_filiere}/{section}', [FiliereController::class, 'saveFiliere']);
-//--------------------- FILIERE
-Route::get('/modules/saveFiliere', [FiliereController::class, 'saveFiliere']);
-Route::get('/modules/allFilieres', [FiliereController::class, 'allFilieres']);
-Route::get('/modules/updateFiliere', [FiliereController::class, 'updateFiliere']);
-Route::get('/modules/updateManyFiliere', [FiliereController::class, 'updateManyFiliere']);
-Route::get('/modules/deleteManyFiliere', [FiliereController::class, 'deleteManyFiliere']);
+
+
 
 //--------------------- SPECIALITY
-Route::get('/modules/saveSpeciality', [SpecialityController::class, 'saveSpeciality']);
-Route::get('/modules/allSpecialites', [SpecialityController::class, 'allSpecialites']);
-Route::get('/modules/allSpecialites2', [SpecialityController::class, 'allSpecialites2']);
-Route::get('/modules/updateManySpecialities', [SpecialityController::class, 'updateManySpecialities']);
-Route::get('/modules/deleteManySpecialities', [SpecialityController::class, 'deleteManySpecialities']);
+
 
 //--------------------- CLASSE
 Route::get('/modules/classe/updateClassSettings', [ClasseController::class, 'updateClassSettings']);
