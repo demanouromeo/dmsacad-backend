@@ -134,20 +134,23 @@ class FiliereController extends Controller
         $data_size = $request->input("data_size");
 
         $fList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
         $allAffected = 1; //interpreted as true. 0-->false
         config(["database.default" => $connection]);
         foreach ($fList as $fil) {
             // code
             $filiere_id = $fil["filiere_id"];
+            $filInDB = Filiere::find($filiere_id);
+            if (is_null($filInDB)) {
+                $allAffected = 0;
+                continue;
+            }
             $nom_filiere = $fil["nom_filiere"];
             //echo"id: ". $fil["filiere_id"] ." -- nom_filiere: ". $fil["nom_filiere"]."  ";
-            $affected = DB::table('filiere')
-                ->where('filiere_id', $filiere_id)
-                ->update(['nom_filiere' => $nom_filiere]);
-            //echo "[$filiere_id]-->$affected   ";
-            if ($affected != 1) {
+            try {
+                $affected = DB::table('filiere')
+                    ->where('filiere_id', $filiere_id)
+                    ->update(['nom_filiere' => $nom_filiere]);
+            } catch (\Throwable $th) {
                 $allAffected = 0;
             }
         }

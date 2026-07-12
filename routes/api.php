@@ -45,9 +45,9 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
 
     //==> ON FILIERE
     Route::post('/filieres/saveFiliere', [FiliereController::class, 'saveFiliere']); //ok
-    Route::post('/filieres/updateFiliere', [FiliereController::class, 'updateFiliere']);//ok
-    Route::post('/filieres/updateManyFiliere', [FiliereController::class, 'updateManyFiliere']);
-    Route::post('/filieres/deleteManyFiliere', [FiliereController::class, 'deleteManyFiliere']);
+    Route::post('/filieres/updateFiliere', [FiliereController::class, 'updateFiliere']); //ok
+    Route::post('/filieres/updateManyFiliere', [FiliereController::class, 'updateManyFiliere']); //ok
+    Route::post('/filieres/deleteManyFiliere', [FiliereController::class, 'deleteManyFiliere']); //ok
 
     //==> ON SPECIALITY
     Route::post('/specialities/saveSpeciality', [SpecialityController::class, 'saveSpeciality']);
