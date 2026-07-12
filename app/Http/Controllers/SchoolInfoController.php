@@ -219,8 +219,8 @@ class SchoolInfoController extends Controller
         $query = 1;
         try {
             $query = $schoolConfig->save();
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage()."<br/>"; 
+        } catch (\Throwable $e) {
+            //echo '<br/>ERROR: ' . $e->getMessage() . "<br/> we shall try to update instead<br/>";
             //Exists already let's try update
             //echo "lets try to update<br/>";
             $conf = BasicSchoolConfig::where('sy_id', "=", "$sy_id")->first();

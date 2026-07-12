@@ -37,13 +37,12 @@ Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
 
 
 //--------------------- SCHOOL CONFIG
-//Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']);
-Route::post('/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']);
-Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']);
-Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']);
-Route::post('/modules/schoolConfig/upload', [SchoolInfoController::class, 'upload']);
-Route::get('/modules/schoolConfig/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);
-Route::get('/modules/schoolConfig/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);
+Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']); //THIS API doesn't need Authentication
+//Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); ALREADY SECURED & TESTES
+//Route::post('/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); SECURED NOT TESTED YET 
+//Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //SECURED - tested and working
+//Route::get('/modules/schoolConfig/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);//SECURED - tested and working
+//Route::get('/modules/schoolConfig/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);//SECURED - tested and working
 
 
 //--------------------- ACCOUNTS
@@ -52,9 +51,20 @@ Route::post('/accounts/connect', [AccountController::class, 'login']);
 Route::post('/accounts/refresh', [AccountController::class, 'refresh']);
 Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']);
 
-// 1. Routes protected by Sanctum (User must be logged in)
+//******* ADMIN ROUTES 
 Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
-    Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']);
+    //==> ON SCHOOL CONFIG
+    Route::post('/configs/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); //Not yet tested
+    Route::get('/configs/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //Tested and working
+    Route::post('/configs/upload', [SchoolInfoController::class, 'upload']);
+});
+
+//******** ANY CONNECTED USER ROUTES
+Route::middleware(['jwt.auth'])->group(function () {
+    //==> ON SCHOOL CONFIG
+    Route::get('/configs/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); //Tested and working
+    Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);
+    Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);
 });
 
 

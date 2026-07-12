@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ThParamController extends Controller
-{   
-    
+{
+
     public function saveThParam(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
         $connection = $request->input("connection");
@@ -56,11 +56,11 @@ class ThParamController extends Controller
             echo "<br/>0"; //Failed
         }
     }
-    
+
     public function thParamOfYear(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -72,10 +72,10 @@ class ThParamController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function index()
     {
         //

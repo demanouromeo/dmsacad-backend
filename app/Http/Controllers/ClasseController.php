@@ -8,7 +8,7 @@ use App\Models\Speciality;
 use App\Models\StudentClasse;
 use FFI\Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 
 class ClasseController extends Controller
 {
@@ -16,7 +16,7 @@ class ClasseController extends Controller
     {
         //echo "Starting...\n";
         $connection = $request->input("connection");
-        $year = $request->input("year");  
+        $year = $request->input("year");
         $level = $request->input("level");
         $section = $request->input("section");
         $activated = $request->input("activated");
@@ -24,11 +24,12 @@ class ClasseController extends Controller
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
         $section_id = MyHelper::getSectionID($section);
-        
-        try{
-           DB::select("INSERT INTO `apc_level` (`sy_id`, `section_id`, `level`, `activated`) 
+
+        try {
+            DB::select("INSERT INTO `apc_level` (`sy_id`, `section_id`, `level`, `activated`) 
            VALUES ('$sy_id', '$section_id', '$level', '$activated');");
-        }catch (Exception $e){}
+        } catch (Exception $e) {
+        }
 
         $allAffected = 1;
         try {
@@ -37,12 +38,12 @@ class ClasseController extends Controller
         } catch (Exception $e) {
             //echo "Error<br/>";
             echo "<br/>" . $e->getMessage() . "<br/>";
-            echo "-1";  
+            echo "-1";
             $allAffected = 0;
         }
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
+
     public function cancelAllBasculement(Request $request)
     {
         $connection = $request->input("connection");
@@ -108,7 +109,7 @@ class ClasseController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
+
     public function processRedoublantsWithPOST(Request $request)
     {
         //echo "Starting...\n";
@@ -152,8 +153,8 @@ class ClasseController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
-    
+
+
     public function clearExclusWithPOST(Request $request)
     {
         //echo "Starting...\n";
@@ -215,19 +216,19 @@ class ClasseController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
-    
+
+
     public function resetBasculement(Request $request)
     {
         $connection = $request->input("connection");
         $year = $request->input("year");
         $next_year = $request->input("next_year");
-        $classe_id = $request->input("classe_id"); 
+        $classe_id = $request->input("classe_id");
         config(["database.default" => $connection]);
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
             $sy_next_id = MyHelper::getSchoolYearID($next_year);
-            
+
             DB::select("DELETE FROM student_classe WHERE student_classe.sy_id = $sy_next_id 
                 AND student_classe.stud_id IN(SELECT student_classe.stud_id FROM student_classe 
                     WHERE student_classe.classe_id = $classe_id 
@@ -248,8 +249,8 @@ class ClasseController extends Controller
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $next_year = $request->input("next_year");//echo"[$next_year]<br/>";
-        $year = $request->input("year"); 
+        $next_year = $request->input("next_year"); //echo"[$next_year]<br/>";
+        $year = $request->input("year");
         $new_classe_id = $request->input("new_classe_id");
 
         $stList = json_decode($data, true);
@@ -261,7 +262,7 @@ class ClasseController extends Controller
         //echo "$year: id=$sy_id";
         //echo "$next_year";
         $sy_next_id = MyHelper::getSchoolYearID($next_year);
-       
+
         //echo "$year: id2=$sy_next_id";
 
         $count  = 1;
@@ -286,7 +287,6 @@ class ClasseController extends Controller
                     WHERE student_classe.stud_id = $stud_id 
                         AND student_classe.sy_id = $sy_next_id 
                         AND student_classe.classe_id = $old_classe_id");
-                         
             } catch (Exception $e) {
                 echo "<br/>" . $e->getMessage() . "<br/>";
                 echo "-1"; //failed to save student_classe;
@@ -295,15 +295,15 @@ class ClasseController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
+
     public function applyBasculement(Request $request)
     {
         //echo "Starting...\n";
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $next_year = $request->input("next_year");//echo"[$next_year]<br/>";
-        $year = $request->input("year"); 
+        $next_year = $request->input("next_year"); //echo"[$next_year]<br/>";
+        $year = $request->input("year");
         $new_classe_id = $request->input("new_classe_id");
 
         $stList = json_decode($data, true);
@@ -315,7 +315,7 @@ class ClasseController extends Controller
         //echo "$year: id=$sy_id";
         //echo "$next_year";
         $sy_next_id = MyHelper::getSchoolYearID($next_year);
-       
+
         //echo "$year: id2=$sy_next_id";
 
         $count  = 1;
@@ -340,7 +340,6 @@ class ClasseController extends Controller
                     WHERE student_classe.stud_id = $stud_id 
                         AND student_classe.sy_id = $sy_next_id 
                         AND student_classe.classe_id = $old_classe_id");
-                         
             } catch (Exception $e) {
                 echo "<br/>" . $e->getMessage() . "<br/>";
                 echo "-1"; //failed to save student_classe;
@@ -349,7 +348,7 @@ class ClasseController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
+
     public function removeBasculement(Request $request)
     {
         //echo "Starting...\n";
@@ -446,7 +445,7 @@ class ClasseController extends Controller
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
 
-    
+
     public function saveChanges(Request $request)
     {
         //echo "Starting...\n";
@@ -587,7 +586,7 @@ class ClasseController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
+
     public function updateClassSettings(Request $request)
     {
         $connection = $request->input("connection");
@@ -597,7 +596,7 @@ class ClasseController extends Controller
         $totalExclusionTh = $request->input("totalExclusionTh");
         $avgDismissalTh = $request->input("avgDismissalTh");
         $repeatUb = $request->input("repeatUb");
-        $passMark = $request->input("passMark"); 
+        $passMark = $request->input("passMark");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         $sy_id = MyHelper::getSchoolYearID($year);
@@ -617,48 +616,47 @@ class ClasseController extends Controller
     public function assignVpAClass(Request $request)
     {
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         $classe_id = $request->input("classe_id");
         $vp_id = $request->input("vp_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
-        
+
         $sy_id = MyHelper::getSchoolYearID($year);
         $result = "1";
         try {
-             DB::select("update `classe_year` set vp_id = $vp_id WHERE classe_id =$classe_id AND sy_id = $sy_id");
+            DB::select("update `classe_year` set vp_id = $vp_id WHERE classe_id =$classe_id AND sy_id = $sy_id");
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             $result = "-1"; //ERROR OCCURS
         }
         echo "$result";
     }
-    
+
     public function removeALLVpClasses(Request $request)
     {
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         $vp_id = $request->input("vp_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
-        $sy_id = MyHelper::getSchoolYearID($year);         
+        $sy_id = MyHelper::getSchoolYearID($year);
         $result = 1;
         try {
             DB::select("update `classe_year` set vp_id = NULL WHERE vp_id =$vp_id AND sy_id = $sy_id");
-            
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
             $result = -1; //ERROR OCCURS
         }
         echo $result;
     }
-    
+
     public function getAllClassesOfSubject(Request $request)
     {
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
-        $section = $request->input("section"); 
-        config(["database.default" => $connection]); 
+        $year = $request->input("year");
+        $section = $request->input("section");
+        config(["database.default" => $connection]);
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
             $section_id = MyHelper::getSectionID($section);
@@ -679,21 +677,21 @@ class ClasseController extends Controller
             }
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allClassesOfSubject(Request $request)
     {
         $connection = $request->input("connection");
         $year = $request->input("year");
         $subject_id = $request->input("subject_id");
-        $section = $request->input("section"); 
-        config(["database.default" => $connection]); 
+        $section = $request->input("section");
+        config(["database.default" => $connection]);
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
             $section_id = MyHelper::getSectionID($section);
-            
+
 
             $classes = DB::select(
                 "SELECT subject_classe.classe_id, classe.classe_name, classe.level, subject_classe.subject_id 
@@ -709,10 +707,10 @@ class ClasseController extends Controller
             }
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allClasse1OfCM(Request $request)
     {
         $connection = $request->input("connection");
@@ -724,7 +722,7 @@ class ClasseController extends Controller
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
             $section_id = MyHelper::getSectionID($section);
-            
+
 
             $classes = DB::select(
                 "SELECT  
@@ -757,7 +755,7 @@ class ClasseController extends Controller
             }
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -812,10 +810,10 @@ class ClasseController extends Controller
             }
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function getClassesOfSameLevel(Request $request)
     {
         $connection = $request->input("connection");
@@ -856,10 +854,10 @@ class ClasseController extends Controller
             return []; //CLASSES OF SAME LEVEL NOT FOUND            
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     //Return classe ids along side with their nb boys nb girls, nb repeating for that school year and section
     public function getForClasseSize(Request $request)
     {
@@ -899,7 +897,7 @@ class ClasseController extends Controller
             }
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -931,7 +929,7 @@ class ClasseController extends Controller
             }
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1019,7 +1017,7 @@ class ClasseController extends Controller
         //return response($allAffected, 200);
         echo  $allAffected; //1--> All speciality successfully deleted; 0--> Failed to save at least one
     }
-    
+
     public function updateManyClasses(Request $request)
     {
         //echo "Starting...\n";
@@ -1194,10 +1192,10 @@ class ClasseController extends Controller
             }
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allClasseOfSection(Request $request)
     {
         $connection = $request->input("connection");
@@ -1206,7 +1204,7 @@ class ClasseController extends Controller
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
-            $sy_id = MyHelper::getSchoolYearID($year); 
+            $sy_id = MyHelper::getSchoolYearID($year);
             $classes = DB::select(
                 "SELECT  
 	                        classe.classe_id, classe.classe_name, classe.level,
@@ -1238,7 +1236,7 @@ class ClasseController extends Controller
             }
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1265,23 +1263,23 @@ class ClasseController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
             $section_id = MyHelper::getSectionID($section_name);
 
-            $cl = new Classe();            
+            $cl = new Classe();
             $cl->classe_name = $classe_name;
             $cl->level = $level;
             $cl_id = 1;
 
             $clYear = new ClasseYear();
             try {
-                $clTmp = Classe::where("classe_name", "=", $classe_name) 
-                ->first();
+                $clTmp = Classe::where("classe_name", "=", $classe_name)
+                    ->first();
                 if (is_null($clTmp)) {
-                     $cl->save();
-                     $cl_id = $cl->classe_id;
-                }else{
+                    $cl->save();
+                    $cl_id = $cl->classe_id;
+                } else {
                     //$cl_id = $clTmp['classe_id'];
                     $cl_id = $clTmp->classe_id;
                 }
-                
+
 
                 $sp = Speciality::where("speciality_name", $speciality_name)->first();
                 if (!is_null($sp)) {
@@ -1341,26 +1339,26 @@ class ClasseController extends Controller
             $clTmp = Classe::where("classe_name", "=", $classe_name)->first();
             try {
                 $classe_id = -1;
-                if(MyHelper::validateStr($classe_name)){
-                    if (is_null($clTmp)){//LA CLASSE N'EXISTE PAS
+                if (MyHelper::validateStr($classe_name)) {
+                    if (is_null($clTmp)) { //LA CLASSE N'EXISTE PAS
                         echo "$classe_name n'existe pas";
                         $clToSave = new Classe();
                         $clToSave->classe_name = $classe_name;
                         $clToSave->level = $level;
                         $clToSave->save();
                         $classe_id =  $clToSave->$classe_id;
-                    }else{//LA CLASSE EXISTE DEJA  
+                    } else { //LA CLASSE EXISTE DEJA  
                         //$classe_id = $clTmp->$classe_id;
                         $classe_id = $clTmp['classe_id'];
-                    } 
+                    }
                     $clYear = new ClasseYear();
                     $clYear->classe_id = $classe_id;
                     $clYear->sy_id = $sy_id;
                     $clYear->section_id = $section_id;
                     $clYear->save();
-                }else{
-                   $msg = $msg . "'$classe_name' contains invalid characters\n";
-                   $k = 0; 
+                } else {
+                    $msg = $msg . "'$classe_name' contains invalid characters\n";
+                    $k = 0;
                 }
             } catch (Exception $exx) {
                 $msg = $msg . "\n" . $exx->getMessage() . "\n";
@@ -1373,13 +1371,13 @@ class ClasseController extends Controller
             echo $msg;
         } //K=1--> All classes successfully modified; K=0--> Failed to save at least one
     }
-    
+
     public function saveManyClassesWithPOST(Request $request)
     {
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         $section = $request->input("section");
 
         $clList = json_decode($data, true);
@@ -1398,25 +1396,25 @@ class ClasseController extends Controller
             $clTmp = Classe::where("classe_name", "=", $classe_name)->first();
             try {
                 $classe_id = -1;
-                if(MyHelper::validateStr($classe_name)){
-                    if (is_null($clTmp)){//LA CLASSE N'EXISTE PAS
+                if (MyHelper::validateStr($classe_name)) {
+                    if (is_null($clTmp)) { //LA CLASSE N'EXISTE PAS
                         $clToSave = new Classe();
                         $clToSave->classe_name = $classe_name;
                         $clToSave->level = $level;
                         $clToSave->save();
                         $classe_id =  $clToSave->$classe_id;
-                    }else{//LA CLASSE EXISTE DEJA  
+                    } else { //LA CLASSE EXISTE DEJA  
                         //$classe_id = $clTmp->$classe_id;
                         $classe_id = $clTmp['classe_id'];
-                    } 
+                    }
                     $clYear = new ClasseYear();
                     $clYear->classe_id = $classe_id;
                     $clYear->sy_id = $sy_id;
                     $clYear->section_id = $section_id;
                     $clYear->save();
-                }else{
-                   $msg = $msg . "'$classe_name' contains invalid characters\n";
-                   $k = 0; 
+                } else {
+                    $msg = $msg . "'$classe_name' contains invalid characters\n";
+                    $k = 0;
                 }
             } catch (Exception $exx) {
                 $msg = $msg . "\n" . $exx->getMessage() . "\n";
@@ -1430,7 +1428,7 @@ class ClasseController extends Controller
         } //K=1--> All classes successfully modified; K=0--> Failed to save at least one
     }
 
- 
+
     public function index()
     {
         //

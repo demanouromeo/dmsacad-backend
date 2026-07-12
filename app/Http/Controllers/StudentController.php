@@ -13,17 +13,17 @@ use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
-    
+
     public function setFatherMother(Request $request)
     {
-        $connection = $request->input("connection"); 
+        $connection = $request->input("connection");
         $stud_id = $request->input("stud_id");
         $father = $request->input("father");
         $mother = $request->input("mother");
         config(["database.default" => $connection]);
-        try { 
+        try {
             //UPDATE student SET st1 = "father1", str2 = "mother1" WHERE stud_id = 5776
-            
+
             echo "Student[$stud_id] -- Father[$father]  --  mother[$mother]<br/>";
             //DB::select("UPDATE student SET st1 = $father, str2 = $mother WHERE stud_id = $stud_id");
             DB::select("UPDATE student SET st1 = '$father', str2 = '$mother' WHERE stud_id = $stud_id");
@@ -35,7 +35,7 @@ class StudentController extends Controller
             return;
         }
     }
-    
+
     public function updateSolvable(Request $request)
     {
         //echo "Starting...\n";
@@ -70,7 +70,7 @@ class StudentController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
     }
-    
+
     public function updateSolvablePOST(Request $request)
     {
         //echo "Starting...\n";
@@ -125,12 +125,12 @@ class StudentController extends Controller
             echo "-1";
         }
     }
-    
+
     public function addStudentToRepeatList(Request $request)
     {
         //echo "Starting...\n";
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         $stud_id = $request->input("stud_id");
         $classe_id = $request->input("classe_id");
 
@@ -143,7 +143,7 @@ class StudentController extends Controller
         $sc->sy_id = $sy_id; //NEXT SCHOOL YEAR
         $sc->repeating = 1;
         $sc->classe_id = $classe_id;
-        try { 
+        try {
             $x = DB::select("SELECT*FROM student_classe WHERE student_classe.sy_id = $sy_id
                         AND student_classe.stud_id = $stud_id AND student_classe.classe_id = $sc->classe_id");
             if (count($x) == 0) {
@@ -156,7 +156,7 @@ class StudentController extends Controller
         }
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
+
     public function removeStudentFromClass(Request $request)
     {
         //echo "Starting...\n";
@@ -168,10 +168,10 @@ class StudentController extends Controller
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
 
-        $allAffected = 1;          
-        try { 
+        $allAffected = 1;
+        try {
             $x = DB::select("DELETE FROM student_classe WHERE student_classe.sy_id = $sy_id
-                        AND student_classe.stud_id = $stud_id AND student_classe.classe_id = $classe_id");            
+                        AND student_classe.stud_id = $stud_id AND student_classe.classe_id = $classe_id");
         } catch (Exception $e) {
             //echo "Error<br/>";
             echo "<br/>" . $e->getMessage() . "<br/>";
@@ -180,7 +180,7 @@ class StudentController extends Controller
         }
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
-    
+
     public function addStudentToClass(Request $request)
     {
         //echo "Starting...\n";
@@ -198,7 +198,7 @@ class StudentController extends Controller
         $allAffected = 1;
         try {
             $x = DB::select("DELETE FROM student_classe WHERE student_classe.sy_id = $sy_id
-                        AND student_classe.stud_id = $stud_id AND student_classe.classe_id = $classe_id_old");             
+                        AND student_classe.stud_id = $stud_id AND student_classe.classe_id = $classe_id_old");
             $sc = new StudentClasse();
             $sc->stud_id = $stud_id;
             $sc->sy_id = $sy_id;
@@ -209,15 +209,15 @@ class StudentController extends Controller
         } catch (Exception $e) {
             //echo "Error<br/>";
             echo "<br/>" . $e->getMessage() . "<br/>";
-            echo "-1";  
+            echo "-1";
             $allAffected = 0;
         }
         echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
     }
 
-    
+
     public function resetPromotionInfo(Request $request)
-    {         
+    {
         $connection = $request->input("connection");
         $year = $request->input("year");
         $classe_id = $request->input("classe_id");
@@ -234,15 +234,15 @@ class StudentController extends Controller
             echo '<br/>ERROR: ' . $e->getMessage();
             return;
         }
-    } 
-    
-    
+    }
+
+
     public function getAllDisciplines(Request $request)
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
         $year = $request->input("year");
-        $term_id = $request->input("term_id"); 
+        $term_id = $request->input("term_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -262,15 +262,15 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function getAllDisciplines2(Request $request)
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -288,15 +288,15 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allStudentCompMark(Request $request)
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -314,16 +314,16 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
-    
+
+
     public function allStudentSubject(Request $request)
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -341,17 +341,17 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function getDisciplineOfClasse(Request $request)
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year");  
-        $term_id = $request->input("term_id"); 
-        $classe_id = $request->input("classe_id"); 
+        $year = $request->input("year");
+        $term_id = $request->input("term_id");
+        $classe_id = $request->input("classe_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -363,11 +363,11 @@ class StudentController extends Controller
                 FROM discipline
                 WHERE term = $term_id AND sy_id = $sy_id
                     AND stud_id IN(SELECT student_classe.stud_id from student_classe
-                    WHERE student_classe.classe_id = $classe_id)" );
+                    WHERE student_classe.classe_id = $classe_id)");
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -377,8 +377,8 @@ class StudentController extends Controller
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $year = $request->input("year"); 
-        $term_id = $request->input("term_id"); 
+        $year = $request->input("year");
+        $term_id = $request->input("term_id");
 
         $absList = json_decode($data, true);
         $n = count($absList);
@@ -396,10 +396,10 @@ class StudentController extends Controller
             try {
                 $ref = Discipline::all()
                     ->where("sy_id", $sy_id)
-                    ->where("stud_id", $stud_id) 
-                    ->where("term", $term_id) 
+                    ->where("stud_id", $stud_id)
+                    ->where("term", $term_id)
                     ->first();
-                if (!is_null($ref)) { 
+                if (!is_null($ref)) {
                     //echo "Ref for $stud_id found <br/>";
                     $ref->absunjust = $abs["nbAbs"];
                     $ref->nb_jour_exclusion = $abs["exclusion"];
@@ -432,15 +432,15 @@ class StudentController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
     }
-    
+
     public function saveOrUpdateABS2(Request $request)
     {
         //echo "Starting...\n";
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $year = $request->input("year"); 
-        $term_id = $request->input("term_id"); 
+        $year = $request->input("year");
+        $term_id = $request->input("term_id");
 
         $absList = json_decode($data, true);
         $n = count($absList);
@@ -458,10 +458,10 @@ class StudentController extends Controller
             try {
                 $ref = Discipline::all()
                     ->where("sy_id", $sy_id)
-                    ->where("stud_id", $stud_id) 
-                    ->where("term", $term_id) 
+                    ->where("stud_id", $stud_id)
+                    ->where("term", $term_id)
                     ->first();
-                if (!is_null($ref)) { 
+                if (!is_null($ref)) {
                     //echo "Ref for $stud_id found <br/>";
                     $ref->absunjust = $abs["nbAbs"];
                     $ref->nb_jour_exclusion = $abs["exclusion"];
@@ -494,7 +494,7 @@ class StudentController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
     }
-    
+
     public function allStudentsOfClasseForAbs(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
         $connection = $request->input("connection");
@@ -518,7 +518,7 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -526,8 +526,8 @@ class StudentController extends Controller
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year");  
-        $term_id = $request->input("term_id"); 
+        $year = $request->input("year");
+        $term_id = $request->input("term_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -541,16 +541,16 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allStudentCompMarkOfTerm2(Request $request)
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year");  
-        $term_id = $request->input("term_id"); 
+        $year = $request->input("year");
+        $term_id = $request->input("term_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -569,7 +569,7 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -577,7 +577,7 @@ class StudentController extends Controller
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year");  
+        $year = $request->input("year");
         $sequence1 = $request->input("sequence1");
         $sequence2 = $request->input("sequence2");
         config(["database.default" => $connection]);
@@ -594,15 +594,15 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allStudentSubjectOfTerm2(Request $request)
     {
         //first and second sequence of the term
         $connection = $request->input("connection");
-        $year = $request->input("year");  
+        $year = $request->input("year");
         $sequence1 = $request->input("sequence1");
         $sequence2 = $request->input("sequence2");
         config(["database.default" => $connection]);
@@ -624,14 +624,14 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
     public function allStudentsOfClasse3(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -657,17 +657,17 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
-    
+
+
     public function allStudentsOfClasseOfSchool(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
-        $connection = $request->input("connection");         
+        $connection = $request->input("connection");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
-        try { 
+        try {
             $students = DB::select(
                 "SELECT student.stud_id, student.matricule, student.name, student.surname, student.bday, 
                         student.bplace, student.sexe, student.handicape, student.position, 
@@ -687,15 +687,15 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
-    
+
+
     public function allStudentsOfClasseOfSection(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
         $connection = $request->input("connection");
-        $section_id = $request->input("section_id");         
+        $section_id = $request->input("section_id");
         $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
@@ -723,17 +723,17 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function updatePromotionInfoWithPOST(Request $request)
     {
         //echo "Starting...\n";
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
 
         $stList = json_decode($data, true);
         $n = count($stList);
@@ -747,14 +747,14 @@ class StudentController extends Controller
             //echo"-----> Processing stud No.[$count]<br/>";
             $count++;
             $stud_id = $st["stud_id"];
-            $classe_id= $st["classe_id"];
-            
+            $classe_id = $st["classe_id"];
+
             $isMannullalyClassified = $st["isMannullalyClassified"];
-            $isMannullalyDismissed = $st["isMannullalyDismissed"]; 
-            $mustRepeat = $st["mustRepeat"]; 
+            $isMannullalyDismissed = $st["isMannullalyDismissed"];
+            $mustRepeat = $st["mustRepeat"];
             $dismissalReason = $st["dismissalReason"]; //RAISON POUR laquelle l'eleve est exclu
             $promuEn = $st["promuEn"]; //id de la classe dans laquelle l'eleve sera promue.
-            $codeExclusion = $st["codeExclusion"];//CODE RAISON EXCLUSION: 1->Age; 2->Conduite; 3->Travail; 4->Ne peut trippler; 5->Abandon; 6->Insolvable
+            $codeExclusion = $st["codeExclusion"]; //CODE RAISON EXCLUSION: 1->Age; 2->Conduite; 3->Travail; 4->Ne peut trippler; 5->Abandon; 6->Insolvable
             /*
             $str1 = $st["str1"];  
             $str2 = $st["str2"];  
@@ -771,7 +771,6 @@ class StudentController extends Controller
                         dismissalReason = '$dismissalReason', promuEn='$promuEn', 
                         codeExclusion=$codeExclusion 
                         WHERE sy_id = $sy_id AND classe_id = $classe_id  AND stud_id = $stud_id");
-                                 
             } catch (Exception $e) {
                 echo "<br/>" . $e->getMessage() . "<br/>";
                 echo "-1"; //failed to save/update;
@@ -787,7 +786,7 @@ class StudentController extends Controller
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
 
         $stList = json_decode($data, true);
         $n = count($stList);
@@ -801,14 +800,14 @@ class StudentController extends Controller
             //echo"-----> Processing stud No.[$count]<br/>";
             $count++;
             $stud_id = $st["stud_id"];
-            $classe_id= $st["classe_id"];
-            
+            $classe_id = $st["classe_id"];
+
             $isMannullalyClassified = $st["isMannullalyClassified"];
-            $isMannullalyDismissed = $st["isMannullalyDismissed"]; 
-            $mustRepeat = $st["mustRepeat"]; 
+            $isMannullalyDismissed = $st["isMannullalyDismissed"];
+            $mustRepeat = $st["mustRepeat"];
             $dismissalReason = $st["dismissalReason"]; //RAISON POUR laquelle l'eleve est exclu
             $promuEn = $st["promuEn"]; //id de la classe dans laquelle l'eleve sera promue.
-            $codeExclusion = $st["codeExclusion"];//CODE RAISON EXCLUSION: 1->Age; 2->Conduite; 3->Travail; 4->Ne peut trippler; 5->Abandon; 6->Insolvable
+            $codeExclusion = $st["codeExclusion"]; //CODE RAISON EXCLUSION: 1->Age; 2->Conduite; 3->Travail; 4->Ne peut trippler; 5->Abandon; 6->Insolvable
             /*
             $str1 = $st["str1"];  
             $str2 = $st["str2"];  
@@ -825,7 +824,6 @@ class StudentController extends Controller
                         dismissalReason = '$dismissalReason', promuEn='$promuEn', 
                         codeExclusion=$codeExclusion 
                         WHERE sy_id = $sy_id AND classe_id = $classe_id  AND stud_id = $stud_id");
-                                 
             } catch (Exception $e) {
                 echo "<br/>" . $e->getMessage() . "<br/>";
                 echo "-1"; //failed to save/update;
@@ -838,7 +836,7 @@ class StudentController extends Controller
     public function allStudentsForMarks(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -855,14 +853,14 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
     public function getAllCompMarksSimple(Request $request)
     {
         $connection = $request->input("connection");
-        $year = $request->input("year");         
+        $year = $request->input("year");
         $term_id = $request->input("term_id");
 
 
@@ -879,14 +877,14 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function getAllSeqMarksSimple(Request $request)
     {
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         $sequence2 = $request->input("sequence1");
         $sequence1 = $request->input("sequence2");
         config(["database.default" => $connection]);
@@ -901,10 +899,10 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
 
     public function saveCompSeqMarks2(Request $request)
     {
@@ -1228,8 +1226,8 @@ class StudentController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
     }
-    
-    
+
+
     public function uploadSeqMarks(Request $request)
     {
         //echo "Starting...\n";
@@ -1254,7 +1252,7 @@ class StudentController extends Controller
             $isEmpty = 0;
             $sequence = $st["sequence"];
             $subject_id = $st["subject_id"];
-            try { 
+            try {
                 $studs = DB::select("SELECT*FROM student_subject 
                 WHERE sy_id = $sy_id AND subject_id = $subject_id 
                 AND sequence = $sequence AND stud_id = $stud_id");
@@ -1355,8 +1353,8 @@ class StudentController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
     }
-    
-    
+
+
     public function uploadCompMarks(Request $request)
     {
         //echo "Starting...\n";
@@ -1490,7 +1488,7 @@ class StudentController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
     }
-    
+
 
     public function getSeqMarks(Request $request)
     {
@@ -1513,7 +1511,7 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1540,7 +1538,7 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1676,8 +1674,8 @@ class StudentController extends Controller
             return 0; //ERROR OCCURS
         }
     }
-    
-        public function copyCompMarks(Request $request)
+
+    public function copyCompMarks(Request $request)
     {
         $connection = $request->input("connection");
         $year = $request->input("year");
@@ -1849,7 +1847,7 @@ class StudentController extends Controller
             return 0; //ERROR OCCURS
         }
     }
-    
+
 
     public function getCompMarks(Request $request)
     {
@@ -1878,7 +1876,7 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1906,11 +1904,11 @@ class StudentController extends Controller
             return response()->json($marks, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
-    
+
+
     public function saveManyStudentsWithPOST(Request $request)
     {
         //echo "Starting...\n";
@@ -2183,7 +2181,7 @@ class StudentController extends Controller
             if ($matricule == "") {
                 $matricule = null; //MATRICULE CAN BE NULL
             }
-            
+
             //echo "Processing ".$name."[".$matricule."]";
 
             $stud = new Student();
@@ -2203,12 +2201,11 @@ class StudentController extends Controller
                     //ON NE CREE PAS  L'ELEVE CAr il existe deja
                     //echo "Student found ";
                     $id = $studTmp->stud_id;
-                    
-                }else{
-                     $stud->save(); //ON CREE  L'ELEVE CAr il est nouveau
-                     $id = $stud->stud_id;
-                } 
-                
+                } else {
+                    $stud->save(); //ON CREE  L'ELEVE CAr il est nouveau
+                    $id = $stud->stud_id;
+                }
+
                 $sc = new StudentClasse();
                 $sc->stud_id = $id;
                 $sc->sy_id = $sy_id;
@@ -2421,7 +2418,7 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -2447,7 +2444,7 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -2469,14 +2466,14 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allStudClassOfYear(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -2490,7 +2487,7 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -2513,7 +2510,7 @@ class StudentController extends Controller
             return response()->json($students, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 

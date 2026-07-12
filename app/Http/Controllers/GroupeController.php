@@ -161,7 +161,7 @@ class GroupeController extends Controller
             return response()->json($groupes, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -184,7 +184,7 @@ class GroupeController extends Controller
             return response()->json($subjects, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 

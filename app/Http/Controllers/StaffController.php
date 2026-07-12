@@ -81,7 +81,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
    
@@ -112,7 +112,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1021,7 +1021,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
     
@@ -1044,7 +1044,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1062,7 +1062,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1092,7 +1092,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1121,7 +1121,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1145,7 +1145,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1169,7 +1169,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1194,7 +1194,7 @@ class StaffController extends Controller
             return response()->json($staff, 200);
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 

@@ -38,7 +38,7 @@ class SpecialityController extends Controller
             return response()->json($sp2List, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -57,7 +57,7 @@ class SpecialityController extends Controller
             return response()->json($specialities, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 

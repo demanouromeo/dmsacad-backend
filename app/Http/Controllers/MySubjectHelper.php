@@ -9,6 +9,13 @@ use App\Models\SubjectClasse;
 
 class MySubjectHelper extends Controller
 {
+    public static function fetchCompetence($sy_id, $classe_id, $subject_id, $term){     
+        //CHECK IF A SUBJECT IS TAUGHT IN A CLASSE WITHIN A GIVEN SCHOOL YEAR
+        $res = DB::select("SELECT * FROM subject_competences 
+        WHERE classe_id = $classe_id AND sy_id = $sy_id 
+        AND subject_id = $subject_id AND term_id = $term;");
+        return $res;
+    }
     
     public static function subjectClasseList($sy_id, $classe_id){     
         //CHECK IF A SUBJECT IS TAUGHT IN A CLASSE WITHIN A GIVEN SCHOOL YEAR

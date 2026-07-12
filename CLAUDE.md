@@ -98,18 +98,17 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
 });
 ```
 
-### Error convention: HTTP 300 means "an exception was swallowed"
+### Error convention: HTTP 500 means "an exception was swallowed"
 
-Many controller methods (see `grep -rn "response()->json([], 300)"` — dozens of hits across
+Many controller methods (see `grep -rn "response()->json([], 500)"` — dozens of hits across
 `ClasseController`, `StudentController`, `StaffController`, `SubjectController`, etc.) wrap their body in
-`try { ... } catch (Exception $e) { return response()->json([], 300); }`, usually with the exception message
-discarded or only echoed (which doesn't work over a JSON API response anyway). `300` is **not** meaningful
-HTTP semantics here — it's this codebase's ad hoc "something failed" status, always paired with a
-`//ERROR OCCURS` comment. When a client reports an unexplained `300` response, the real cause is never in the
-HTTP layer — it's an exception (often a null-property access, since PHP promotes those to a catchable
-`ErrorException` in this app) inside the corresponding controller method. Since these catches don't log,
-temporarily add `Log::error($e->getMessage())` in the relevant catch block to find the real cause, then
-remove it once done.
+`try { ... } catch (Exception $e) { return response()->json([], 500); }`, usually with the exception message
+discarded or only echoed (which doesn't work over a JSON API response anyway). This used to be an ad hoc 
+correct `500` (Internal Server Error), paired with a `//ERROR OCCURS` comment —  
+Either way, the real cause is never in the HTTP layer — it's an exception (often a null-property access, since
+PHP promotes those to a catchable `ErrorException` in this app) inside the corresponding controller method.
+Since these catches don't log, temporarily add `Log::error($e->getMessage())` in the relevant catch block to
+find the real cause, then remove it once done.
 
 ### `MyHelper` (app/Http/Controllers/MyHelper.php)
 

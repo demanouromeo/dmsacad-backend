@@ -15,12 +15,12 @@ use Illuminate\Support\Facades\DB;
 
 class SubjectController extends Controller
 {
-    
+
     public function deleteCompetencesWithNoMarks(Request $request)
     {
         //echo "Starting...\n";
         $connection = $request->input("connection");
-        $year  = $request->input("year"); 
+        $year  = $request->input("year");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
 
@@ -32,12 +32,14 @@ class SubjectController extends Controller
         $sy_id = MyHelper::getSchoolYearID($year);
         //echo "sy_id: $section</br>"; 
         foreach ($compList as $sub) {
-            $comp_id = $sub["subject_competence_id"]; 
+            $comp_id = $sub["subject_competence_id"];
             $allAffected = 1;
             try {
                 $x = DB::select(
-                "DELETE FROM subject_competences 
-                WHERE subject_competence_id = ?", [$comp_id]);
+                    "DELETE FROM subject_competences 
+                WHERE subject_competence_id = ?",
+                    [$comp_id]
+                );
             } catch (Exception $ex) {
                 $allAffected = 0;
                 //echo "ERROR " . $ex->getMessage();
@@ -46,12 +48,12 @@ class SubjectController extends Controller
         //return response($allAffected, 200);
         echo (string) $allAffected; //1--> All competences successfully deleted; 0--> Failed to delete at least one
     }
-    
+
     public function deleteCompetencesWithNoMarksPOST(Request $request)
     {
         //echo "Starting...\n";
         $connection = $request->input("connection");
-        $year  = $request->input("year"); 
+        $year  = $request->input("year");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
 
@@ -63,12 +65,14 @@ class SubjectController extends Controller
         $sy_id = MyHelper::getSchoolYearID($year);
         //echo "sy_id: $section</br>"; 
         foreach ($compList as $sub) {
-            $comp_id = $sub["subject_competence_id"]; 
+            $comp_id = $sub["subject_competence_id"];
             $allAffected = 1;
             try {
                 $x = DB::select(
-                "DELETE FROM subject_competences 
-                WHERE subject_competence_id = ?", [$comp_id]);
+                    "DELETE FROM subject_competences 
+                WHERE subject_competence_id = ?",
+                    [$comp_id]
+                );
             } catch (Exception $ex) {
                 $allAffected = 0;
                 //echo "ERROR " . $ex->getMessage();
@@ -77,7 +81,7 @@ class SubjectController extends Controller
         //return response($allAffected, 200);
         echo (string) $allAffected; //1--> All competences successfully deleted; 0--> Failed to delete at least one
     }
-    
+
     public function saveManySubjectsWithPOST(Request $request)
     {
         $connection = $request->input("connection");
@@ -227,7 +231,7 @@ class SubjectController extends Controller
             //->delete();
             $res = DB::select("DELETE FROM subject_competences 
                 WHERE classe_id = $classe_id and sy_id = $sy_id");
-                echo "1";
+            echo "1";
         } catch (Exception $e) {
             echo "<br/>" . $e->getMessage();
             echo "-1";
@@ -275,10 +279,10 @@ class SubjectController extends Controller
         }
         echo "$allAffected"; //1--> All stud_comp_mark successfully deleted; 0--> Failed to delete at least one
     }
-    
-    
-    
-    
+
+
+
+
     public function updateManyCompetences(Request $request)
     {
         //echo "Starting...\n";
@@ -305,12 +309,12 @@ class SubjectController extends Controller
         }
         echo "$allAffected"; //1--> All groupes successfully modified; 0--> Failed to save at least one
     }
-    
+
     public function allCompetences(Request $request)
     {
         $connection = $request->input("connection");
         $year = $request->input("year");
-        $section_name = $request->input("section"); 
+        $section_name = $request->input("section");
         $term_id = $request->input("term_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Nom_Filiere: $nom_filiere -- Section: $section";
@@ -328,15 +332,15 @@ class SubjectController extends Controller
             return response()->json($competences, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allCompetencesOfSection(Request $request)
     {
         $connection = $request->input("connection");
         $year = $request->input("year");
-        $section_name = $request->input("section");  
+        $section_name = $request->input("section");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Nom_Filiere: $nom_filiere -- Section: $section";
 
@@ -352,10 +356,10 @@ class SubjectController extends Controller
             return response()->json($competences, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allCompetences1(Request $request)
     {
         $connection = $request->input("connection");
@@ -384,7 +388,7 @@ class SubjectController extends Controller
             return response()->json($competences, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -414,7 +418,7 @@ class SubjectController extends Controller
             return response()->json($competences, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
     public function saveCompetence(Request $request)
@@ -450,7 +454,7 @@ class SubjectController extends Controller
             //cas car la matiere peut avoir plusieurs competences au cours d'une année et dans un trimestre donné
         }
     }
-    
+
     public function calquerSubjects(Request $request)
     {
         $connection = $request->input("connection");
@@ -597,7 +601,7 @@ class SubjectController extends Controller
         $data = $request->input("data");
         $classe_id_from = $request->input("classe_id_from");
         $year = $request->input("year");
-        $section = $request->input("section"); 
+        $section = $request->input("section");
 
         $classe_ids = json_decode($data, true);
         //$n = count($subList);
@@ -668,7 +672,7 @@ class SubjectController extends Controller
 
         echo $allAffected;
     }
-    
+
     public function calquerCompetencesOfTerm(Request $request)
     {
         $connection = $request->input("connection");
@@ -748,7 +752,7 @@ class SubjectController extends Controller
 
         echo $allAffected;
     }
-    
+
 
     public function saveManySC(Request $request)
     {   //update MANY SUBJECT_CLASSES
@@ -820,7 +824,7 @@ class SubjectController extends Controller
             echo "$k|$msg";
         } //K=1--> All subjects successfully modified; K=0--> Failed to save at least one
     }
-    
+
     public function saveManySCWithPost(Request $request)
     {   //update MANY SUBJECT_CLASSES
         $connection = $request->input("connection");
@@ -891,7 +895,7 @@ class SubjectController extends Controller
             echo "$k|$msg";
         } //K=1--> All subjects successfully modified; K=0--> Failed to save at least one
     }
- 
+
 
     public function saveManyAttricutionsWithPost(Request $request)
     {   //SAVES MANY ATTRIBUTIONS
@@ -910,21 +914,20 @@ class SubjectController extends Controller
         //$sy_id = MyHelper::getSchoolYearID($year);
         //$section_id = MyHelper::getSectionID($section);
         $msg = "";
-        foreach ($scList as $sc) {             
+        foreach ($scList as $sc) {
             $subject_classe_id = $sc["subject_classe_id"];
-            $staff_id = $sc["staff_id"];             
+            $staff_id = $sc["staff_id"];
             //echo "subject_id: $subject_id | classe_id: $classe_id | coef: $coef | groupe_id: $groupe_id |";
-             
+
             $ref = new SubjectClasseStaff();
             $ref->subject_classe_id = $subject_classe_id;
             $ref->staff_id = $staff_id;
-            try{
+            try {
                 $ref->save();
-            }catch(Exception $ex){
-                $msg = $msg."".$ex->getMessage()."<br/>";
+            } catch (Exception $ex) {
+                $msg = $msg . "" . $ex->getMessage() . "<br/>";
                 $k = 0;
             }
-            
         } //END FOR
 
         if ($k == 1) {
@@ -1061,7 +1064,7 @@ class SubjectController extends Controller
         echo "$allAffected"; //1--> All groupes successfully modified; 0--> Failed to save at least one
     }
 
-        public function saveSubject(Request $request)
+    public function saveSubject(Request $request)
     {
         $connection = $request->input("connection");
         $year = $request->input("year");
@@ -1083,10 +1086,10 @@ class SubjectController extends Controller
                 if (is_null($subTmp)) {
                     $sub->save();
                     $id = $sub->subject_id;
-                } else {                    
+                } else {
                     $id = $subTmp->subject_id;
                 }
-                $subYear->subject_id = $id;  
+                $subYear->subject_id = $id;
                 $subYear->sy_id = $sy_id;
                 $subYear->section_id = $section_id;
                 $subYear->save();
@@ -1102,12 +1105,12 @@ class SubjectController extends Controller
                 echo '<br/>Message: ' . $ex->getMessage() . '<br>';
                 echo "-2"; //Operation failed OR groupe exists already
             }
-        } catch (Exception $e) {            
+        } catch (Exception $e) {
             echo "-1"; //Le groupe existe déja
             //echo '<br/>Message: ' . $e->getMessage();
         }
     }
-    
+
     public function allSubjectOfSectionAndYear(Request $request)
     {
         $connection = $request->input("connection");
@@ -1123,7 +1126,7 @@ class SubjectController extends Controller
             return response()->json($subjects, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1148,7 +1151,7 @@ class SubjectController extends Controller
             return response()->json($subjects, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1184,15 +1187,15 @@ class SubjectController extends Controller
             return response()->json($subjects, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allSubjectOfClasse(Request $request)
     {
         $connection = $request->input("connection");
         $year = $request->input("year");
-        $section_name = $request->input("section"); 
+        $section_name = $request->input("section");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         try {
@@ -1218,7 +1221,7 @@ class SubjectController extends Controller
             return response()->json($subjects, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 300); //ERROR OCCURS
+            return response()->json([], 500); //ERROR OCCURS
         }
     }
 
@@ -1239,7 +1242,7 @@ class SubjectController extends Controller
             echo $res;
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            //return response()->json([], 300); //ERROR OCCURS
+            //return response()->json([], 500); //ERROR OCCURS
             echo -2; //Error occurs
         }
     }

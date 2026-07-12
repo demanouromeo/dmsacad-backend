@@ -132,7 +132,7 @@ class FiliereController extends Controller
             }
         } catch (Exception $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
-            //return response()->json([], 300); //ERROR OCCURS
+            //return response()->json([], 500); //ERROR OCCURS
             echo "-2"; //Le nom de la filiere existe deja
         }
     }
