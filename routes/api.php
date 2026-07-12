@@ -21,50 +21,38 @@ use App\Models\Speciality;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/test', [TestController::class, 'test']);
-Route::post('/test/getData', [TestController::class, 'getData']);
-Route::get('/test/lockTerms', [TestController::class, 'lockTerms']);
-Route::get('/test/addCenseurToClasses', [TestController::class, 'addCenseurToClasses']);
-Route::get('/test/updateStudentClasseStructure', [TestController::class, 'updateStudentClasseStructure']);
-Route::get('/test/updateClasseYearStructure', [TestController::class, 'updateClasseYearStructure']);
-Route::get('/test/add2627', [TestController::class, 'add2627']);
-Route::get('/test/prepareNewYear', [TestController::class, 'prepareNewYear']);
-Route::get('/test/deleteStudClasse', [TestController::class, 'deleteStudClasse']);
-Route::get('/test/deleteManyStudClasse', [TestController::class, 'deleteManyStudClasse']);
-Route::post('/test/deleteManyStudClassePOST', [TestController::class, 'deleteManyStudClassePOST']);
-Route::get('/test/alterStaff', [TestController::class, 'alterStaff']);
-Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
+
 
 
 //--------------------- SCHOOL CONFIG
 Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']); //THIS API doesn't need Authentication
-//Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); ALREADY SECURED & TESTES
-//Route::post('/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); SECURED NOT TESTED YET 
-//Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //SECURED - tested and working
-//Route::get('/modules/schoolConfig/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);//SECURED - tested and working
-//Route::get('/modules/schoolConfig/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);//SECURED - tested and working
-//Route::post('/configs/upload', [SchoolInfoController::class, 'upload']);//SECURED 
+
 
 //--------------------- ACCOUNTS
-Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']);
-Route::post('/accounts/connect', [AccountController::class, 'login']);
-Route::post('/accounts/refresh', [AccountController::class, 'refresh']);
-Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']);
+Route::post('/accounts/connect', [AccountController::class, 'login']); //ok - NO NEED FOR AUTHENTICATION. ANYONE CAN LOGIN
+Route::post('/accounts/refresh', [AccountController::class, 'refresh']); //ok - NO NEED FOR AUTHENTICATION. ANYONE CAN REFRESH TOKEN. MEANWHILE, THE REFRESH TOKEN IS CHECKED IN THE CONTROLLER. IF IT'S INVALID, IT WILL RETURN 401 UNAUTHORIZED. IF IT'S VALID, IT WILL RETURN A NEW ACCESS TOKEN.
+
 
 //******* ADMIN ROUTES 
 Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     //==> ON SCHOOL CONFIG
     Route::post('/configs/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); //Not yet tested
-    Route::get('/configs/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //Tested and working
-    Route::post('/configs/upload', [SchoolInfoController::class, 'upload']); //WORKS. I tested on POstman, Uploaded logo. I choose Body tab then --> form-data then key= image, value=choose file, other keys: connection and year. setting value for each.  
+    Route::get('/configs/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //ok
+    Route::post('/configs/upload', [SchoolInfoController::class, 'upload']); //ok. I tested on POstman, Uploaded logo. I choose Body tab then --> form-data then key= image, value=choose file, other keys: connection and year. setting value for each.  
+
+    //==> ON ACCOUNTS
+    Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']); //ok
 });
 
 //******** ANY CONNECTED USER ROUTES
 Route::middleware(['jwt.auth'])->group(function () {
     //==> ON SCHOOL CONFIG
-    Route::get('/configs/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); //Tested and working
-    Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']); //Tested and working
-    Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']); //Tested and working
+    Route::get('/configs/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); //ok
+    Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']); //ok
+    Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']); //ok
+
+    //==> ON ACCOUNTS
+    Route::post('/accounts/updateAccountWithPOST', [AccountController::class, 'updateAccountWithPOST']); //Any user can update its account
 });
 
 
@@ -284,3 +272,39 @@ Route::get('/modules/lock/saveOrUpdateLocks', [LockController::class, 'saveOrUpd
 //--------------------- Patient
 Route::get('/modules/patient/allPatients', [TestController::class, 'allPatients']);
 Route::get('/modules/patient/savePatient', [TestController::class, 'savePatient']);
+
+
+
+
+//test API
+Route::get('/test', [TestController::class, 'test']);
+Route::post('/test/getData', [TestController::class, 'getData']);
+Route::get('/test/lockTerms', [TestController::class, 'lockTerms']);
+Route::get('/test/addCenseurToClasses', [TestController::class, 'addCenseurToClasses']);
+Route::get('/test/updateStudentClasseStructure', [TestController::class, 'updateStudentClasseStructure']);
+Route::get('/test/updateClasseYearStructure', [TestController::class, 'updateClasseYearStructure']);
+Route::get('/test/add2627', [TestController::class, 'add2627']);
+Route::get('/test/prepareNewYear', [TestController::class, 'prepareNewYear']);
+Route::get('/test/deleteStudClasse', [TestController::class, 'deleteStudClasse']);
+Route::get('/test/deleteManyStudClasse', [TestController::class, 'deleteManyStudClasse']);
+Route::post('/test/deleteManyStudClassePOST', [TestController::class, 'deleteManyStudClassePOST']);
+Route::get('/test/alterStaff', [TestController::class, 'alterStaff']);
+Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
+
+
+//--------------------- SCHOOL CONFIG [DONE]
+//Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']); //THIS API doesn't need Authentication
+//Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); ALREADY SECURED & TESTES
+//Route::post('/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); SECURED NOT TESTED YET 
+//Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //SECURED - tested and working
+//Route::get('/modules/schoolConfig/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);//SECURED - tested and working
+//Route::get('/modules/schoolConfig/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);//SECURED - tested and working
+//Route::post('/configs/upload', [SchoolInfoController::class, 'upload']);//SECURED 
+
+
+
+//--------------------- ACCOUNTS [DONE]
+// Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']);
+// Route::post('/accounts/connect', [AccountController::class, 'login']);
+// Route::post('/accounts/refresh', [AccountController::class, 'refresh']);
+// Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']);

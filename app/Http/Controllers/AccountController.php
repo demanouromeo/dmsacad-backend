@@ -15,6 +15,53 @@ use Illuminate\Support\Facades\Cookie;
 class AccountController extends Controller
 {
 
+    public function updateAccountWithPOST(Request $request)
+    {
+        $connection = $request->input("connection");
+        $login = $request->input("login");
+        $pwd = $request->input("new_pwd");
+        $acc_id = $request->input("acc_id");
+        config(["database.default" => $connection]);
+        //echo "Connection: $connection -- Year: $year -- Nom_Filiere: $nom_filiere -- Section: $section";
+
+        try {
+            $ref = Account::find($acc_id);
+            if (is_null($ref)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid credentials [Old Password is wrong]',
+                ], 401); //ACCOUNT NOT FOUND
+            }
+
+            //Make sure no other account exists with the new login
+            $existingAccount = Account::where('login', $login)
+                ->where('acc_id', '!=', $acc_id)
+                ->first();
+            if (!is_null($existingAccount)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Login already exists. Login is unique for each account. Please choose another login.',
+                ], 400); //BAD REQUEST
+            }
+
+
+            $ref->login = $login;
+            $ref->pwd = $pwd;
+            $ref->update();
+            return response()->json([
+                'status' => true,
+                'message' => 'Account updated successfully',
+            ], 200);
+        } catch (\Throwable $e) {
+            //echo '<br/>Message: ' .$e->getMessage();
+            return response()->json([
+                'status' => false,
+                'error' => "An error occurred while updating the account",
+                'message' => $e->getMessage(),
+            ], 500); //INTERNAL SERVER ERROR
+        }
+    }
+
     public function updateAccount(Request $request)
     {
         $connection = $request->input("connection");
