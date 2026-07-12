@@ -43,7 +43,7 @@ Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'al
 //Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //SECURED - tested and working
 //Route::get('/modules/schoolConfig/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);//SECURED - tested and working
 //Route::get('/modules/schoolConfig/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);//SECURED - tested and working
-
+//Route::post('/configs/upload', [SchoolInfoController::class, 'upload']);//SECURED 
 
 //--------------------- ACCOUNTS
 Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']);
@@ -56,7 +56,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     //==> ON SCHOOL CONFIG
     Route::post('/configs/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); //Not yet tested
     Route::get('/configs/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //Tested and working
-    Route::post('/configs/upload', [SchoolInfoController::class, 'upload']);
+    Route::post('/configs/upload', [SchoolInfoController::class, 'upload']); //WORKS. I tested on POstman, Uploaded logo. I choose Body tab then --> form-data then key= image, value=choose file, other keys: connection and year. setting value for each.  
 });
 
 //******** ANY CONNECTED USER ROUTES

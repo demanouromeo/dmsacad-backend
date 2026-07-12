@@ -111,7 +111,7 @@ class SchoolInfoController extends Controller
             $config = BasicSchoolConfig::all();
             //$config = BasicSchoolConfig::where('sy_id', '=', $sy_id)->first();
             return response()->json($config, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([], 500); //ERROR OCCURS; 500 = Internal Server Error
         }
     }
