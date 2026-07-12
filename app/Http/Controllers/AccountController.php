@@ -17,6 +17,19 @@ class AccountController extends Controller
 
     public function updateAccountWithPOST(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'login' => 'required|string',
+                'new_pwd' => 'required|string',
+                'acc_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $login = $request->input("login");
         $pwd = $request->input("new_pwd");
@@ -56,50 +69,33 @@ class AccountController extends Controller
             //echo '<br/>Message: ' .$e->getMessage();
             return response()->json([
                 'status' => false,
-                'error' => "An error occurred while updating the account",
                 'message' => $e->getMessage(),
             ], 500); //INTERNAL SERVER ERROR
-        }
-    }
-
-    public function updateAccount(Request $request)
-    {
-        $connection = $request->input("connection");
-        $login = $request->input("login");
-        $pwd = $request->input("pwd");
-        $acc_id = $request->input("acc_id");
-        config(["database.default" => $connection]);
-        //echo "Connection: $connection -- Year: $year -- Nom_Filiere: $nom_filiere -- Section: $section";
-
-        try {
-            $ref = Account::find($acc_id);
-            if (!is_null($ref)) {
-                $ref->login = $login;
-                $ref->pwd = $pwd;
-                $ref->update();
-                echo "1";
-            } else {
-                echo "-1"; //ACCOUNT NOT FOUND
-            }
-        } catch (Exception $e) {
-            //echo '<br/>Message: ' .$e->getMessage();
-            echo "-2"; //ERROR OCCURS
         }
     }
 
     public function login(Request $request)
     {
         try {
-            $jwt_secret = env('JWT_SECRET');
-            $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour or 3600 minutes
-            $refresh_token_duration = env('REFRESH_TOKEN_DURATION', 60 * 24 * 7); // default to 7 days
-
             // Validate request
             $data = $request->validate([
                 'login' => 'required|string',
                 'pwd' => 'required|string',
                 'connection' => 'required|string'
             ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        try {
+            $jwt_secret = env('JWT_SECRET');
+            $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour or 3600 minutes
+            $refresh_token_duration = env('REFRESH_TOKEN_DURATION', 60 * 24 * 7); // default to 7 days
+
+
 
             $login = $data['login'];
             $pwd = $data['pwd'];
@@ -217,23 +213,18 @@ class AccountController extends Controller
      */
     public function refresh(Request $request)
     {
-        $connection = "";
-        $data = $request->validate([
-            'connection' => 'required|string'
-        ]);
-        $connection = $data['connection'];
         try {
             // Validate request
             $data = $request->validate([
                 'connection' => 'required|string'
             ]);
-            $connection = $data['connection'];
         } catch (Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'connection is required',
-            ], 401);
+                'message' => 'Validation failed: ' . $e->getMessage(), //'connection is required',
+            ], 422);
         }
+        $connection = $data['connection'];
 
         try {
             // 1. Read refresh token from cookie
@@ -245,7 +236,7 @@ class AccountController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'Refresh token missing'
-                ], 401);
+                ], 401); //401 = Unauthorized
             }
 
             // Switch DB connection dynamically
@@ -265,7 +256,7 @@ class AccountController extends Controller
             }
 
             // 3. Retrieve user from DB
-            $account = Account::find($decoded->sub);
+            $account = Account::find($decoded->sub); //sub is the acc_id of the account in the token
 
             if (!$account) {
                 return response()->json([
@@ -303,7 +294,6 @@ class AccountController extends Controller
     }
 
 
-
     public function allAccounts($connection)
     {
         config(["database.default" => $connection]);
@@ -312,6 +302,7 @@ class AccountController extends Controller
         //echo 'sy_id='. $obj->sy_id .'\n';
         return response()->json($accounts, 200);
     }
+    
     public function index()
     {
         $Accounts = Account::all();
