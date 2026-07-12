@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SectionYear;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 

@@ -25,8 +25,8 @@ use Illuminate\Support\Facades\Route;
 
 
 //--------------------- SCHOOL CONFIG
-Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']); //THIS API doesn't need Authentication
-
+Route::get('/configs/allSchools', [SchoolInfoController::class, 'allSchools']); //THIS API doesn't need Authentication
+Route::get('/configs/getSchoolYears', [SchoolInfoController::class, 'getSchoolYears']);
 
 //--------------------- ACCOUNTS
 Route::post('/accounts/connect', [AccountController::class, 'login']); //ok - NO NEED FOR AUTHENTICATION. ANYONE CAN LOGIN

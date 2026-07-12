@@ -81,8 +81,36 @@ class SchoolInfoController extends Controller
         return response()->json($schools, 200);
     }
 
+    public function getSchoolYears(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input('connection');
+        config(["database.default" => $connection]);
+        $schoolYears = DB::select("SELECT sy_id, year, is_current FROM school_year ORDER BY year DESC");
+        return response()->json($schoolYears, 200);
+    }
+
     public function getClassificationParam(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         //first and second sequence of the term
         $connection = $request->input("connection");
         $year = $request->input("year");
@@ -95,13 +123,25 @@ class SchoolInfoController extends Controller
                 `class_specific`, `term_specific` FROM `classifiedparam` WHERE $sy_id");
             return response()->json($params, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS; 500 = Internal Server Error
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve classification parameters: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allSchoolConfig(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year"); //Will be used to find sy_id         
         config(["database.default" => $connection]);
@@ -118,6 +158,17 @@ class SchoolInfoController extends Controller
 
     public function getSchoolYearID(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $year = $request->input('year');
         $connection = $request->input('connection');
         config(["database.default" => $connection]);
@@ -217,8 +268,17 @@ class SchoolInfoController extends Controller
 
     public function updateSchoolInfo(Request $request)
     {
-
-        //$sy = $request->input('sy');
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input('connection');
         config(["database.default" => $connection]);
         $schoolConfig = new BasicSchoolConfig();
@@ -288,10 +348,18 @@ class SchoolInfoController extends Controller
             } else {
                 $query = -2; //Operation failed
                 //echo '<br/>ERROR: ' . $e->getMessage(); 
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to update config: ' . $e->getMessage(),
+                ], 500);
             }
-        }
+        } //End try-catch
 
-        echo "$query";
+        //echo "$query";
+        return response()->json([
+            'status' => true,
+            'message' => 'School configuration successfully updated',
+        ], 200);
     }
 
     public function upload(Request $request)
@@ -317,9 +385,16 @@ class SchoolInfoController extends Controller
             $imageName = "logo1.png";
             $request->image->move(public_path("images/$connection/logo"), $imageName);
             //$product->image_path = "images/$connection/" . $imageName;         
-            echo "1"; //Product saved
+            //echo "1"; //Product saved
+            return response()->json([
+                'status' => true,
+                'message' => 'Logo uploaded successfully',
+            ], 200);
         } catch (\Throwable $e) {
-            echo "<br/>" . $e->getMessage();
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to upload logo: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }
