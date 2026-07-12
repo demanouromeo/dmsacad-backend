@@ -19,7 +19,19 @@ class FiliereController extends Controller
 
     public function deleteManyFiliere(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year  = $request->input("year");
         $data = $request->input("data");
@@ -27,15 +39,18 @@ class FiliereController extends Controller
 
         $fList = json_decode($data, true);
         $n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        //$allAffected = 1; //interpreted as true. 0-->false
+
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
-        //echo "sy_id: $sy_id</br>";
+        $allAffected = 1;
         foreach ($fList as $fil) {
             $filiere_id = $fil["filiere_id"];
             $filiereRef = Filiere::find($filiere_id);
-            $allAffected = 1;
+            if (is_null($filiereRef)) {
+                //echo "Filiere with id [$filiere_id] not found. Skipping deletion.\n"; 
+                continue; //Skip to the next filiere. WE COUNT AS IF IT HAS BEEN DELETED SUCCESSFULLY. BECAUSE IT IS NOT IN THE DATABASE ANYMORE
+            }
+            //echo "deleting... filiere_id: $filiere_id --> filiere_name: " . $filiereRef->nom_filiere . "\n";
             try {
                 //Set speciality_id of all classe_year that are in speciality in that filière to null
                 $val1 = DB::select("UPDATE classe_year SET classe_year.speciality_id = NULL 
@@ -47,7 +62,7 @@ class FiliereController extends Controller
                 $val2 = DB::select("DELETE FROM speciality_year 
                                 WHERE speciality_year.sy_id = $sy_id 
                                     AND speciality_year.filiere_id = $filiere_id"); //ASSUMING A FILIERE IS IN ONLY ON SECTION IN A SCHOOL YEAR
-                
+
                 //Supprimons toutes les specialités de cette filiere
                 $val3 = DB::select("DELETE FROM speciality WHERE speciality.speciality_id NOT 
                             IN(SELECT speciality_year.speciality_id FROM speciality_year)");
@@ -74,21 +89,46 @@ class FiliereController extends Controller
                         }
                     }
                 } else {
-                    //La filiere ne sera pas supprimé
-                    $allAffected = 0;
-                    //echo "filireId: $filiere_id will not be affected Since res = $res<br/> ";
+                    $forceDelete = DB::select("DELETE FROM filiere WHERE filiere.filiere_id not IN(SELECT filiere_year.filiere_id FROM filiere_year)");
+                    //Ceci relève un problème de consistance dans la base de données. La filiere n'est pas reliée a un filiere_year. Elle ete inserer directement dans BD pour des test. Mais l'administrateur a du oublie de le supprimer.
                 }
             } catch (Exception $ex) {
+                //echec de suppression d'au moins une filiere
                 $allAffected = 0;
                 //echo "ERROR " . $ex->getMessage();
             }
         } //END FOR
         //return response($allAffected, 200);
-        echo (string) $allAffected; //1--> All filere successfully deleted; 0--> Failed to save at least one
+        //echo (string) $allAffected; //1--> All filere successfully deleted; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All filieres successfully deleted.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete at least one filiere.',
+            ], 500);
+        }
     }
+
+
     public function updateManyFiliere(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
@@ -111,11 +151,33 @@ class FiliereController extends Controller
                 $allAffected = 0;
             }
         }
-        echo "$allAffected"; //1--> All filere successfully modified; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All filieres successfully updated.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update at least one filiere.',
+            ], 500);
+        }
     }
 
     public function updateFiliere(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'nom_filiere_old' => 'required|string',
+                'nom_filiere_new' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $nom_filiere_old = $request->input("nom_filiere_old");
         $nom_filiere_new = $request->input("nom_filiere_new");
@@ -124,21 +186,42 @@ class FiliereController extends Controller
         try {
             $filiere = Filiere::where('nom_filiere', '=', $nom_filiere_old)->first();
             if (is_null($filiere)) {
-                echo "-1"; //Operation failed
+                //echo "-1"; //NOT FOUND
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Operation failed: Filiere with name [' . $nom_filiere_old . '] not found.',
+                ], 404); //404 = Not Found
             } else {
                 $filiere->nom_filiere = $nom_filiere_new;
                 $filiere->Update();
-                echo "1"; //Operation successfull
+                //echo "1"; //Operation successfull
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Operation successful: Filiere name updated from [' . $nom_filiere_old . '] to [' . $nom_filiere_new . '].',
+                ], 200);
             }
-        } catch (Exception $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            //return response()->json([], 500); //ERROR OCCURS
-            echo "-2"; //Le nom de la filiere existe deja
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $th->getMessage(),
+            ], 500); //500 = Internal Server Error
         }
     }
 
     public function allFilieres(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $sectionName = $request->input("section");
@@ -152,6 +235,19 @@ class FiliereController extends Controller
     }
     public function saveFiliere(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'nom_filiere' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $nom_filiere = $request->input("nom_filiere");
@@ -176,12 +272,22 @@ class FiliereController extends Controller
                     $myOption->delete(); //to avoid inconsistancy
                 } catch (Exception $exx) {
                 }
-                echo "-2";
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Operation failed: unable to save the corresponding filiere_year. ' . $ex->getMessage(),
+                ], 500);
             }
-            echo "1"; //Operation is successfull
+            return response()->json([
+                'status' => true,
+                'message' => 'Operation successful',
+            ], 200);
         } catch (Exception $e) {
             //echo '<br/>Message: ' .$e->getMessage();
-            echo "-1"; //La filiere existe déja
+            //echo "-1"; //La filiere existe déja
+            return response()->json([
+                'status' => false,
+                'message' => 'Operation failed: A filiere with the same name [' . $nom_filiere . '] already exists. ' . $e->getMessage(),
+            ], 500);
         }
     }
     public function index() {}

@@ -44,13 +44,13 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']); //ok
 
     //==> ON FILIERE
-    Route::get('/filieres/saveFiliere', [FiliereController::class, 'saveFiliere']);
-    Route::get('/filieres/updateFiliere', [FiliereController::class, 'updateFiliere']);
-    Route::get('/filieres/updateManyFiliere', [FiliereController::class, 'updateManyFiliere']);
-    Route::get('/filieres/deleteManyFiliere', [FiliereController::class, 'deleteManyFiliere']);
+    Route::post('/filieres/saveFiliere', [FiliereController::class, 'saveFiliere']); //ok
+    Route::post('/filieres/updateFiliere', [FiliereController::class, 'updateFiliere']);//ok
+    Route::post('/filieres/updateManyFiliere', [FiliereController::class, 'updateManyFiliere']);
+    Route::post('/filieres/deleteManyFiliere', [FiliereController::class, 'deleteManyFiliere']);
 
     //==> ON SPECIALITY
-    Route::get('/specialities/saveSpeciality', [SpecialityController::class, 'saveSpeciality']);
+    Route::post('/specialities/saveSpeciality', [SpecialityController::class, 'saveSpeciality']);
     Route::get('/specialities/updateManySpecialities', [SpecialityController::class, 'updateManySpecialities']);
     Route::get('/specialities/deleteManySpecialities', [SpecialityController::class, 'deleteManySpecialities']);
 });
@@ -66,7 +66,7 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::post('/accounts/updateAccountWithPOST', [AccountController::class, 'updateAccountWithPOST']); //ok. Any user can update its account
 
     //==> ON FILIERE
-    Route::get('/filieres/allFilieres', [FiliereController::class, 'allFilieres']);
+    Route::get('/filieres/allFilieres', [FiliereController::class, 'allFilieres']); //ok
 
     //==> ON SPECIALITY
     Route::get('/specialities/allSpecialites', [SpecialityController::class, 'allSpecialites']);
