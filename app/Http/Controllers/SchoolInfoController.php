@@ -94,7 +94,7 @@ class SchoolInfoController extends Controller
             $params = DB::select("SELECT `nb_matieres_rate`, `total_coef_rate`,`classified`, 
                 `class_specific`, `term_specific` FROM `classifiedparam` WHERE $sy_id");
             return response()->json($params, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS; 500 = Internal Server Error
         }
@@ -279,7 +279,7 @@ class SchoolInfoController extends Controller
             $request->image->move(public_path("images/$connection/logo"), $imageName);
             //$product->image_path = "images/$connection/" . $imageName;         
             echo "1"; //Product saved
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo "<br/>" . $e->getMessage();
         }
     }

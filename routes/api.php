@@ -63,8 +63,8 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
 Route::middleware(['jwt.auth'])->group(function () {
     //==> ON SCHOOL CONFIG
     Route::get('/configs/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); //Tested and working
-    Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);
-    Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);
+    Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']); //Tested and working
+    Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']); //Tested and working
 });
 
 
