@@ -33,25 +33,62 @@ Route::post('/accounts/refresh', [AccountController::class, 'refresh']); //ok - 
 
 //******* ADMIN ROUTES 
 Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
-    //==> ON SCHOOL CONFIG
+    //==> ADMIN ON SCHOOL CONFIG
     Route::post('/configs/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); //ok. WORKs. Tested on Postman as post request. With Body tab --> The from-data. Logo image uploaded fro
     Route::get('/configs/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //ok
     Route::post('/configs/upload', [SchoolInfoController::class, 'upload']); //ok. I tested on POstman, Uploaded logo. I choose Body tab then --> form-data then key= image, value=choose file, other keys: connection and year. setting value for each.  
 
-    //==> ON ACCOUNTS
+    //==> ADMIN ON ACCOUNTS
     Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']); //ok
 
-    //==> ON FILIERE
+    //==> ADMIN ON FILIERE
     Route::post('/filieres/saveFiliere', [FiliereController::class, 'saveFiliere']); //ok
     Route::post('/filieres/updateFiliere', [FiliereController::class, 'updateFiliere']); //ok
     Route::post('/filieres/updateManyFiliere', [FiliereController::class, 'updateManyFiliere']); //ok
     Route::post('/filieres/deleteManyFiliere', [FiliereController::class, 'deleteManyFiliere']); //ok
 
-    //==> ON SPECIALITY
+    //==> ADMIN ON SPECIALITY
     Route::post('/specialities/saveSpeciality', [SpecialityController::class, 'saveSpeciality']); //ok
     Route::post('/specialities/updateManySpecialities', [SpecialityController::class, 'updateManySpecialities']); //OK
     Route::post('/specialities/deleteManySpecialities', [SpecialityController::class, 'deleteManySpecialities']); //OK
+
+
+
+    //==> ADMIN ON CLASSES
+    Route::post('/classes/updateClassSettings', [ClasseController::class, 'updateClassSettings']); //OK
+    Route::post('/classes/assignVpAClass', [ClasseController::class, 'assignVpAClass']); //OK
+    Route::post('/classes/assignClassesToAVp', [ClasseController::class, 'assignClassesToAVp']); //OK - SUPER USEFULL
+    Route::delete('/classes/removeALLVpClasses', [ClasseController::class, 'removeALLVpClasses']); //OK
+    Route::delete('/classes/removeAClassFromAVp', [ClasseController::class, 'removeAClassFromAVp']); //OK
+    Route::get('/classes/allVpClasses', [ClasseController::class, 'allVpClasses']); //OK
+    Route::post('/classes/saveClasse', [ClasseController::class, 'saveClasse']);
+    Route::post('/classes/updateManyClasses', [ClasseController::class, 'updateManyClasses']);
+    Route::post('/classes/saveManyClasses', [ClasseController::class, 'saveManyClasses']);
+    Route::post('/classes/deleteManyClasses', [ClasseController::class, 'deleteManyClasses']);
+    Route::post('/classes/deleteClassesOfSectionAndYear', [ClasseController::class, 'deleteClassesOfSectionAndYear']);
+    Route::post('/classes/deleteManyClassesWithPOST', [ClasseController::class, 'deleteManyClassesWithPOST']);
+    Route::post('/classes/updateManyClassesWithPOST', [ClasseController::class, 'updateManyClassesWithPOST']);
+    Route::post('/classes/saveManyClassesWithPOST', [ClasseController::class, 'saveManyClassesWithPOST']);
+    Route::get('/classes/resetBasculement', [ClasseController::class, 'resetBasculement']);
+    Route::get('/classes/applyBasculement', [ClasseController::class, 'applyBasculement']);
+    Route::post('/classes/applyBasculementWithPOST', [ClasseController::class, 'applyBasculementWithPOST']);
+    Route::get('/classes/removeBasculement', [ClasseController::class, 'removeBasculement']);
+    Route::post('/classes/removeBasculementWithPOST', [ClasseController::class, 'removeBasculementWithPOST']);
+    Route::post('/classes/saveChanges', [ClasseController::class, 'saveChanges']);
+    Route::post('/classes/saveChangesWithPOST', [ClasseController::class, 'saveChangesWithPOST']);
+    Route::get('/classes/basculerSpecial', [ClasseController::class, 'basculerSpecial']);
+    Route::get('/classes/processRedoublants', [ClasseController::class, 'processRedoublants']);
+    Route::post('/classes/processRedoublantsWithPOST', [ClasseController::class, 'processRedoublantsWithPOST']);
+    Route::get('/classes/cancelAllBasculement', [ClasseController::class, 'cancelAllBasculement']);
+    Route::get('/classes/clearExclus', [ClasseController::class, 'clearExclus']);
+    Route::post('/classes/clearExclusWithPOST', [ClasseController::class, 'clearExclusWithPOST']);
+    Route::post('/classes/updateApcLevel', [ClasseController::class, 'updateApcLevel']);
 });
+
+
+
+
+
 
 //******** ANY CONNECTED USER ROUTES
 Route::middleware(['jwt.auth'])->group(function () {
@@ -60,13 +97,13 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']); //ok
     Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']); //ok
 
-    //==> ON ACCOUNTS
+    //==> ANY CONNECTED USER ON ACCOUNTS
     Route::post('/accounts/updateAccountWithPOST', [AccountController::class, 'updateAccountWithPOST']); //ok. Any user can update its account
 
-    //==> ON FILIERE
+    //==> ANY CONNECTED USER ON FILIERE
     Route::get('/filieres/allFilieres', [FiliereController::class, 'allFilieres']); //ok
 
-    //==> ON SPECIALITY
+    //==> ANY CONNECTED USER ON SPECIALITY
     Route::get('/specialities/allSpecialitesOfSection', [SpecialityController::class, 'allSpecialitesOfSection']); //ok
     Route::get('/specialities/allSpecialitesOfYear', [SpecialityController::class, 'allSpecialitesOfYear']); //ok
 
@@ -83,39 +120,6 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/classes/getAllClassesOfSubject', [ClasseController::class, 'getAllClassesOfSubject']); //OK
     Route::get('/classes/allClasseOfSection', [ClasseController::class, 'allClasseOfSection']); //OK
 });
-
-
-
-
-
-
-
-Route::get('/classes/updateClassSettings', [ClasseController::class, 'updateClassSettings']);
-Route::get('/classes/assignVpAClass', [ClasseController::class, 'assignVpAClass']);
-Route::get('/classes/removeALLVpClasses', [ClasseController::class, 'removeALLVpClasses']);
-Route::get('/classes/saveClasse', [ClasseController::class, 'saveClasse']);
-Route::get('/classes/updateManyClasses', [ClasseController::class, 'updateManyClasses']);
-Route::get('/classes/saveManyClasses', [ClasseController::class, 'saveManyClasses']);
-Route::get('/classes/deleteManyClasses', [ClasseController::class, 'deleteManyClasses']);
-Route::get('/classes/deleteClassesOfSectionAndYear', [ClasseController::class, 'deleteClassesOfSectionAndYear']);
-Route::post('/classes/deleteManyClassesWithPOST', [ClasseController::class, 'deleteManyClassesWithPOST']);
-Route::post('/classes/updateManyClassesWithPOST', [ClasseController::class, 'updateManyClassesWithPOST']);
-Route::post('/classes/saveManyClassesWithPOST', [ClasseController::class, 'saveManyClassesWithPOST']);
-Route::get('/classes/resetBasculement', [ClasseController::class, 'resetBasculement']);
-Route::get('/classes/applyBasculement', [ClasseController::class, 'applyBasculement']);
-Route::post('/classes/applyBasculementWithPOST', [ClasseController::class, 'applyBasculementWithPOST']);
-Route::get('/classes/removeBasculement', [ClasseController::class, 'removeBasculement']);
-Route::post('/classes/removeBasculementWithPOST', [ClasseController::class, 'removeBasculementWithPOST']);
-Route::get('/classes/saveChanges', [ClasseController::class, 'saveChanges']);
-Route::post('/classes/saveChangesWithPOST', [ClasseController::class, 'saveChangesWithPOST']);
-Route::get('/classes/basculerSpecial', [ClasseController::class, 'basculerSpecial']);
-Route::get('/classes/processRedoublants', [ClasseController::class, 'processRedoublants']);
-Route::post('/classes/processRedoublantsWithPOST', [ClasseController::class, 'processRedoublantsWithPOST']);
-Route::get('/classes/cancelAllBasculement', [ClasseController::class, 'cancelAllBasculement']);
-Route::get('/classes/clearExclus', [ClasseController::class, 'clearExclus']);
-Route::post('/classes/clearExclusWithPOST', [ClasseController::class, 'clearExclusWithPOST']);
-Route::get('/classes/updateApcLevel', [ClasseController::class, 'updateApcLevel']);
-
 
 
 

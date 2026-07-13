@@ -589,6 +589,23 @@ class ClasseController extends Controller
 
     public function updateClassSettings(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'classe_id' => 'required|integer|min:1',
+                'totalAbsTh' => 'required|integer|min:1|max:300',
+                'totalExclusionTh' => 'required|integer|min:0|max:300', // Assuming 300 is the maximum number of school days in a year
+                'avgDismissalTh' => 'required|numeric|min:0|max:20',
+                'repeatUb' => 'required|numeric',
+                'passMark' => 'required|numeric|min:0|max:20',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $classe_id = $request->input("classe_id");
@@ -600,21 +617,38 @@ class ClasseController extends Controller
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         $sy_id = MyHelper::getSchoolYearID($year);
-        $result = "1";
         try {
             DB::select("update `classe_year` set totalAbsTh = $totalAbsTh, 
                     totalExclusionTh = $totalExclusionTh, avgDismissalTh = $avgDismissalTh,
                     repeatUb = $repeatUb, passMark = $passMark
                 WHERE classe_id =$classe_id AND sy_id = $sy_id");
         } catch (Exception $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            $result = "-1"; //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while updating class settings: ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
         }
-        echo "$result";
+        return response()->json([
+            'status' => true,
+            'message' => 'Class settings updated successfully',
+        ], 200);
     }
 
     public function assignVpAClass(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'classe_id' => 'required|integer|min:1',
+                'vp_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $classe_id = $request->input("classe_id");
@@ -627,29 +661,170 @@ class ClasseController extends Controller
         try {
             DB::select("update `classe_year` set vp_id = $vp_id WHERE classe_id =$classe_id AND sy_id = $sy_id");
         } catch (Exception $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            $result = "-1"; //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while assigning VP[' . $vp_id . '] to the class[' . $classe_id . ']: ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
         }
-        echo "$result";
+        return response()->json([
+            'status' => true,
+            'message' => 'VP[' . $vp_id . '] assigned to the class[' . $classe_id . '] successfully',
+        ], 200);
     }
 
-    public function removeALLVpClasses(Request $request)
+    public function assignClassesToAVp(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'vp_id' => 'required|integer|min:1',
+                'data' => 'required|json',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $vp_id = $request->input("vp_id");
         config(["database.default" => $connection]);
-        //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
+
         $sy_id = MyHelper::getSchoolYearID($year);
-        $result = 1;
+
+        $data = $request->input("data");
+        $data_size = $request->input("data_size");
+
+        $classList = json_decode($data, true);
+        $allAffected = 1; //interpreted as true. 0-->false
+        foreach ($classList as $classe) {
+            $classe_id = $classe['classe_id'];
+            try {
+                DB::select("update `classe_year` set vp_id = $vp_id WHERE classe_id =$classe_id AND sy_id = $sy_id");
+            } catch (Exception $e) {
+                //'message' => 'An error occurred while assigning VP[' . $vp_id . '] to the class[' . $classe_id . ']: ' . $e->getMessage(),
+                $allAffected = 0; //failed to assign VP to at least one class
+            }
+        }
+
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'VP[' . $vp_id . '] assigned to all classes successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while assigning VP[' . $vp_id . '] to some classes (at least one class assignment failed)',
+            ], 500);
+        }
+    }
+
+    public function removeALLVpClasses(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'vp_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input("connection");
+        $year = $request->input("year");
+        $vp_id = $request->input("vp_id");
+        config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+
         try {
             DB::select("update `classe_year` set vp_id = NULL WHERE vp_id =$vp_id AND sy_id = $sy_id");
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            $result = -1; //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while removing classes from VP[' . $vp_id . '] : ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
         }
-        echo $result;
+        return response()->json([
+            'status' => true,
+            'message' => 'All classes removed from VP[' . $vp_id . ']  successfully',
+        ], 200);
     }
+
+    public function removeAClassFromAVp(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'vp_id' => 'required|integer|min:1',
+                'class_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input("connection");
+        $year = $request->input("year");
+        $vp_id = $request->input("vp_id");
+        $class_id = $request->input("class_id");
+        config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+
+        try {
+            DB::select("update classe_year set vp_id = NULL WHERE vp_id =$vp_id AND classe_id = $class_id AND sy_id = $sy_id");
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while removing class[' . $class_id . '] from VP[' . $vp_id . '] : ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
+        }
+        return response()->json([
+            'status' => true,
+            'message' => 'Class[' . $class_id . '] removed from VP[' . $vp_id . ']  successfully',
+        ], 200);
+    }
+
+
+    public function allVpClasses(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'vp_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input("connection");
+        $year = $request->input("year");
+        $sectionName = $request->input("section");
+        $vp_id = $request->input("vp_id");
+        config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+        $section_id = MyHelper::getSectionID($sectionName);
+
+        $classes = DB::select(
+            "SELECT classe.classe_id, classe.classe_name, classe.level FROM classe, classe_year 
+                WHERE classe.classe_id = classe_year.classe_id
+                AND classe_year.sy_id = $sy_id AND classe_year.vp_id = $vp_id 
+                AND classe_year.section_id = $section_id"
+        );
+        return response()->json($classes, 200);
+    }
+
 
     public function getAllClassesOfSubject(Request $request)
     {
@@ -658,7 +833,7 @@ class ClasseController extends Controller
                 'connection' => 'required|string',
                 'year' => 'required|string',
                 'section' => 'required|string',
-                'subject_id' => 'required|integer',
+                'subject_id' => 'required|integer|min:1',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -706,7 +881,7 @@ class ClasseController extends Controller
                 'connection' => 'required|string',
                 'year' => 'required|string',
                 'section' => 'required|string',
-                'subject_id' => 'required|integer',
+                'subject_id' => 'required|integer|min:1',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -754,7 +929,7 @@ class ClasseController extends Controller
                 'connection' => 'required|string',
                 'year' => 'required|string',
                 'section' => 'required|string',
-                'staff_id' => 'required|integer',
+                'staff_id' => 'required|integer|min:1',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -909,7 +1084,7 @@ class ClasseController extends Controller
                 'connection' => 'required|string',
                 'year' => 'required|string',
                 'section' => 'required|string',
-                'classe_id' => 'required|integer',
+                'classe_id' => 'required|integer|min:1',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -1034,7 +1209,7 @@ class ClasseController extends Controller
                 'connection' => 'required|string',
                 'year' => 'required|string',
                 'section' => 'required|string',
-                'subject_id' => 'required|integer',
+                'subject_id' => 'required|integer|min:1',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -1363,7 +1538,7 @@ class ClasseController extends Controller
             $request->validate([
                 'connection' => 'required|string',
                 'year' => 'required|string',
-                'section_id' => 'required|integer',
+                'section_id' => 'required|integer|min:1',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
