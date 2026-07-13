@@ -78,7 +78,7 @@ class FiliereController extends Controller
                 }
                 //echo "rows affected AFTTER deleting fyear [$tmp]<br/>";
 
-                if ($tmp == 1) { //The filiere year has been deleted successfully
+                if ($tmp == 1) { //The filiere_year has been deleted successfully
                     //On peut eventuellement supprimer la filiere si elle n'est pas dans un autre schoolyear
                     $fyList = FiliereYear::where('filiere_id', '=', $filiere_id)->get();
                     $count = $fyList->count();

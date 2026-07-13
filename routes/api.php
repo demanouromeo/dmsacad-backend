@@ -50,9 +50,9 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/filieres/deleteManyFiliere', [FiliereController::class, 'deleteManyFiliere']); //ok
 
     //==> ON SPECIALITY
-    Route::post('/specialities/saveSpeciality', [SpecialityController::class, 'saveSpeciality']);
-    Route::get('/specialities/updateManySpecialities', [SpecialityController::class, 'updateManySpecialities']);
-    Route::get('/specialities/deleteManySpecialities', [SpecialityController::class, 'deleteManySpecialities']);
+    Route::post('/specialities/saveSpeciality', [SpecialityController::class, 'saveSpeciality']); //ok
+    Route::post('/specialities/updateManySpecialities', [SpecialityController::class, 'updateManySpecialities']);
+    Route::post('/specialities/deleteManySpecialities', [SpecialityController::class, 'deleteManySpecialities']); //OK
 });
 
 //******** ANY CONNECTED USER ROUTES
@@ -69,15 +69,10 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/filieres/allFilieres', [FiliereController::class, 'allFilieres']); //ok
 
     //==> ON SPECIALITY
-    Route::get('/specialities/allSpecialites', [SpecialityController::class, 'allSpecialites']);
-    Route::get('/specialities/allSpecialites2', [SpecialityController::class, 'allSpecialites2']);
+    Route::get('/specialities/allSpecialitesOfSection', [SpecialityController::class, 'allSpecialitesOfSection']); //ok
+    Route::get('/specialities/allSpecialitesOfYear', [SpecialityController::class, 'allSpecialitesOfYear']); //ok
 });
 
-
-
-
-
-//--------------------- SPECIALITY
 
 
 //--------------------- CLASSE

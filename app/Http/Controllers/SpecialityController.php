@@ -19,8 +19,19 @@ class SpecialityController extends Controller
      */
 
     //PB its joining well but selecting only One
-    public function allSpecialites2(Request $request)
+    public function allSpecialitesOfYear(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string'
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         config(["database.default" => $connection]);
@@ -38,12 +49,27 @@ class SpecialityController extends Controller
             return response()->json($sp2List, 200);
         } catch (Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve specialities of the year. ' . $e->getMessage(),
+            ], 500);
         }
     }
 
-    public function allSpecialites(Request $request)
+    public function allSpecialitesOfSection(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -56,13 +82,30 @@ class SpecialityController extends Controller
             $specialities = MyHelper::getSpecialitiesOfYearOfSection($sy_id, $section_id);
             return response()->json($specialities, 200);
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve specialities of the section. ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function saveSpeciality(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'speciality_name' => 'required|string',
+                'nom_filiere' => 'required|string',
+                'desc' => 'string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $speciality_name = $request->input("speciality_name");
@@ -95,7 +138,10 @@ class SpecialityController extends Controller
                 $spYear->sy_id = $sy_id;
                 $spYear->section_id = $section_id;
                 $spYear->save();
-                echo "1"; //Operation is successfull*/
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Speciality and corresponding SpecialityYear saved successfully.',
+                ], 200);
             } catch (Exception $ex) {
                 //If exception then sp or spyear failed to save. We delete them to avoid inconsitency
                 $sp->delete();
@@ -103,17 +149,33 @@ class SpecialityController extends Controller
                     $spYear->delete();
                 } catch (Exception $exx) {
                 }
-                echo '<br/>Message: ' . $ex->getMessage() . '<br>';
-                echo "-2"; //Operation failed
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Operation failed: We couldn\'t save speciality_year Or a speciality with same name already Exist. NOTE THAT speciality name is UNIQUE ' . $ex->getMessage(),
+                ], 409); //409 = Conflict
             }
         } catch (Exception $e) {
-            //echo '<br/>Message: ' . $e->getMessage();
-            echo "-1"; //La specialiteé existe déja
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to save speciality. Error occurred: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function updateManySpecialities(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         //echo "Starting...\n";
         $connection = $request->input("connection");
         $data = $request->input("data");
@@ -141,9 +203,22 @@ class SpecialityController extends Controller
         }
         echo "$allAffected"; //1--> All filere successfully modified; 0--> Failed to save at least one
     }
-    
+
     public function deleteManySpecialities(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'integer',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         //echo "Starting...\n";
         $connection = $request->input("connection");
         $year  = $request->input("year");
@@ -175,7 +250,7 @@ class SpecialityController extends Controller
                 }
                 //echo "rows affected AFTTER deleting sp_years [$tmp]<br/>";
 
-                if ($tmp == 1) { //The speciality year has been deleted successfully
+                if ($tmp == 1) { //The speciality_year has been deleted successfully
                     //On peut eventuellement supprimer la speciality si elle n'est pas dans un autre schoolyear
                     $sp_yList = SpecialityYear::where('speciality_id', '=', $speciality_id)->get();
                     $count = $sp_yList->count();
@@ -186,9 +261,12 @@ class SpecialityController extends Controller
                         }
                     }
                 } else {
+                    /*
                     //La speciality ne sera pas supprimé
                     $allAffected = 0;
                     //echo "spId: $speciality_id will not be affected Since res = $res<br/> ";
+                    */
+                    $forceDelete = DB::select("DELETE FROM speciality WHERE speciality.speciality_id not IN(SELECT speciality_year.speciality_id FROM speciality_year)");
                 }
             } catch (Exception $ex) {
                 $allAffected = 0;
@@ -196,7 +274,18 @@ class SpecialityController extends Controller
             }
         } //END FOR
         //return response($allAffected, 200);
-        echo (string) $allAffected; //1--> All speciality successfully deleted; 0--> Failed to save at least one
+        //echo (string) $allAffected; //1--> All speciality successfully deleted; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All specialities successfully deleted.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete at least one speciality.',
+            ], 500);
+        }
     }
 
     public function index()
