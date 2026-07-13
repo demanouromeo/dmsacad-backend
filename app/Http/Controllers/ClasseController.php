@@ -653,6 +653,19 @@ class ClasseController extends Controller
 
     public function getAllClassesOfSubject(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'subject_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -673,16 +686,34 @@ class ClasseController extends Controller
             if (count($classes) > 0) {
                 return response()->json($classes, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No classes found for this year and section',
+                ], 404);
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching classes for the year and section: ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
         }
     }
 
     public function allClassesOfSubject(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'subject_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $subject_id = $request->input("subject_id");
@@ -703,16 +734,34 @@ class ClasseController extends Controller
             if (count($classes) > 0) {
                 return response()->json($classes, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No classes found for the given subject[' . $subject_id . '] in the specified year and section.',
+                ], 404);
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching classes for the subject[' . $subject_id . ']: ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
         }
     }
 
     public function allClasse1OfCM(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'staff_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -751,16 +800,33 @@ class ClasseController extends Controller
             if (count($classes) > 0) {
                 return response()->json($classes, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No classes found for the class master with ID [' . $staff_id . '] in the given year and section.',
+                ], 404);
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred when fetching classes for the class master with ID [' . $staff_id . ']: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function getAPCLevels(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -777,17 +843,34 @@ class ClasseController extends Controller
             if (count($apcLevels) > 0) {
                 return response()->json($apcLevels, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No APC levels found for the given year and section.',
+                ], 404);
             }
         } catch (Exception  $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return [];
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching APC levels: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     //Get all the classes of the section
     public function getAllClassesOfSection(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -806,16 +889,34 @@ class ClasseController extends Controller
             if (count($classes) > 0) {
                 return response()->json($classes, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No classes found for the given section.',
+                ], 404);
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching classes of section [' . $section . '] ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function getClassesOfSameLevel(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'classe_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -846,21 +947,40 @@ class ClasseController extends Controller
                         $k++;
                     }
                     return response()->json($res, 200);
-                    //return response()->json($classes, 200);
                 } else {
-                    return [];
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'No classes of the same level found for classe_id [' . $classe_id . ']',
+                    ], 404);
                 }
             }
-            return []; //CLASSES OF SAME LEVEL NOT FOUND            
+            return response()->json([
+                'status' => false,
+                'message' => 'Classe not found for classe_id [' . $classe_id . ']',
+            ], 404); //CLASSES OF SAME LEVEL NOT FOUND
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching classes of the same level as classe_id [' . $classe_id . '] : ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     //Return classe ids along side with their nb boys nb girls, nb repeating for that school year and section
     public function getForClasseSize(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -893,17 +1013,35 @@ class ClasseController extends Controller
             if (count($classes) > 0) {
                 return response()->json($classes, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No classes found for the specified year and section.',
+                ], 404);
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Error when getForClasseSize: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     ///Find classes WHERE A SUJECT IS TAUGHT
     public function getClassesOfASuject(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'subject_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -925,11 +1063,17 @@ class ClasseController extends Controller
             if (count($classes) > 0) {
                 return response()->json($classes, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No classes found where subject [' . $subject_id . '] is taught',
+                ], 404); //NOT FOUND
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred when fetching classes where subject [' . $subject_id . '] is taught: ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
+
         }
     }
 
@@ -1152,6 +1296,18 @@ class ClasseController extends Controller
 
     public function allClasse1(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -1188,16 +1344,33 @@ class ClasseController extends Controller
             if (count($classes) > 0) {
                 return response()->json($classes, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No classes found for the specified section and year.',
+                ], 404);
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred while fetching classes: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allClasseOfSection(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_id = $request->input("section_id");
@@ -1232,11 +1405,16 @@ class ClasseController extends Controller
             if (count($classes) > 0) {
                 return response()->json($classes, 200);
             } else {
-                return [];
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No classes found for this year and section [year: ' . $year . ', section_id: ' . $section_id . ']',
+                ], 404);
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred while fetching classes: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
