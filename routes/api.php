@@ -51,7 +51,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
 
     //==> ON SPECIALITY
     Route::post('/specialities/saveSpeciality', [SpecialityController::class, 'saveSpeciality']); //ok
-    Route::post('/specialities/updateManySpecialities', [SpecialityController::class, 'updateManySpecialities']);
+    Route::post('/specialities/updateManySpecialities', [SpecialityController::class, 'updateManySpecialities']); //OK
     Route::post('/specialities/deleteManySpecialities', [SpecialityController::class, 'deleteManySpecialities']); //OK
 });
 

@@ -188,20 +188,36 @@ class SpecialityController extends Controller
         $allAffected = 1; //interpreted as true. 0-->false
         config(["database.default" => $connection]);
         foreach ($spList as $sp) {
-            // code
-            $speciality_id = $sp["speciality_id"];
-            $speciality_name = $sp["speciality_name"];
-            $description = $sp["description"];
-            //echo "id: " . $sp["speciality_id"] . " -- speciality_name: " . $sp["speciality_name"]
-            //    . "  description: " . $sp['description'];
-            $affected = DB::table('speciality')
-                ->where('speciality_id', $speciality_id)
-                ->update(['speciality_name' => $speciality_name, 'description' => $description]);
-            if ($affected != 1) {
+            try {
+                $speciality_id = $sp["speciality_id"];
+                $ref = Speciality::find($speciality_id);
+                if (is_null($ref)) {
+                    $allAffected = 0;
+                    continue; //Skip to the next speciality. WE COUNT AS IF IT HAS BEEN UPDATED SUCCESSFULLY. BECAUSE IT IS NOT IN THE DATABASE ANYMORE
+                }
+                $speciality_name = $sp["speciality_name"];
+                $description = $sp["description"];
+                //echo "id: " . $sp["speciality_id"] . " -- speciality_name: " . $sp["speciality_name"]
+                //    . "  description: " . $sp['description'];
+                $affected = DB::table('speciality')
+                    ->where('speciality_id', $speciality_id)
+                    ->update(['speciality_name' => $speciality_name, 'description' => $description]);
+            } catch (\Throwable $th) {
                 $allAffected = 0;
             }
         }
-        echo "$allAffected"; //1--> All filere successfully modified; 0--> Failed to save at least one
+        //"$allAffected"; //1--> All filere successfully modified; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All specialities successfully updated.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update at least one speciality.',
+            ], 500);
+        }
     }
 
     public function deleteManySpecialities(Request $request)
@@ -227,15 +243,13 @@ class SpecialityController extends Controller
 
         $spList = json_decode($data, true);
         $n = count($spList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        //$allAffected = 1; //interpreted as true. 0-->false
+
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
-        //echo "sy_id: $sy_id</br>";
+        $allAffected = 1; //interpreted as true. 0-->false
         foreach ($spList as $sp) {
             $speciality_id = $sp["speciality_id"];
             $spRef = Speciality::find($speciality_id);
-            $allAffected = 1;
             try {
                 $val1 = DB::select("UPDATE classe_year SET classe_year.speciality_id = NULL 
                         where classe_year.speciality_id = $speciality_id
@@ -261,19 +275,14 @@ class SpecialityController extends Controller
                         }
                     }
                 } else {
-                    /*
-                    //La speciality ne sera pas supprimé
-                    $allAffected = 0;
-                    //echo "spId: $speciality_id will not be affected Since res = $res<br/> ";
-                    */
                     $forceDelete = DB::select("DELETE FROM speciality WHERE speciality.speciality_id not IN(SELECT speciality_year.speciality_id FROM speciality_year)");
                 }
             } catch (Exception $ex) {
                 $allAffected = 0;
                 //echo "ERROR " . $ex->getMessage();
             }
-        } //END FOR
-        //return response($allAffected, 200);
+        } //END FOR 
+
         //echo (string) $allAffected; //1--> All speciality successfully deleted; 0--> Failed to save at least one
         if ($allAffected == 1) {
             return response()->json([
