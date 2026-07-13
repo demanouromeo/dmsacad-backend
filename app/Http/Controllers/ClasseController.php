@@ -1337,22 +1337,34 @@ class ClasseController extends Controller
         echo  $allAffected; //1--> All speciality successfully deleted; 0--> Failed to save at least one
     }
 
+
     public function updateManyClasses(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'nullable|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $data = $request->input("data");
-        //$data = $request->input("year");
         $data_size = $request->input("data_size");
         $year = $request->input("year");
 
-        $clList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
         $allAffected = 1; //interpreted as true. 0-->false
         $allAffected2 = 1;
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
+
+        $clList = json_decode($data, true);
         foreach ($clList as $cl) {
             $classe_id = $cl["classe_id"];
             $classe_name = $cl["classe_name"];
@@ -1360,31 +1372,14 @@ class ClasseController extends Controller
             $speciality_id = $cl["speciality_id"];
             $classe_master = $cl["classe_master_id"];
             $sg_id = $cl["sg_id"];
-            //echo "cl_id: $classe_id -- cl_name: $classe_name  --  Level: $level --  
-            //    speciality_id: $speciality_id -- classe_master_id: $classe_master --  
-            //   sg_id: $sg_id";
+
             //------- UPDATE THE CLASSE YEAR
             try {
-                //code...
-                /*$allAffected = DB::table('classe')
-                    ->where('classe_id', $classe_id)
-                    ->update(['classe_name' => $classe_name,'level' => $level]);
-                */
                 $cl = Classe::where('classe_id', $classe_id)->first();
                 $cl->level = $level;
                 $cl->classe_name = $classe_name;
                 $allAffected = $cl->update();
 
-                //------- UPDATE THE CLASSE YEAR
-                /*$allAffected2 = DB::table('classe_year')
-                    ->where('classe_id', $classe_id)
-                    ->where('sy_id', $sy_id)
-                    ->update([                        
-                        'speciality_id' => $speciality_id,
-                        'classe_master' => $classe_master,
-                        'sg_id' => $sg_id
-                    ]);
-                    */
                 $cly = ClasseYear::where('sy_id', $sy_id)
                     ->where('classe_id', $classe_id)
                     ->first();
@@ -1399,75 +1394,22 @@ class ClasseController extends Controller
             if ($allAffected != 1 || $allAffected2 != 1) {
                 $allAffected = 0;
             }
+        } //END FOR
+
+        //echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All classes updated successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update at least one class',
+            ], 500);
         }
-        echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
     }
 
-    public function updateManyClassesWithPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        //$data = $request->input("year");
-        $data_size = $request->input("data_size");
-        $year = $request->input("year");
-
-        $clList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false
-        $allAffected2 = 1;
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        foreach ($clList as $cl) {
-            $classe_id = $cl["classe_id"];
-            $classe_name = $cl["classe_name"];
-            $level = $cl["level"];
-            $speciality_id = $cl["speciality_id"];
-            $classe_master = $cl["classe_master_id"];
-            $sg_id = $cl["sg_id"];
-            //echo "cl_id: $classe_id -- cl_name: $classe_name  --  Level: $level --  
-            //    speciality_id: $speciality_id -- classe_master_id: $classe_master --  
-            //   sg_id: $sg_id";
-            //------- UPDATE THE CLASSE YEAR
-            try {
-                //code...
-                /*$allAffected = DB::table('classe')
-                    ->where('classe_id', $classe_id)
-                    ->update(['classe_name' => $classe_name,'level' => $level]);
-                */
-                $cl = Classe::where('classe_id', $classe_id)->first();
-                $cl->level = $level;
-                $cl->classe_name = $classe_name;
-                $allAffected = $cl->update();
-
-                //------- UPDATE THE CLASSE YEAR
-                /*$allAffected2 = DB::table('classe_year')
-                    ->where('classe_id', $classe_id)
-                    ->where('sy_id', $sy_id)
-                    ->update([                        
-                        'speciality_id' => $speciality_id,
-                        'classe_master' => $classe_master,
-                        'sg_id' => $sg_id
-                    ]);
-                    */
-                $cly = ClasseYear::where('sy_id', $sy_id)
-                    ->where('classe_id', $classe_id)
-                    ->first();
-                $cly->speciality_id = $speciality_id;
-                $cly->sg_id = $sg_id;
-                $cly->classe_master = $classe_master;
-                $allAffected2 = $cly->update();
-            } catch (Exception $ex) {
-                //echo $ex->getMessage();
-                $allAffected = 0;
-            }
-            if ($allAffected != 1 || $allAffected2 != 1) {
-                $allAffected = 0;
-            }
-        }
-        echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
-    }
 
     public function allClasse1(Request $request)
     {
@@ -1596,9 +1538,23 @@ class ClasseController extends Controller
 
     public function saveClasse(Request $request)
     {
-        /*        
-           'level': selectedLevel.toString(),
-         */
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'speciality_name' => 'nullable|string',
+                'classe_name' => 'required|string',
+                'classe_master_id' => 'nullable|integer|min:1',
+                'section' => 'required|string',
+                'level' => 'required|integer|min:1',
+                'sg_id' => 'nullable|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $speciality_name = $request->input("speciality_name");
@@ -1608,10 +1564,7 @@ class ClasseController extends Controller
         $level = $request->input("level");
         $sg_id = $request->input("sg_id");
         config(["database.default" => $connection]);
-        //echo "Connection: $connection <br/>Year: $year <br/>sp_name: $speciality_name"
-        //   . "<br/>classe_name: $classe_name <br/> 
-        //   Section: $section_name <br/>classe_master: $classe_master
-        //   <br/>Level: $level<br/>sg_id: $sg_id<br/>";        
+
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
             $section_id = MyHelper::getSectionID($section_name);
@@ -1629,7 +1582,6 @@ class ClasseController extends Controller
                     $cl->save();
                     $cl_id = $cl->classe_id;
                 } else {
-                    //$cl_id = $clTmp['classe_id'];
                     $cl_id = $clTmp->classe_id;
                 }
 
@@ -1648,28 +1600,62 @@ class ClasseController extends Controller
                 if ($sg_id != "null") {
                     $clYear->sg_id = $sg_id;
                 }
-                $clYear->save();
-                echo "1"; //Operation is successfull
+
+                $clYearTmp = DB::select("SELECT * FROM classe_year WHERE classe_id = ? AND sy_id = ?", [$cl_id, $sy_id]);
+                if (count($clYearTmp) > 0) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'ClasseYear already exists for Classe[' . $cl_id . '] and SchoolYear[' . $sy_id . ']. We consider that [' . $classe_name . '] already exists',
+                    ], 409);
+                } else {
+                    $clYear->save();
+                }
+
+                //echo "1"; //Operation is successfull
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Classe[' . $cl_id . '] and ClasseYear[' . $clYear->classe_year_id . '] created successfully.',
+                ], 201);
             } catch (Exception $ex) {
-                //If exception then sp or clYear failed to save. We delete them to avoid inconsitency
+                //If exception then cl or clYear failed to save. We delete it to avoid inconsitency
                 $cl->delete();
                 try {
                     $clYear->delete();
                 } catch (Exception $exx) {
                     //echo '<br/>Message: ' . $exx->getMessage() . '<br>';
                 }
-                //echo '<br/>Message: ' . $ex->getMessage() . '<br>';
-                echo "-2"; //Operation failed
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to save Classe[' . $classe_name . '] or ClasseYear: ' . $ex->getMessage(),
+                ], 500);
             }
         } catch (Exception $e) {
             //echo '<br/>Message: ' . $e->getMessage();
-            echo "-1"; //La classe existe existe déja
+            return response()->json([
+                'status' => false,
+                'message' => 'Classe[' . $request->input("classe_name") . '] already exists: ' . $e->getMessage(),
+            ], 409);
         }
     }
 
 
     public function saveManyClasses(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'nullable|integer|min:1',
+
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
@@ -1679,16 +1665,19 @@ class ClasseController extends Controller
         $clList = json_decode($data, true);
         //$n = count($fList);
         //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $k = 1; //1--> Success. 0--> Some classes not saved [Exists allready in other sections or contain wrong characters]
-        $allAffected2 = 1;
+
 
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
         $section_id = MyHelper::getSectionID($section);
         $msg = "";
+        $allAffected = 1; //1--> Success. 0--> Some classes not saved [Exists allready in other sections or contain wrong characters]
         foreach ($clList as $cl) {
             $classe_name = $cl["classe_name"];
             $level = $cl["level"];
+            $sg_id = $cl["sg_id"];
+            $classe_master_id = $cl["classe_master_id"];
+            $speciality_name = $cl["speciality_name"];
             $clTmp = Classe::where("classe_name", "=", $classe_name)->first();
             try {
                 $classe_id = -1;
@@ -1698,87 +1687,60 @@ class ClasseController extends Controller
                         $clToSave = new Classe();
                         $clToSave->classe_name = $classe_name;
                         $clToSave->level = $level;
-                        $clToSave->save();
-                        $classe_id =  $clToSave->$classe_id;
+                        $clTmp = Classe::where("classe_name", "=", $classe_name)
+                            ->first();
+                        if (is_null($clTmp)) {
+                            $clToSave->save();
+                        } else {
+                            $allAffected = 0; // the classe already exists for this classe_name.
+                            $msg = $msg . "'$classe_name' already exists<br/>";
+                            continue; //We skip this classe and continue with the next one
+                        }
+                        $classe_id =  $clToSave->classe_id;
                     } else { //LA CLASSE EXISTE DEJA  
                         //$classe_id = $clTmp->$classe_id;
                         $classe_id = $clTmp['classe_id'];
                     }
+
                     $clYear = new ClasseYear();
                     $clYear->classe_id = $classe_id;
                     $clYear->sy_id = $sy_id;
                     $clYear->section_id = $section_id;
-                    $clYear->save();
-                } else {
-                    $msg = $msg . "'$classe_name' contains invalid characters\n";
-                    $k = 0;
-                }
-            } catch (Exception $exx) {
-                $msg = $msg . "\n" . $exx->getMessage() . "\n";
-            }
-        } //END FOR
-
-        if ($k == 1) {
-            echo $k;
-        } else {
-            echo $msg;
-        } //K=1--> All classes successfully modified; K=0--> Failed to save at least one
-    }
-
-    public function saveManyClassesWithPOST(Request $request)
-    {
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-        $year = $request->input("year");
-        $section = $request->input("section");
-
-        $clList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $k = 1; //1--> Success. 0--> Some classes not saved [Exists allready in other sections or contain wrong characters]
-        $allAffected2 = 1;
-
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        $section_id = MyHelper::getSectionID($section);
-        $msg = "";
-        foreach ($clList as $cl) {
-            $classe_name = $cl["classe_name"];
-            $level = $cl["level"];
-            $clTmp = Classe::where("classe_name", "=", $classe_name)->first();
-            try {
-                $classe_id = -1;
-                if (MyHelper::validateStr($classe_name)) {
-                    if (is_null($clTmp)) { //LA CLASSE N'EXISTE PAS
-                        $clToSave = new Classe();
-                        $clToSave->classe_name = $classe_name;
-                        $clToSave->level = $level;
-                        $clToSave->save();
-                        $classe_id =  $clToSave->$classe_id;
-                    } else { //LA CLASSE EXISTE DEJA  
-                        //$classe_id = $clTmp->$classe_id;
-                        $classe_id = $clTmp['classe_id'];
+                    $clYear->sg_id = $sg_id;
+                    $clYear->classe_master = $classe_master_id;
+                    $sp = Speciality::where("speciality_name", $speciality_name)->first();
+                    if (!is_null($sp)) {
+                        $clYear->speciality_id = $sp->speciality_id;
                     }
-                    $clYear = new ClasseYear();
-                    $clYear->classe_id = $classe_id;
-                    $clYear->sy_id = $sy_id;
-                    $clYear->section_id = $section_id;
-                    $clYear->save();
+
+                    $clYearTmp = DB::select("SELECT * FROM classe_year WHERE classe_id = ? AND sy_id = ?", [$classe_id, $sy_id]);
+                    if (count($clYearTmp) > 0) {
+                        $allAffected = 0; // the classe_year already exists for this classe and school year. 
+                        $msg = $msg . "'$classe_name' already exists has a classe_year record for the [' . $sy_id . '] school year. So we consider the classe exists already<br/>";
+                        continue; //We skip this classe and continue with the next one
+                    } else {
+                        $clYear->save();
+                    }
                 } else {
-                    $msg = $msg . "'$classe_name' contains invalid characters\n";
-                    $k = 0;
+                    $msg = $msg . "'$classe_name' contains invalid characters<br/>";
+                    $allAffected = 0;
                 }
             } catch (Exception $exx) {
-                $msg = $msg . "\n" . $exx->getMessage() . "\n";
+                $msg = $msg . "<br/>" . $exx->getMessage() . "<br/>";
             }
         } //END FOR
 
-        if ($k == 1) {
-            echo $k;
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All classes successfully saved.',
+            ], 201);
         } else {
-            echo $msg;
-        } //K=1--> All classes successfully modified; K=0--> Failed to save at least one
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to save at least one class. Details: <br/>' . $msg,
+            ], 500);
+        } //allAffected=1--> All classes successfully saved; allAffected=0--> Failed to save at least one
     }
 
 

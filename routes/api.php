@@ -61,14 +61,11 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::delete('/classes/removeALLVpClasses', [ClasseController::class, 'removeALLVpClasses']); //OK
     Route::delete('/classes/removeAClassFromAVp', [ClasseController::class, 'removeAClassFromAVp']); //OK
     Route::get('/classes/allVpClasses', [ClasseController::class, 'allVpClasses']); //OK
-    Route::post('/classes/saveClasse', [ClasseController::class, 'saveClasse']);
-    Route::post('/classes/updateManyClasses', [ClasseController::class, 'updateManyClasses']);
-    Route::post('/classes/saveManyClasses', [ClasseController::class, 'saveManyClasses']);
+    Route::post('/classes/saveClasse', [ClasseController::class, 'saveClasse']); //OK
+    Route::post('/classes/updateManyClasses', [ClasseController::class, 'updateManyClasses']); //OK
+    Route::post('/classes/saveManyClasses', [ClasseController::class, 'saveManyClasses']); //OK
     Route::post('/classes/deleteManyClasses', [ClasseController::class, 'deleteManyClasses']);
     Route::post('/classes/deleteClassesOfSectionAndYear', [ClasseController::class, 'deleteClassesOfSectionAndYear']);
-    Route::post('/classes/deleteManyClassesWithPOST', [ClasseController::class, 'deleteManyClassesWithPOST']);
-    Route::post('/classes/updateManyClassesWithPOST', [ClasseController::class, 'updateManyClassesWithPOST']);
-    Route::post('/classes/saveManyClassesWithPOST', [ClasseController::class, 'saveManyClassesWithPOST']);
     Route::get('/classes/resetBasculement', [ClasseController::class, 'resetBasculement']);
     Route::get('/classes/applyBasculement', [ClasseController::class, 'applyBasculement']);
     Route::post('/classes/applyBasculementWithPOST', [ClasseController::class, 'applyBasculementWithPOST']);
