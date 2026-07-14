@@ -64,13 +64,11 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/classes/saveClasse', [ClasseController::class, 'saveClasse']); //OK
     Route::post('/classes/updateManyClasses', [ClasseController::class, 'updateManyClasses']); //OK
     Route::post('/classes/saveManyClasses', [ClasseController::class, 'saveManyClasses']); //OK
-    Route::post('/classes/deleteManyClasses', [ClasseController::class, 'deleteManyClasses']);
-    Route::post('/classes/deleteClassesOfSectionAndYear', [ClasseController::class, 'deleteClassesOfSectionAndYear']);
-    Route::get('/classes/resetBasculement', [ClasseController::class, 'resetBasculement']);
-    Route::get('/classes/applyBasculement', [ClasseController::class, 'applyBasculement']);
-    Route::post('/classes/applyBasculementWithPOST', [ClasseController::class, 'applyBasculementWithPOST']);
-    Route::get('/classes/removeBasculement', [ClasseController::class, 'removeBasculement']);
-    Route::post('/classes/removeBasculementWithPOST', [ClasseController::class, 'removeBasculementWithPOST']);
+    Route::post('/classes/deleteManyClasses', [ClasseController::class, 'deleteManyClasses']); //OK
+    Route::delete('/classes/deleteClassesOfSectionAndYear', [ClasseController::class, 'deleteClassesOfSectionAndYear']); //OK    
+    Route::post('/classes/applyBasculement', [ClasseController::class, 'applyBasculement']); //OK
+    Route::delete('/classes/resetBasculement', [ClasseController::class, 'resetBasculement']); //OK | iT removes basculement for all students of a classe. It is different from removeBasculement which removes basculement for some students of a classe(It can also do for all if you specify all students).
+    Route::post('/classes/removeBasculement', [ClasseController::class, 'removeBasculement']); //How does it differs from resetBasculement? They are similar but not the same.
     Route::post('/classes/saveChanges', [ClasseController::class, 'saveChanges']);
     Route::post('/classes/saveChangesWithPOST', [ClasseController::class, 'saveChangesWithPOST']);
     Route::get('/classes/basculerSpecial', [ClasseController::class, 'basculerSpecial']);

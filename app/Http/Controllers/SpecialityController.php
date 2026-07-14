@@ -47,7 +47,7 @@ class SpecialityController extends Controller
             $count = $sp2List->count();
             echo "$count \n";
             return response()->json($sp2List, 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
             return response()->json([
                 'status' => false,
@@ -81,7 +81,7 @@ class SpecialityController extends Controller
 
             $specialities = MyHelper::getSpecialitiesOfYearOfSection($sy_id, $section_id);
             return response()->json($specialities, 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve specialities of the section. ' . $e->getMessage(),
@@ -142,19 +142,19 @@ class SpecialityController extends Controller
                     'status' => true,
                     'message' => 'Speciality and corresponding SpecialityYear saved successfully.',
                 ], 200);
-            } catch (Exception $ex) {
+            } catch (\Exception $ex) {
                 //If exception then sp or spyear failed to save. We delete them to avoid inconsitency
                 $sp->delete();
                 try {
                     $spYear->delete();
-                } catch (Exception $exx) {
+                } catch (\Exception $exx) {
                 }
                 return response()->json([
                     'status' => false,
                     'message' => 'Operation failed: We couldn\'t save speciality_year Or a speciality with same name already Exist. NOTE THAT speciality name is UNIQUE ' . $ex->getMessage(),
                 ], 409); //409 = Conflict
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to save speciality. Error occurred: ' . $e->getMessage(),
@@ -277,7 +277,7 @@ class SpecialityController extends Controller
                 } else {
                     $forceDelete = DB::select("DELETE FROM speciality WHERE speciality.speciality_id not IN(SELECT speciality_year.speciality_id FROM speciality_year)");
                 }
-            } catch (Exception $ex) {
+            } catch (\Exception $ex) {
                 $allAffected = 0;
                 //echo "ERROR " . $ex->getMessage();
             }

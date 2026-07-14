@@ -92,7 +92,7 @@ class FiliereController extends Controller
                     $forceDelete = DB::select("DELETE FROM filiere WHERE filiere.filiere_id not IN(SELECT filiere_year.filiere_id FROM filiere_year)");
                     //Ceci relève un problème de consistance dans la base de données. La filiere n'est pas reliée a un filiere_year. Elle ete inserer directement dans BD pour des test. Mais l'administrateur a du oublie de le supprimer.
                 }
-            } catch (Exception $ex) {
+            } catch (\Exception $ex) {
                 //echec de suppression d'au moins une filiere
                 $allAffected = 0;
                 //echo "ERROR " . $ex->getMessage();
@@ -269,11 +269,11 @@ class FiliereController extends Controller
             $optionYear->sy_id = $sy_id;
             try {
                 $optionYear->save();
-            } catch (Exception $ex) {
+            } catch (\Exception $ex) {
                 //Failed to save the corresponding speciality year;
                 try {
                     $myOption->delete(); //to avoid inconsistancy
-                } catch (Exception $exx) {
+                } catch (\Exception $exx) {
                 }
                 return response()->json([
                     'status' => false,
@@ -284,7 +284,7 @@ class FiliereController extends Controller
                 'status' => true,
                 'message' => 'Operation successful',
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             //echo '<br/>Message: ' .$e->getMessage();
             //echo "-1"; //La filiere existe déja
             return response()->json([
