@@ -71,7 +71,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/classes/removeBasculement', [ClasseController::class, 'removeBasculement']); //How does it differs from resetBasculement? They are similar but not the same.
     Route::get('/classes/basculerSpecial', [ClasseController::class, 'basculerSpecial']); //OK
     Route::post('/classes/processRedoublants', [ClasseController::class, 'processRedoublants']); //OK
-    Route::post('/classes/saveChanges', [ClasseController::class, 'saveChanges']);//OK utilisé pour enregistrer les modifications: lors du basculement
+    Route::post('/classes/saveChanges', [ClasseController::class, 'saveChanges']); //OK !=applyBasculement utilisé pour enregistrer les modifications: lors du basculement
     Route::get('/classes/cancelAllBasculement', [ClasseController::class, 'cancelAllBasculement']);
     Route::get('/classes/clearExclus', [ClasseController::class, 'clearExclus']);
     Route::post('/classes/clearExclusWithPOST', [ClasseController::class, 'clearExclusWithPOST']);
