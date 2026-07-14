@@ -9,14 +9,25 @@ use Illuminate\Support\Facades\DB;
 
 class SectionYearController extends Controller
 {
-    
+
     public function getSections(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
+        $year = $request->input("year");
         config(["database.default" => $connection]);
         try {
-            $sy_id = MyHelper::getSchoolYearID($year); 
+            $sy_id = MyHelper::getSchoolYearID($year);
 
             $res = DB::select(
                 "SELECT section_year.section_year_id, section_year.section_id, section.section_name 
@@ -29,14 +40,16 @@ class SectionYearController extends Controller
             if (count($res) > 0) {
                 return response()->json($res, 200);
             } else {
-                return [];
+                return response()->json([], 200);
             }
         } catch (Exception  $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return [];
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
         }
     }
-    
+
     /**
      * Display a listing of the resource.
      */

@@ -12,6 +12,24 @@ class ThParamController extends Controller
 
     public function saveThParam(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'lb' => 'required|numeric|min:0|max:20',
+                'ub' => 'required|numeric|min:0|max:20',
+                'lb_default' => 'required|numeric|min:0|max:20',
+                'ub_default' => 'required|numeric|min:0|max:20',
+                'seuil_abs' => 'required|numeric|min:0',
+                'val1' => 'required|numeric|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $lb = $request->input("lb");
@@ -20,7 +38,6 @@ class ThParamController extends Controller
         $ub_default = $request->input("ub_default");
         $seuil_abs = $request->input("seuil_abs");
         $val1 = $request->input("val1");
-        //$seuil_abs_default = $request->input("seuil_abs_default");
 
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
@@ -50,15 +67,32 @@ class ThParamController extends Controller
                 $ref2->val1 = $val1;
                 $ref2->save();
             }
-            echo 1;
+            return response()->json([
+                'status' => true,
+                'message' => 'Thparam saved successfully.',
+            ], 200);
         } catch (Exception $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            echo "<br/>0"; //Failed
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occured when saving thparam: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function thParamOfYear(Request $request)
     {   //THE CLASSE IS ASSUME TO BE A CLASSE OF THE CURRENT SECTION
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         config(["database.default" => $connection]);
@@ -71,8 +105,10 @@ class ThParamController extends Controller
             );
             return response()->json($students, 200);
         } catch (Exception $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
         }
     }
 

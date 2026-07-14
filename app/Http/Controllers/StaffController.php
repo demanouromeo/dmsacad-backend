@@ -88,6 +88,18 @@ class StaffController extends Controller
 
     public function subjectTaughtByaStaff2(Request $request)
     {   //FIND ALL THE SUBJECTS ASSIGNED TO STAFF giving for each the classe and subject title
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -108,13 +120,27 @@ class StaffController extends Controller
             );
             return response()->json($staff, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while retrieving subjects taught by the staff: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function AllAttributionsOfSection(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -962,6 +988,17 @@ class StaffController extends Controller
 
     public function allStaffs1(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         config(["database.default" => $connection]);
@@ -986,14 +1023,27 @@ class StaffController extends Controller
             );
             return response()->json($staff, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while retrieving staff: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allStaffs2(Request $request)
     {
-        //TEACHER STAFF ARE ARE THOSE HAVING FUNCTIONS IN(0[ENS.], 1[SG], 2[CENSEUR], 6[CHIEF OF WORK])
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         config(["database.default" => $connection]);
@@ -1009,13 +1059,26 @@ class StaffController extends Controller
             );
             return response()->json($staff, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while retrieving staff: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function teachFromAcc(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'acc_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $acc_id = $request->input("acc_id");
         config(["database.default" => $connection]);
@@ -1033,7 +1096,21 @@ class StaffController extends Controller
     }
 
     public function allStaffsOfaSC(Request $request)
-    {   //FIND ALL THE STAFF TEACHING A COURSE IN A CLASSE
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'subject_id' => 'required|integer|min:1',
+                'classe_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -1057,13 +1134,28 @@ class StaffController extends Controller
             );
             return response()->json($staff, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while retrieving staff for the subject and class: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function subjectTaughtByaStaff(Request $request)
-    {   //FIND ALL THE SUBJECTS ASSIGNED TO STAFF giving for each the classe and subject title
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'staff_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -1086,14 +1178,27 @@ class StaffController extends Controller
             );
             return response()->json($staff, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while retrieving subjects taught by the staff: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allClassMastersOfYear(Request $request)
     {
-        //ClassMasters STAFF ARE ARE THOSE HAVING FUNCTIONS = 0 ; (0[ENS.], 1[SG], 2[CENSEUR], 6[CHIEF OF WORK])
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         config(["database.default" => $connection]);
@@ -1102,7 +1207,7 @@ class StaffController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
 
             $staff = DB::select(
-                "SELECT staff.staff_id, staff.name FROM `staff`
+                "SELECT staff.staff_id, staff.name, staff.surname FROM `staff`
                 WHERE staff.function = 0                
                     AND staff_id IN(SELECT staff_year.staff_id FROM staff_year 
 		                WHERE staff_year.sy_id = $sy_id)
@@ -1110,14 +1215,26 @@ class StaffController extends Controller
             );
             return response()->json($staff, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching class masters: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allSgOfYear(Request $request)
     {
-        //ClassMasters STAFF ARE ARE THOSE HAVING FUNCTIONS = 0 ; (0[ENS.], 1[SG], 2[CENSEUR], 6[CHIEF OF WORK])
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         config(["database.default" => $connection]);
@@ -1126,7 +1243,7 @@ class StaffController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
 
             $staff = DB::select(
-                "SELECT staff.staff_id, staff.name FROM `staff`
+                "SELECT staff.staff_id, staff.name, staff.surname FROM `staff`
                 WHERE staff.function = 1                
                     AND staff_id IN(SELECT staff_year.staff_id FROM staff_year 
 		                WHERE staff_year.sy_id = $sy_id)
@@ -1134,14 +1251,26 @@ class StaffController extends Controller
             );
             return response()->json($staff, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching SG staff: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allTeachingStaffOfYear(Request $request)
     {
-        //TEACHER STAFF ARE ARE THOSE HAVING FUNCTIONS IN(0[ENS.], 1[SG], 2[CENSEUR], 6[CHIEF OF WORK])
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         config(["database.default" => $connection]);
@@ -1159,8 +1288,10 @@ class StaffController extends Controller
             );
             return response()->json($staff, 200);
         } catch (\Throwable $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching teaching staff: ' . $e->getMessage(),
+            ], 500);
         }
     }
 

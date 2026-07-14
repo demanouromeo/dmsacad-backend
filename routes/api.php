@@ -86,12 +86,18 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/staffs/assignACourse', [StaffController::class, 'assignACourse']); //OK
     Route::delete('/staffs/removeACourse', [StaffController::class, 'removeACourse']); //OK
     Route::delete('/staffs/removeALLCourses', [StaffController::class, 'removeALLCourses']); //OK    
-    Route::post('/staffs/batchAssignCourses', [StaffController::class, 'batchAssignCourses']);//OK
+    Route::post('/staffs/batchAssignCourses', [StaffController::class, 'batchAssignCourses']); //OK
     Route::post('/staffs/batchRemoveCourses', [StaffController::class, 'batchRemoveCourses']);
     Route::get('/staffs/arrangeSG', [StaffController::class, 'arrangeSG']); //OK - WORKs on REMOTE SERVER. NOT ON LOCAL XAMPP SERVER
     Route::get('/staffs/arrangeSGSimple', [StaffController::class, 'arrangeSGSimple']); //OK - WORKs on REMOTE SERVER. NOT ON LOCAL XAMPP SERVER
-});
 
+    //==> ADMIN ON THPARAM
+    Route::post('/th/saveThParam', [ThParamController::class, 'saveThParam']); //OK
+
+    //==> ADMIN ON CLASSIFIEDPARAM
+    Route::post('/settings/saveClassifiedParamOfYear', [ClassifiedparamController::class, 'saveClassifiedParamOfYear']); //OK
+});
+//===================================================================== END ADMIN ROUTES =====================================================================================================
 
 
 
@@ -129,159 +135,145 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 
     //==> ANY CONNECTED USER ON STAFF
-    Route::get('/staffs/allClassMastersOfYear', [StaffController::class, 'allClassMastersOfYear']);
-    Route::get('/staffs/allSgOfYear', [StaffController::class, 'allSgOfYear']);
-    Route::get('/staffs/allStaffs1', [StaffController::class, 'allStaffs1']);
-    Route::get('/staffs/allStaffs2', [StaffController::class, 'allStaffs2']);
-    Route::get('/staffs/allTeachingStaffOfYear', [StaffController::class, 'allTeachingStaffOfYear']);
-    Route::get('/staffs/allStaffsOfaSC', [StaffController::class, 'allStaffsOfaSC']);
-    Route::get('/staffs/subjectTaughtByaStaff', [StaffController::class, 'subjectTaughtByaStaff']);
-    Route::get('/staffs/teachFromAcc', [StaffController::class, 'teachFromAcc']);
-    Route::get('/staffs/AllAttributionsOfSection', [StaffController::class, 'AllAttributionsOfSection']);
-    Route::get('/staffs/subjectTaughtByaStaff2', [StaffController::class, 'subjectTaughtByaStaff2']);
+    Route::get('/staffs/allClassMastersOfYear', [StaffController::class, 'allClassMastersOfYear']); //OK
+    Route::get('/staffs/allSgOfYear', [StaffController::class, 'allSgOfYear']); //OK
+    Route::get('/staffs/allStaffs1', [StaffController::class, 'allStaffs1']); //OK
+    Route::get('/staffs/allStaffs2', [StaffController::class, 'allStaffs2']); //OK
+    Route::get('/staffs/allTeachingStaffOfYear', [StaffController::class, 'allTeachingStaffOfYear']); //OK
+    Route::get('/staffs/allStaffsOfaSC', [StaffController::class, 'allStaffsOfaSC']); //OK. Important List teachers teaching a subject in a class
+    Route::get('/staffs/subjectTaughtByaStaff', [StaffController::class, 'subjectTaughtByaStaff']); //OK
+    Route::get('/staffs/teachFromAcc', [StaffController::class, 'teachFromAcc']); //OK
+    Route::get('/staffs/AllAttributionsOfSection', [StaffController::class, 'AllAttributionsOfSection']); //ok
+    Route::get('/staffs/subjectTaughtByaStaff2', [StaffController::class, 'subjectTaughtByaStaff2']); //OK
+
+    //==> ANY CONNECTED USER ON SECTION
+    Route::get('/section/getSections', [SectionYearController::class, 'getSections']); //OK
+
+    //==> ANY CONNECTED USER ON THPARAM 
+    Route::get('/th/thParamOfYear', [ThParamController::class, 'thParamOfYear']); //OK
+
+    //==> ANY CONNECTED USER ON CLASSIFIEDPARAM
+    Route::get('/settings/classifiedParamOfYear', [ClassifiedparamController::class, 'classifiedParamOfYear']);
 });
-
-
-
-
-
-
+//===================================================================== END ANY CONNECTED USER ROUTES =====================================================================================================
 
 
 
 
 //--------------------- GROUPE
-Route::get('/modules/subjects/allGroupes', [GroupeController::class, 'allGroupes']);
-Route::get('/modules/subjects/deleteManyGroupes', [GroupeController::class, 'deleteManyGroupes']);
-Route::get('/modules/subjects/saveGroupe', [GroupeController::class, 'saveGroupe']);
-Route::get('/modules/subjects/updateManyGroupes', [GroupeController::class, 'updateManyGroupes']);
-Route::get('/modules/subjects/groupesOfYearAndSection', [GroupeController::class, 'groupesOfYearAndSection']);
+Route::get('/subjects/allGroupes', [GroupeController::class, 'allGroupes']);
+Route::get('/subjects/deleteManyGroupes', [GroupeController::class, 'deleteManyGroupes']);
+Route::get('/subjects/saveGroupe', [GroupeController::class, 'saveGroupe']);
+Route::get('/subjects/updateManyGroupes', [GroupeController::class, 'updateManyGroupes']);
+Route::get('/subjects/groupesOfYearAndSection', [GroupeController::class, 'groupesOfYearAndSection']);
 
 //--------------------- SUBJECTS
-Route::get('/modules/subjects/allSubjectOfSectionAndYear', [SubjectController::class, 'allSubjectOfSectionAndYear']);
-Route::get('/modules/subjects/saveSubject', [SubjectController::class, 'saveSubject']);
-Route::get('/modules/subjects/updateManySubjects', [SubjectController::class, 'updateManySubjects']);
-Route::get('/modules/subjects/deleteManySubjects', [SubjectController::class, 'deleteManySubjects']);
-Route::get('/modules/subjects/saveManySubjects', [SubjectController::class, 'saveManySubjects']);
-Route::get('/modules/subjects/deleteAllSubjectsOfSectionAndYear', [SubjectController::class, 'deleteAllSubjectsOfSectionAndYear']);
-Route::get('/modules/subjects/subjectsNotOfClasse', [SubjectController::class, 'subjectsNotOfClasse']);
-Route::get('/modules/subjects/subjectOfClasse', [SubjectController::class, 'subjectOfClasse']);
-Route::get('/modules/subjects/allSubjectOfClasse', [SubjectController::class, 'allSubjectOfClasse']);
-Route::get('/modules/subjects/saveManySC', [SubjectController::class, 'saveManySC']);
-Route::get('/modules/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']);
-Route::get('/modules/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']);
-Route::get('/modules/subjects/allCompetences', [SubjectController::class, 'allCompetences']);
-Route::get('/modules/subjects/allCompetences1', [SubjectController::class, 'allCompetences1']);
-Route::get('/modules/subjects/allCompetences2', [SubjectController::class, 'allCompetences2']);
-Route::get('/modules/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']);
-Route::get('/modules/subjects/deleteManyCompetences', [SubjectController::class, 'deleteManyCompetences']);
-Route::get('/modules/subjects/calquerCompetences', [SubjectController::class, 'calquerCompetences']);
-Route::get('/modules/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']);
-Route::get('/modules/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
-Route::get('/modules/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
-Route::get('/modules/subjects/subjectOfSection', [SubjectController::class, 'subjectOfSection']);
-Route::post('/modules/subjects/deleteManySubjectsWithPOST', [SubjectController::class, 'deleteManySubjectsWithPOST']);
-Route::post('/modules/subjects/updateManySubjectsWithPOST', [SubjectController::class, 'updateManySubjectsWithPOST']);
-Route::post('/modules/subjects/saveManySubjectsWithPOST', [SubjectController::class, 'saveManySubjectsWithPOST']);
-Route::post('/modules/subjects/saveManySCWithPost', [SubjectController::class, 'saveManySCWithPost']);
-Route::post('/modules/subjects/saveManyAttricutionsWithPost', [SubjectController::class, 'saveManyAttricutionsWithPost']);
-Route::get('/modules/subjects/allCompetencesOfSection', [SubjectController::class, 'allCompetencesOfSection']);
-Route::get('/modules/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']);
-Route::get('/modules/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
-Route::post('/modules/subjects/deleteCompetencesWithNoMarksPOST', [SubjectController::class, 'deleteCompetencesWithNoMarksPOST']);
+Route::get('/subjects/allSubjectOfSectionAndYear', [SubjectController::class, 'allSubjectOfSectionAndYear']);
+Route::get('/subjects/saveSubject', [SubjectController::class, 'saveSubject']);
+Route::get('/subjects/updateManySubjects', [SubjectController::class, 'updateManySubjects']);
+Route::get('/subjects/deleteManySubjects', [SubjectController::class, 'deleteManySubjects']);
+Route::get('/subjects/saveManySubjects', [SubjectController::class, 'saveManySubjects']);
+Route::get('/subjects/deleteAllSubjectsOfSectionAndYear', [SubjectController::class, 'deleteAllSubjectsOfSectionAndYear']);
+Route::get('/subjects/subjectsNotOfClasse', [SubjectController::class, 'subjectsNotOfClasse']);
+Route::get('/subjects/subjectOfClasse', [SubjectController::class, 'subjectOfClasse']);
+Route::get('/subjects/allSubjectOfClasse', [SubjectController::class, 'allSubjectOfClasse']);
+Route::get('/subjects/saveManySC', [SubjectController::class, 'saveManySC']);
+Route::get('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']);
+Route::get('/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']);
+Route::get('/subjects/allCompetences', [SubjectController::class, 'allCompetences']);
+Route::get('/subjects/allCompetences1', [SubjectController::class, 'allCompetences1']);
+Route::get('/subjects/allCompetences2', [SubjectController::class, 'allCompetences2']);
+Route::get('/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']);
+Route::get('/subjects/deleteManyCompetences', [SubjectController::class, 'deleteManyCompetences']);
+Route::get('/subjects/calquerCompetences', [SubjectController::class, 'calquerCompetences']);
+Route::get('/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']);
+Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
+Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
+Route::get('/subjects/subjectOfSection', [SubjectController::class, 'subjectOfSection']);
+Route::post('/subjects/deleteManySubjectsWithPOST', [SubjectController::class, 'deleteManySubjectsWithPOST']);
+Route::post('/subjects/updateManySubjectsWithPOST', [SubjectController::class, 'updateManySubjectsWithPOST']);
+Route::post('/subjects/saveManySubjectsWithPOST', [SubjectController::class, 'saveManySubjectsWithPOST']);
+Route::post('/subjects/saveManySCWithPost', [SubjectController::class, 'saveManySCWithPost']);
+Route::post('/subjects/saveManyAttricutionsWithPost', [SubjectController::class, 'saveManyAttricutionsWithPost']);
+Route::get('/subjects/allCompetencesOfSection', [SubjectController::class, 'allCompetencesOfSection']);
+Route::get('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']);
+Route::get('/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
+Route::post('/subjects/deleteCompetencesWithNoMarksPOST', [SubjectController::class, 'deleteCompetencesWithNoMarksPOST']);
 
 
 
 
 //--------------------- STUDENT
-Route::get('/modules/student/allStudents', [StudentController::class, 'allStudents']);
-Route::get('/modules/student/allStudentsOfClasse', [StudentController::class, 'allStudentsOfClasse']);
-Route::get('/modules/student/allStudentsOfClasse2', [StudentController::class, 'allStudentsOfClasse2']);
-Route::get('/modules/student/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
-Route::get('/modules/student/updateManyStudents', [StudentController::class, 'updateManyStudents']);
-Route::get('/modules/student/deleteManyStudents', [StudentController::class, 'deleteManyStudents']);
-Route::get('/modules/student/saveManyStudents', [StudentController::class, 'saveManyStudents']);
-Route::get('/modules/student/saveAStudent', [StudentController::class, 'saveAStudent']);
-Route::get('/modules/student/updateManyStudents', [StudentController::class, 'updateManyStudents']);
-Route::get('/modules/student/allStudClassOfAClasse', [StudentController::class, 'allStudClassOfAClasse']);
-Route::get('/modules/student/saveManySeqMarks2', [StudentController::class, 'saveManySeqMarks2']);
-Route::get('/modules/student/getSeqMarks', [StudentController::class, 'getSeqMarks']);
-Route::get('/modules/student/getSeqMarks2', [StudentController::class, 'getSeqMarks2']);
-Route::get('/modules/student/getCompMarks', [StudentController::class, 'getCompMarks']);
-Route::get('/modules/student/getCompMarks2', [StudentController::class, 'getCompMarks2']);
-Route::get('/modules/student/saveCompSeqMarks', [StudentController::class, 'saveCompSeqMarks']);
-Route::get('/modules/student/getCompMarks', [StudentController::class, 'getCompMarks']);
-Route::get('/modules/student/copyCompMarks', [StudentController::class, 'copyCompMarks']);
-Route::get('/modules/student/copySeqMarks', [StudentController::class, 'copySeqMarks']);
-Route::get('/modules/student/copyCompMarks2', [StudentController::class, 'copyCompMarks2']);
-Route::get('/modules/student/copySeqMarks2', [StudentController::class, 'copySeqMarks2']);
-Route::get('/modules/student/getAllSeqMarksSimple', [StudentController::class, 'getAllSeqMarksSimple']);
-Route::get('/modules/student/getAllCompMarksSimple', [StudentController::class, 'getAllCompMarksSimple']);
-Route::get('/modules/student/allStudentsForMarks', [StudentController::class, 'allStudentsForMarks']);
-Route::get('/modules/student/allStudentsOfClasse3', [StudentController::class, 'allStudentsOfClasse3']);
-Route::get('/modules/student/allStudentsOfClasseOfSchool', [StudentController::class, 'allStudentsOfClasseOfSchool']);
-Route::get('/modules/student/allStudentSubjectOfTerm', [StudentController::class, 'allStudentSubjectOfTerm']);
-Route::get('/modules/student/allStudentCompMarkOfTerm', [StudentController::class, 'allStudentCompMarkOfTerm']);
-Route::get('/modules/student/allStudentsOfClasseForAbs', [StudentController::class, 'allStudentsOfClasseForAbs']);
-Route::get('/modules/student/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
-Route::get('/modules/student/getDisciplineOfClasse', [StudentController::class, 'getDisciplineOfClasse']);
-Route::get('/modules/student/allStudentSubjectOfTerm2', [StudentController::class, 'allStudentSubjectOfTerm2']);
-Route::get('/modules/student/allStudentCompMarkOfTerm2', [StudentController::class, 'allStudentCompMarkOfTerm2']);
-Route::get('/modules/student/allStudentSubject', [StudentController::class, 'allStudentSubject']);
-Route::get('/modules/student/allStudentCompMark', [StudentController::class, 'allStudentCompMark']);
-Route::get('/modules/student/getAllDisciplines', [StudentController::class, 'getAllDisciplines']);
-Route::get('/modules/student/getAllDisciplines2', [StudentController::class, 'getAllDisciplines2']);
-Route::get('/modules/student/resetPromotionInfo', [StudentController::class, 'resetPromotionInfo']);
-Route::get('/modules/student/updatePromotionInfo', [StudentController::class, 'updatePromotionInfo']);
+Route::get('/students/allStudents', [StudentController::class, 'allStudents']);
+Route::get('/students/allStudentsOfClasse', [StudentController::class, 'allStudentsOfClasse']);
+Route::get('/students/allStudentsOfClasse2', [StudentController::class, 'allStudentsOfClasse2']);
+Route::get('/students/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
+Route::get('/students/updateManyStudents', [StudentController::class, 'updateManyStudents']);
+Route::get('/students/deleteManyStudents', [StudentController::class, 'deleteManyStudents']);
+Route::get('/students/saveManyStudents', [StudentController::class, 'saveManyStudents']);
+Route::get('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
+Route::get('/students/updateManyStudents', [StudentController::class, 'updateManyStudents']);
+Route::get('/students/allStudClassOfAClasse', [StudentController::class, 'allStudClassOfAClasse']);
+Route::get('/students/saveManySeqMarks2', [StudentController::class, 'saveManySeqMarks2']);
+Route::get('/students/getSeqMarks', [StudentController::class, 'getSeqMarks']);
+Route::get('/students/getSeqMarks2', [StudentController::class, 'getSeqMarks2']);
+Route::get('/students/getCompMarks', [StudentController::class, 'getCompMarks']);
+Route::get('/students/getCompMarks2', [StudentController::class, 'getCompMarks2']);
+Route::get('/students/saveCompSeqMarks', [StudentController::class, 'saveCompSeqMarks']);
+Route::get('/students/getCompMarks', [StudentController::class, 'getCompMarks']);
+Route::get('/students/copyCompMarks', [StudentController::class, 'copyCompMarks']);
+Route::get('/students/copySeqMarks', [StudentController::class, 'copySeqMarks']);
+Route::get('/students/copyCompMarks2', [StudentController::class, 'copyCompMarks2']);
+Route::get('/students/copySeqMarks2', [StudentController::class, 'copySeqMarks2']);
+Route::get('/students/getAllSeqMarksSimple', [StudentController::class, 'getAllSeqMarksSimple']);
+Route::get('/students/getAllCompMarksSimple', [StudentController::class, 'getAllCompMarksSimple']);
+Route::get('/students/allStudentsForMarks', [StudentController::class, 'allStudentsForMarks']);
+Route::get('/students/allStudentsOfClasse3', [StudentController::class, 'allStudentsOfClasse3']);
+Route::get('/students/allStudentsOfClasseOfSchool', [StudentController::class, 'allStudentsOfClasseOfSchool']);
+Route::get('/students/allStudentSubjectOfTerm', [StudentController::class, 'allStudentSubjectOfTerm']);
+Route::get('/students/allStudentCompMarkOfTerm', [StudentController::class, 'allStudentCompMarkOfTerm']);
+Route::get('/students/allStudentsOfClasseForAbs', [StudentController::class, 'allStudentsOfClasseForAbs']);
+Route::get('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
+Route::get('/students/getDisciplineOfClasse', [StudentController::class, 'getDisciplineOfClasse']);
+Route::get('/students/allStudentSubjectOfTerm2', [StudentController::class, 'allStudentSubjectOfTerm2']);
+Route::get('/students/allStudentCompMarkOfTerm2', [StudentController::class, 'allStudentCompMarkOfTerm2']);
+Route::get('/students/allStudentSubject', [StudentController::class, 'allStudentSubject']);
+Route::get('/students/allStudentCompMark', [StudentController::class, 'allStudentCompMark']);
+Route::get('/students/getAllDisciplines', [StudentController::class, 'getAllDisciplines']);
+Route::get('/students/getAllDisciplines2', [StudentController::class, 'getAllDisciplines2']);
+Route::get('/students/resetPromotionInfo', [StudentController::class, 'resetPromotionInfo']);
+Route::get('/students/updatePromotionInfo', [StudentController::class, 'updatePromotionInfo']);
 
-Route::post('/modules/student/saveOrUpdateABSWithPOST2', [StudentController::class, 'saveOrUpdateABSWithPOST2']);
-Route::post('/modules/student/saveManySeqMarksWithPOST2', [StudentController::class, 'saveManySeqMarksWithPOST2']);
-Route::post('/modules/student/saveCompSeqMarksWithPOST2', [StudentController::class, 'saveCompSeqMarksWithPOST2']);
-Route::post('/modules/student/saveManyStudentsWithPOST2', [StudentController::class, 'saveManyStudentsWithPOST2']);
-Route::post('/modules/student/deleteManyStudentsWithPOST', [StudentController::class, 'deleteManyStudentsWithPOST']);
-Route::post('/modules/student/updatePromotionInfoWithPOST', [StudentController::class, 'updatePromotionInfoWithPOST']);
-Route::get('/modules/student/updateDismiss', [StudentController::class, 'updateDismiss']);
-Route::get('/modules/student/updateSolvable', [StudentController::class, 'updateSolvable']);
-Route::post('/modules/student/updateSolvablePOST', [StudentController::class, 'updateSolvablePOST']);
-Route::get('/modules/student/addStudentToRepeatList', [StudentController::class, 'addStudentToRepeatList']);
-Route::get('/modules/student/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
-Route::get('/modules/student/allStudentsOfClasseOfSection', [StudentController::class, 'allStudentsOfClasseOfSection']);
-Route::get('/modules/student/setFatherMother', [StudentController::class, 'setFatherMother']);
-Route::get('/modules/student/addStudentToClass', [StudentController::class, 'addStudentToClass']);
-Route::get('/modules/student/allStudClassOfYear', [StudentController::class, 'allStudClassOfYear']);
-Route::get('/modules/student/uploadSeqMarks', [StudentController::class, 'uploadSeqMarks']);
-Route::post('/modules/student/uploadSeqMarksWithPOST', [StudentController::class, 'uploadSeqMarksWithPOST']);
-Route::get('/modules/student/uploadCompMarks', [StudentController::class, 'uploadCompMarks']);
-Route::post('/modules/student/uploadCompMarksWithPOST', [StudentController::class, 'uploadCompMarksWithPOST']);
-
-
-
-//--------------------- SECTION
-Route::get('/modules/section/getSections', [SectionYearController::class, 'getSections']);
+Route::post('/students/saveOrUpdateABSWithPOST2', [StudentController::class, 'saveOrUpdateABSWithPOST2']);
+Route::post('/students/saveManySeqMarksWithPOST2', [StudentController::class, 'saveManySeqMarksWithPOST2']);
+Route::post('/students/saveCompSeqMarksWithPOST2', [StudentController::class, 'saveCompSeqMarksWithPOST2']);
+Route::post('/students/saveManyStudentsWithPOST2', [StudentController::class, 'saveManyStudentsWithPOST2']);
+Route::post('/students/deleteManyStudentsWithPOST', [StudentController::class, 'deleteManyStudentsWithPOST']);
+Route::post('/students/updatePromotionInfoWithPOST', [StudentController::class, 'updatePromotionInfoWithPOST']);
+Route::get('/students/updateDismiss', [StudentController::class, 'updateDismiss']);
+Route::get('/students/updateSolvable', [StudentController::class, 'updateSolvable']);
+Route::post('/students/updateSolvablePOST', [StudentController::class, 'updateSolvablePOST']);
+Route::get('/students/addStudentToRepeatList', [StudentController::class, 'addStudentToRepeatList']);
+Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
+Route::get('/students/allStudentsOfClasseOfSection', [StudentController::class, 'allStudentsOfClasseOfSection']);
+Route::get('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
+Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
+Route::get('/students/allStudClassOfYear', [StudentController::class, 'allStudClassOfYear']);
+Route::get('/students/uploadSeqMarks', [StudentController::class, 'uploadSeqMarks']);
+Route::post('/students/uploadSeqMarksWithPOST', [StudentController::class, 'uploadSeqMarksWithPOST']);
+Route::get('/students/uploadCompMarks', [StudentController::class, 'uploadCompMarks']);
+Route::post('/students/uploadCompMarksWithPOST', [StudentController::class, 'uploadCompMarksWithPOST']);
 
 
 
 
 
 
-//--------------------- THPARAM
-Route::get('/modules/th/thParamOfYear', [ThParamController::class, 'thParamOfYear']);
-Route::get('/modules/th/saveThParam', [ThParamController::class, 'saveThParam']);
-
-//--------------------- CLASSIFIED PARAM
-Route::get('/modules/settings/classifiedParamOfYear', [ClassifiedparamController::class, 'classifiedParamOfYear']);
-Route::get('/modules/settings/saveClassifiedParamOfYear', [ClassifiedparamController::class, 'saveClassifiedParamOfYear']);
 
 
 //--------------------- LOCK
-Route::get('/modules/lock/locksOfYear', [LockController::class, 'locksOfYear']);
-Route::get('/modules/lock/saveOrUpdateLocks', [LockController::class, 'saveOrUpdateLocks']);
-
-
-//--------------------- Patient
-Route::get('/modules/patient/allPatients', [TestController::class, 'allPatients']);
-Route::get('/modules/patient/savePatient', [TestController::class, 'savePatient']);
-
+Route::get('/lock/locksOfYear', [LockController::class, 'locksOfYear']);
+Route::get('/lock/saveOrUpdateLocks', [LockController::class, 'saveOrUpdateLocks']);
 
 
 
