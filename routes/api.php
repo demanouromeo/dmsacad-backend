@@ -75,6 +75,21 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::delete('/classes/cancelAllBasculement', [ClasseController::class, 'cancelAllBasculement']); //OK
     Route::post('/classes/clearExclus', [ClasseController::class, 'clearExclus']); //OK // Take 'data' from request body and 'next_year' then delete all student_classe of next_year that contain students in 'data'
     Route::post('/classes/updateApcLevel', [ClasseController::class, 'updateApcLevel']); //OK. here activated in request body can be 0(true) or 1(false).
+
+
+    //==> ADMIN ON STAFF
+    Route::post('/staffs/saveStaff', [StaffController::class, 'saveStaff']); //OK
+    Route::post('/staffs/saveManyStaffs', [StaffController::class, 'saveManyStaffs']); //OK
+    Route::post('/staffs/modifyStaff', [StaffController::class, 'modifyStaff']); //OK - TO BE REVIEWED LATE TO ENABLE UPDATE all STAFF INFO. So that it could be used on client side to update staff profil/details.
+    Route::post('/staffs/updateManyStaffs', [StaffController::class, 'updateManyStaffs']); //OK
+    Route::post('/staffs/deleteManyStaffs', [StaffController::class, 'deleteManyStaffs']); //OK
+    Route::post('/staffs/assignACourse', [StaffController::class, 'assignACourse']); //OK
+    Route::delete('/staffs/removeACourse', [StaffController::class, 'removeACourse']); //OK
+    Route::delete('/staffs/removeALLCourses', [StaffController::class, 'removeALLCourses']); //OK    
+    Route::post('/staffs/batchAssignCourses', [StaffController::class, 'batchAssignCourses']);//OK
+    Route::post('/staffs/batchRemoveCourses', [StaffController::class, 'batchRemoveCourses']);
+    Route::get('/staffs/arrangeSG', [StaffController::class, 'arrangeSG']); //OK - WORKs on REMOTE SERVER. NOT ON LOCAL XAMPP SERVER
+    Route::get('/staffs/arrangeSGSimple', [StaffController::class, 'arrangeSGSimple']); //OK - WORKs on REMOTE SERVER. NOT ON LOCAL XAMPP SERVER
 });
 
 
@@ -100,7 +115,7 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/specialities/allSpecialitesOfYear', [SpecialityController::class, 'allSpecialitesOfYear']); //ok
 
 
-    //==> ON CLASSES
+    //==> ANY CONNECTED USER ON CLASSES
     Route::get('/classes/allClasse1', [ClasseController::class, 'allClasse1']); //OK 
     Route::get('/classes/getForClasseSize', [ClasseController::class, 'getForClasseSize']); //ok
     Route::get('/classes/getAllClassesOfSection', [ClasseController::class, 'getAllClassesOfSection']); //OK
@@ -111,35 +126,26 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/classes/allClassesOfSubject', [ClasseController::class, 'allClassesOfSubject']); //OK - better than getClassesOfASuject
     Route::get('/classes/getAllClassesOfSubject', [ClasseController::class, 'getAllClassesOfSubject']); //OK
     Route::get('/classes/allClasseOfSection', [ClasseController::class, 'allClasseOfSection']); //OK
+
+
+    //==> ANY CONNECTED USER ON STAFF
+    Route::get('/staffs/allClassMastersOfYear', [StaffController::class, 'allClassMastersOfYear']);
+    Route::get('/staffs/allSgOfYear', [StaffController::class, 'allSgOfYear']);
+    Route::get('/staffs/allStaffs1', [StaffController::class, 'allStaffs1']);
+    Route::get('/staffs/allStaffs2', [StaffController::class, 'allStaffs2']);
+    Route::get('/staffs/allTeachingStaffOfYear', [StaffController::class, 'allTeachingStaffOfYear']);
+    Route::get('/staffs/allStaffsOfaSC', [StaffController::class, 'allStaffsOfaSC']);
+    Route::get('/staffs/subjectTaughtByaStaff', [StaffController::class, 'subjectTaughtByaStaff']);
+    Route::get('/staffs/teachFromAcc', [StaffController::class, 'teachFromAcc']);
+    Route::get('/staffs/AllAttributionsOfSection', [StaffController::class, 'AllAttributionsOfSection']);
+    Route::get('/staffs/subjectTaughtByaStaff2', [StaffController::class, 'subjectTaughtByaStaff2']);
 });
 
 
 
-//--------------------- STAFF
-Route::get('/modules/staff/arrangeSG', [StaffController::class, 'arrangeSG']);
-Route::get('/modules/staff/allClassMastersOfYear', [StaffController::class, 'allClassMastersOfYear']);
-Route::get('/modules/staff/allSgOfYear', [StaffController::class, 'allSgOfYear']);
-Route::get('/modules/staff/saveStaff', [StaffController::class, 'saveStaff']);
-Route::get('/modules/staff/saveManyStaffs', [StaffController::class, 'saveManyStaffs']);
-Route::post('/modules/staff/saveManyStaffsWithPOST', [StaffController::class, 'saveManyStaffsWithPOST']);
-Route::get('/modules/staff/allStaffs1', [StaffController::class, 'allStaffs1']);
-Route::get('/modules/staff/allStaffs2', [StaffController::class, 'allStaffs2']);
-Route::get('/modules/staff/updateManyStaffs', [StaffController::class, 'updateManyStaffs']);
-Route::get('/modules/staff/deleteManyStaffs', [StaffController::class, 'deleteManyStaffs']);
-Route::get('/modules/staff/allTeachingStaffOfYear', [StaffController::class, 'allTeachingStaffOfYear']);
-Route::get('/modules/staff/allStaffsOfaSC', [StaffController::class, 'allStaffsOfaSC']);
-Route::get('/modules/staff/subjectTaughtByaStaff', [StaffController::class, 'subjectTaughtByaStaff']);
-Route::get('/modules/staff/assignACourse', [StaffController::class, 'assignACourse']);
-Route::get('/modules/staff/removeACourse', [StaffController::class, 'removeACourse']);
-Route::get('/modules/staff/removeALLCourses', [StaffController::class, 'removeALLCourses']);
-Route::post('/modules/staff/updateManyStaffsPOST', [StaffController::class, 'updateManyStaffsPOST']);
-Route::post('/modules/staff/deleteManyStaffsWithPOST', [StaffController::class, 'deleteManyStaffsWithPOST']);
-Route::get('/modules/staff/teachFromAcc', [StaffController::class, 'teachFromAcc']);
-Route::get('/modules/staff/AllAttributionsOfSection', [StaffController::class, 'AllAttributionsOfSection']);
-Route::get('/modules/staff/subjectTaughtByaStaff2', [StaffController::class, 'subjectTaughtByaStaff2']);
-Route::get('/modules/staff/modifyStaff', [StaffController::class, 'modifyStaff']);
-Route::get('/modules/staff/batchAssignCourses', [StaffController::class, 'batchAssignCourses']);
-Route::get('/modules/staff/batchRemoveCourses', [StaffController::class, 'batchRemoveCourses']);
+
+
+
 
 
 

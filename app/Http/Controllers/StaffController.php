@@ -7,15 +7,43 @@ use App\Models\Staff;
 use App\Models\StaffYear;
 use App\Models\SubjectClasse;
 use App\Models\SubjectClasseStaff;
-use Exception;
+use \Throwable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StaffController extends Controller
 {
-    
+
     public function modifyStaff(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'staff_id' => 'required|integer|min:1',
+                'grade' => 'nullable|string',
+                'region' => 'nullable|string',
+                'department' => 'nullable|string',
+                'arrodissement' => 'nullable|string',
+                'numeroRecrutement' => 'nullable|string',
+                'provenantDe' => 'nullable|string',
+                'dateReprise' => 'nullable|string',
+                'diplome' => 'nullable|string',
+                'specilitee' => 'nullable|string',
+                'matiereEnseignee' => 'nullable|string',
+                'dateEntree' => 'nullable|string',
+                'date1erePrise' => 'nullable|string',
+                'matricule' => 'nullable|string',
+                'dob' => 'nullable|string',
+                'pob' => 'nullable|string',
+                'posting_decision' => 'nullable|string',
+
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $staff_id = $request->input("staff_id");
         $grade = $request->input("grade");
@@ -39,7 +67,6 @@ class StaffController extends Controller
         config(["database.default" => $connection]);
         try {
 
-            
             DB::select("UPDATE staff SET grade = '$grade', region = '$region', department = '$department',
             arrodissement = '$arrodissement', numeroRecrutement = '$numeroRecrutement', provenantDe = '$provenantDe',
             dateReprise = '$dateReprise', diplome = '$diplome', specilitee = '$specilitee', matiereEnseignee = '$matiereEnseignee', 
@@ -47,22 +74,23 @@ class StaffController extends Controller
             matricule = '$matricule', dob = '$dob', pob = '$pob',
             posting_decision = '$posting_decision' 
             WHERE staff_id  = $staff_id");
-            
-            
-            //DB::select("UPDATE staff SET grade = '$grade' WHERE staff_id = $staff_id");
-            echo "1"; //SUCCESS
-        } catch (Exception $e) {
-            echo "0";
-            echo '<br/>ERROR: ' . $e->getMessage();
-            return;
+            return response()->json([
+                'status' => true,
+                'message' => 'Staff updated successfully',
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Staff update failed: ' . $e->getMessage(),
+            ], 500);
         }
     }
-    
+
     public function subjectTaughtByaStaff2(Request $request)
     {   //FIND ALL THE SUBJECTS ASSIGNED TO STAFF giving for each the classe and subject title
         $connection = $request->input("connection");
         $year = $request->input("year");
-        $section = $request->input("section"); 
+        $section = $request->input("section");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
 
@@ -79,12 +107,12 @@ class StaffController extends Controller
                         AND subject_classe.section_id = $section_id"
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
     }
-   
+
     public function AllAttributionsOfSection(Request $request)
     {
         $connection = $request->input("connection");
@@ -96,7 +124,7 @@ class StaffController extends Controller
         $sy_id = MyHelper::getSchoolYearID($year);
         $section_id = MyHelper::getSectionID($section);
 
-        try {           
+        try {
 
             $staff = DB::select(
                 "SELECT classe.`level`, classe.classe_name,  subject.subject_title,  staff.name, subject.subject_id, classe.classe_id, staff.staff_id, subject_classe.subject_classe_id, subject_classe_staff.id 
@@ -110,7 +138,7 @@ class StaffController extends Controller
                         ORDER BY classe.`level`, classe.classe_name, subject.subject_title"
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
@@ -118,6 +146,20 @@ class StaffController extends Controller
 
     public function removeALLCourses(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'staff_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -126,18 +168,39 @@ class StaffController extends Controller
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
         $sy_id = MyHelper::getSchoolYearID($year);
         $section_id = MyHelper::getSectionID($section);
-        $result = 1;
+
         try {
             $result = MyHelper::removeAStaffCourses($sy_id, $section_id, $staff_id);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
-            $result = -2; //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to remove courses for staff [' . $staff_id . ']: \n[' . $e->getMessage() . ']',
+            ], 500);
         }
-        echo $result;
+        return response()->json([
+            'status' => true,
+            'message' => 'Successfully removed all courses from staff [' . $staff_id . ']',
+        ], 200);
     }
 
     public function removeACourse(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'subject_id' => 'required|integer|min:1',
+                'classe_id' => 'required|integer|min:1',
+                'staff_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -147,6 +210,7 @@ class StaffController extends Controller
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
 
+        $errMsg = "";
         $result = 1;
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
@@ -169,27 +233,53 @@ class StaffController extends Controller
                 //THE SUBJECT HAS BEEN  ASSIGNED TO THAT TEACHER IN THAT CLASSE
                 $id = -1;
                 foreach ($res1 as $st) {
-                    //echo $cl->classe_name;
                     $id =  $st->id;
                 }
-                //echo "<br/>id=$id";
+
                 try {
                     $ref = SubjectClasseStaff::find($id)->delete();
-                } catch (Exception $e) {
-                    //echo "<br/>" . $e->getMessage() . "<br/>"; //Fatal error, since id has to exist according to above DB::select()
+                } catch (\Throwable $e) {
+                    //"<br/>" . $e->getMessage() . "<br/>"; //Fatal error, since id has to exist according to above DB::select()
                     $result = -1;
+                    $errMsg = $e->getMessage();
                 }
             } else {
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             //echo '<br/>ERROR: ' . $e->getMessage();
             $result = -2; //ERROR OCCURS
+            $errMsg = $e->getMessage();
         }
-        echo $result;
+        if ($result == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Course removed successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to remove course [' . $subject_id . '] from staff [' . $staff_id . ']: \n[' . $errMsg . ']',
+            ], 500);
+        }
     }
 
     public function assignACourse(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'subject_id' => 'required|integer|min:1',
+                'classe_id' => 'required|integer|min:1',
+                'staff_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
@@ -199,6 +289,7 @@ class StaffController extends Controller
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
 
+        $errMsg = "";
         $result = 1;
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
@@ -231,23 +322,49 @@ class StaffController extends Controller
                     $scStaff->staff_id = $staff_id;
                     try {
                         $scStaff->save();
-                    } catch (Exception $e) {
-                        echo "<br/>" . $e->getMessage() . "<br/>";
+                    } catch (\Throwable $e) {
+                        $errMsg = $e->getMessage();
                         $result = -1;
                     }
                 } else {
+                    $errMsg = "Subject $subject_id is not taught in class $classe_id for year $year and section $section\nSo it can't be assigned to staff $staff_id";
                     $result = 0;
                 }
             }
-        } catch (Exception $e) {
-            echo '<br/>ERROR: ' . $e->getMessage();
+        } catch (\Throwable $e) {
+            $errMsg = $e->getMessage();
             $result = -2; //ERROR OCCURS
         }
-        echo $result;
+
+        if ($result == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Course assigned successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to assign course: \n[' . $errMsg . ']',
+            ], 500);
+        }
     }
-    
+
     public function batchAssignCourses(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
@@ -257,18 +374,19 @@ class StaffController extends Controller
         $attribList = json_decode($data, true);
         //$n = count($attribList);
         //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $k = 1; //1--> Success. 0--> Some classes not assignes  
+
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
         $section_id = MyHelper::getSectionID($section);
 
         $msg = "";
+        $k = 1; //1--> Success. 0--> Some classes not assignes 
         foreach ($attribList as $attribution) {
             $staff_id = $attribution["staff_id"];
             $subject_id = $attribution["subject_id"];
             $classe_id = $attribution["classe_id"];
 
-            try { 
+            try {
 
                 //VERIFIONS SI LA MATIERE A DEJA ETE ATTRIBUE  A CETTE ENSEIGNANT DANS L'ANNEE ET LA SECTION EN COURS
                 $res1 = DB::select(
@@ -297,30 +415,54 @@ class StaffController extends Controller
                         $scStaff->staff_id = $staff_id;
                         try {
                             $scStaff->save();
-                        } catch (Exception $e) {
-                            echo "<br/>" . $e->getMessage() . "<br/>";
+                        } catch (\Throwable $e) {
+                            //"<br/>" . $e->getMessage() . "<br/>";
                             $k = -1;
+                            $msg = $e->getMessage();
                         }
                     } else {
                         $k = 0;
+                        $msg = "Subject ['" . $subject_id . "'] is not taught in class ['" . $classe_id . "'] for year ['" . $year . "'] and section ['" . $section . "']\nSo it can't be assigned to staff ['" . $staff_id . "']";
                     }
                 }
-            } catch (Exception $e) {
-                echo '<br/>ERROR: ' . $e->getMessage();
+            } catch (\Throwable $e) {
+                // '<br/>ERROR: ' . $e->getMessage();
+                $msg = $e->getMessage();
                 $k = -2; //ERROR OCCURS
             }
         } //END FOR
 
-        if ($k == 1) {//success
-            echo $k;
+        if ($k == 1) { //success
+            return response()->json([
+                'status' => true,
+                'message' => 'All courses assigned successfully',
+            ], 200);
         } else {
-            echo "$k|$msg";
+            return response()->json([
+                'status' => false,
+                'message' => "Failed assignment of at least one course: \n" . $msg,
+            ], 400);
         } //K=1--> All attributions Applied; K=0, -1 ou -2. --> Failed to save at least one
     }
-    
-    
+
+
     public function batchRemoveCourses(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
@@ -328,20 +470,18 @@ class StaffController extends Controller
         $section = $request->input("section");
 
         $attribList = json_decode($data, true);
-        //$n = count($attribList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $k = 1; //1--> Success. 0--> Some classes not assignes  
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
         $section_id = MyHelper::getSectionID($section);
 
         $msg = "";
+        $k = 1; //1--> Success. 0--> Some classes not assignes  
         foreach ($attribList as $attribution) {
             $staff_id = $attribution["staff_id"];
             $subject_id = $attribution["subject_id"];
             $classe_id = $attribution["classe_id"];
 
-            try { 
+            try {
 
                 //VERIFIONS SI LA MATIERE A DEJA ETE ATTRIBUE  A CETTE ENSEIGNANT DANS L'ANNEE ET LA SECTION EN COURS
                 $res1 = DB::select(
@@ -366,262 +506,128 @@ class StaffController extends Controller
                     //echo "<br/>id=$id";
                     try {
                         $ref = SubjectClasseStaff::find($id)->delete();
-                    } catch (Exception $e) {
-                        //echo "<br/>" . $e->getMessage() . "<br/>"; //Fatal error, since id has to exist according to above DB::select()
+                    } catch (\Throwable $e) {
+                        //"<br/>" . $e->getMessage() . "<br/>"; //Fatal error, since id has to exist according to above DB::select()
                         $k = -1;
+                        $msg = $e->getMessage();
                     }
                 } else {
                 }
-            } catch (Exception $e) {
-                //echo '<br/>ERROR: ' . $e->getMessage();
+            } catch (\Throwable $e) {
+                //'<br/>ERROR: ' . $e->getMessage();
                 $k = -2; //ERROR OCCURS
+                $msg = $e->getMessage();
             }
         } //END FOR
 
         if ($k == 1) { //success
-            echo $k;
+            return response()->json([
+                'status' => true,
+                'message' => 'All courses removed successfully',
+            ], 200);
         } else {
-            echo "$k|$msg";
+            return response()->json([
+                'status' => false,
+                'message' => "Failed to remove at least one course: \n" . $msg,
+            ], 500);
         } //K=1--> All attributions Applied; K=0, -1 ou -2. --> Failed to save at least one
     }
-    
-    
+
+
     public function deleteManyStaffs(Request $request)
     {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $year  = $request->input("year");
-        $data = $request->input("data");
-        $section = $request->input("section");
-        $data_size = $request->input("data_size");
-
-        $staffList = json_decode($data, true);
-        $n = count($staffList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false
-
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        $section_id = MyHelper::getSectionID($section);
-        foreach ($staffList as $st) {
-            $staff_id = $st["staff_id"];
-            $res = MyHelper::deleteAStaff($sy_id, $section_id, $staff_id);
-            if ($res < 0) {
-                $allAffected = 0;
-            }
-            /*
-            //echo "$staff_id<br/>";
-            $stRef = Staff::where("staff_id", "=", $staff_id)->first();
-            //echo "".($stRef->staff_id);
-            $stClasses = SubjectClasseStaff::where("staff_id", '=', $staff_id)
-                ->get();
-            $stYears = StaffYear::where("staff_id", '=', $staff_id)
-                ->where("sy_id", '=', $sy_id) //MAKE SURE IT IS STAFF OF THE YEAR
-                ->get();
-            try {
-                if (!is_null($stClasses)) { //A teacher may not be assign any course, in that case it is normal to have this stClasse null
-                    foreach ($stClasses as $stClass) {
-                        $res1 = $stClass->delete();
-                        if (!$res1) {
-                            $allAffected = 0;
-                        }
-                    }
-                }
-
-                if (!is_null($stYears)) {
-                    foreach ($stYears as $stYear) {
-                        $res2 = $stYear->delete();
-                        if (!$res2) {
-                            $allAffected = 0;
-                        }
-                    }
-                } else { //DB IS INCONSITENT IN THIS CASE; SINCE A STAFF HAS TO BE IN A SCHOOL YEAR
-                    //do nothng yet
-                }
-
-                //LETS VERIFY IF st EXISTS IN ANY OTHER SCHOOL_YEAR BEFORE DELETING
-                $x = StaffYear::where("staff_id", '=', $staff_id)
-                    ->first();
-                if (is_null($x)) { //WE CAN DELETE stRef SINCE HE IS NOT APPEARING IN ANY OTHER SCHOOL YEAR
-                    $res2 = $stRef->delete();
-                    if (!$res2) {
-                        $allAffected = 0;
-                    }
-                }
-            } catch (Exception $ex) {
-                $allAffected = 0;
-                echo "ERROR " . $ex->getMessage();
-            }
-            $val1 = DB::select("DELETE FROM subject_classe_staff WHERE 
-            subject_classe_staff.staff_id 
-            NOT IN(SELECT staff_year.staff_id FROM staff_year)");
-            $val2 = DB::select("DELETE FROM staff WHERE staff.staff_id NOT IN (SELECT staff_year.staff_id from staff_year)");
-            */
-        } //END FOR
-        //return response($allAffected, 200);
-        echo (string) $allAffected; //1--> All groupes successfully deleted; 0--> Failed to save at least one
-    }
-
-    public function deleteManyStaffsWithPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $year  = $request->input("year");
-        $data = $request->input("data");
-        $section = $request->input("section");
-        $data_size = $request->input("data_size");
-
-        $staffList = json_decode($data, true);
-        $n = count($staffList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false
-
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        $section_id = MyHelper::getSectionID($section);
-        foreach ($staffList as $st) {
-            $staff_id = $st["staff_id"];
-            $res = MyHelper::deleteAStaff($sy_id, $section_id, $staff_id);
-            if ($res < 0) {
-                $allAffected = 0;
-            }
-            /*
-            //echo "$staff_id<br/>";
-            $stRef = Staff::where("staff_id", "=", $staff_id)->first();
-            //echo "".($stRef->staff_id);
-            $stClasses = SubjectClasseStaff::where("staff_id", '=', $staff_id)
-                ->get();
-            $stYears = StaffYear::where("staff_id", '=', $staff_id)
-                ->where("sy_id", '=', $sy_id) //MAKE SURE IT IS STAFF OF THE YEAR
-                ->get();
-            try {
-                if (!is_null($stClasses)) { //A teacher may not be assign any course, in that case it is normal to have this stClasse null
-                    foreach ($stClasses as $stClass) {
-                        $res1 = $stClass->delete();
-                        if (!$res1) {
-                            $allAffected = 0;
-                        }
-                    }
-                }
-
-                if (!is_null($stYears)) {
-                    foreach ($stYears as $stYear) {
-                        $res2 = $stYear->delete();
-                        if (!$res2) {
-                            $allAffected = 0;
-                        }
-                    }
-                } else { //DB IS INCONSITENT IN THIS CASE; SINCE A STAFF HAS TO BE IN A SCHOOL YEAR
-                    //do nothng yet
-                }
-
-                //LETS VERIFY IF st EXISTS IN ANY OTHER SCHOOL_YEAR BEFORE DELETING
-                $x = StaffYear::where("staff_id", '=', $staff_id)
-                    ->first();
-                if (is_null($x)) { //WE CAN DELETE stRef SINCE HE IS NOT APPEARING IN ANY OTHER SCHOOL YEAR
-                    $res2 = $stRef->delete();
-                    if (!$res2) {
-                        $allAffected = 0;
-                    }
-                }
-            } catch (Exception $ex) {
-                $allAffected = 0;
-                echo "ERROR " . $ex->getMessage();
-            }
-            $val1 = DB::select("DELETE FROM subject_classe_staff WHERE 
-            subject_classe_staff.staff_id 
-            NOT IN(SELECT staff_year.staff_id FROM staff_year)");
-            $val2 = DB::select("DELETE FROM staff WHERE staff.staff_id NOT IN (SELECT staff_year.staff_id from staff_year)");
-            */
-        } //END FOR
-        //return response($allAffected, 200);
-        echo (string) $allAffected; //1--> All groupes successfully deleted; 0--> Failed to save at least one
-    }
-
-    public function updateManyStaffsPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-        $year = $request->input("year");
-
-        $stList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false  
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        foreach ($stList as $st) {
-            $staff_id = $st["staff_id"];
-            $name = $st["name"];
-            $phone1 = $st["phone1"];
-            $function = $st["function"];
-            $civility = $st["civility"];
-
-            $login = $st["login"];
-            $pwd = $st["pwd"];
-            $acc_id = $st["acc_id"];
-            try {
-
-                $st2 = Staff::find($staff_id);
-                $st2->name = $name;
-                $st2->civility = $civility;
-                $st2->function = $function;
-                $query = $st2->update(); //Mettre a jour les champs except phone1;
-                try {
-                    $st2->phone1 = $phone1;
-                    $tmp1 = DB::table('staff')
-                        ->where('staff_id', $staff_id)
-                        ->update(['phone1' => $phone1]);
-                    //echo "allAffected: $allAffected FOR $st2->phone1<br/>";
-                } catch (Exception $e) {
-                    //Field Phone is unique so can't be suplicated
-                    $allAffected = 0;
-                    //echo "<br/>".$e->getMessage()."<br/>";   
-                    //echo "allAffected: $allAffected FOR $st2->phone1 as exception ouccurs<br/>";                  
-                }
-
-                //LETS UPDATE THE RELATED ACCOUNT
-                $acc = Account::find($acc_id);
-                //$k = is_null($acc);
-                //$id = $acc->acc_id;
-                //echo "is acc null: ".$k."  [$id]-$login+$pwd <br/>";
-                $acc->pwd = $pwd;
-                $acc->login = $login;
-                try {
-                    $tmp2 = $acc->update();
-                } catch (Exception $e) {
-                    //Login is unique so can't be suplicated
-                    //echo "<br/>".$e->getMessage()."<br/>";
-                    $allAffected = 0;
-                }
-            } catch (Exception $ex) {
-                //echo $ex->getMessage();
-                $allAffected = 0;
-            }
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'data' => 'required|json',
+                'section' => 'required|string',
+                'data_size' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
         }
-        echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
-        self::arrangeSGSimple();
+        $connection = $request->input("connection");
+        $year  = $request->input("year");
+        $data = $request->input("data");
+        $section = $request->input("section");
+        $data_size = $request->input("data_size");
+
+        $staffList = json_decode($data, true);
+        $n = count($staffList);
+        $allAffected = 1; //interpreted as true. 0-->false
+
+        config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+        $section_id = MyHelper::getSectionID($section);
+        foreach ($staffList as $st) {
+            $staff_id = $st["staff_id"];
+            try {
+                $res = MyHelper::deleteAStaff($sy_id, $section_id, $staff_id);
+            } catch (\Throwable $th) {
+                $allAffected = 0;
+            }
+            /*
+            if ($res < 0) {
+                $allAffected = 0;
+            }*/
+        } //END FOR       
+        //echo (string) $allAffected; //1--> All groupes successfully deleted; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All staff deleted successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete at least one staff',
+            ], 500);
+        }
     }
-    
+
+
+
     public function updateManyStaffs(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
         $year = $request->input("year");
 
         $stList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false  
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
+
+        $errMsg = "";
+        $allAffected = 1; //interpreted as true. 0-->false  
         foreach ($stList as $st) {
             $staff_id = $st["staff_id"];
             $name = $st["name"];
+            $surname = $st["surname"];
+            if ($name == "null") {
+                $name = "";
+            }
+            if ($surname == "null") {
+                $surname = "";
+            }
+            $sexe = $st["sexe"];
             $phone1 = $st["phone1"];
             $function = $st["function"];
             $civility = $st["civility"];
@@ -633,6 +639,8 @@ class StaffController extends Controller
 
                 $st2 = Staff::find($staff_id);
                 $st2->name = $name;
+                $st2->surname = $surname;
+                $st2->sexe = $sexe;
                 $st2->civility = $civility;
                 $st2->function = $function;
                 $query = $st2->update(); //Mettre a jour les champs except phone1;
@@ -641,39 +649,64 @@ class StaffController extends Controller
                     $tmp1 = DB::table('staff')
                         ->where('staff_id', $staff_id)
                         ->update(['phone1' => $phone1]);
-                    //echo "allAffected: $allAffected FOR $st2->phone1<br/>";
-                } catch (Exception $e) {
+                } catch (\Throwable $e) {
                     //Field Phone is unique so can't be suplicated
                     $allAffected = 0;
                     //echo "<br/>".$e->getMessage()."<br/>";   
-                    //echo "allAffected: $allAffected FOR $st2->phone1 as exception ouccurs<br/>";                  
+                    //echo "allAffected: $allAffected FOR $st2->phone1 as \Throwable ouccurs<br/>";  
+                    $errMsg = "Phone number $phone1 is already used by another staff. Please use another phone number for $name";
                 }
 
                 //LETS UPDATE THE RELATED ACCOUNT
                 $acc = Account::find($acc_id);
-                //$k = is_null($acc);
-                //$id = $acc->acc_id;
-                //echo "is acc null: ".$k."  [$id]-$login+$pwd <br/>";
                 $acc->pwd = $pwd;
                 $acc->login = $login;
                 try {
                     $tmp2 = $acc->update();
-                } catch (Exception $e) {
-                    //Login is unique so can't be suplicated
+                } catch (\Throwable $e) {
+                    //Login is unique so can't be duplicated
                     //echo "<br/>".$e->getMessage()."<br/>";
                     $allAffected = 0;
+                    $errMsg = "Login $login is already used by another staff. Please use another login for $name";
                 }
-            } catch (Exception $ex) {
+            } catch (\Throwable $ex) {
                 //echo $ex->getMessage();
                 $allAffected = 0;
+                $errMsg = $ex->getMessage();
             }
         }
-        echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
+        //echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All staff updated successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update at least one staff: \n[' . $errMsg . ']',
+            ], 500);
+        }
     }
 
     public function saveManyStaffs(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'data' => 'required|json',
+                'section' => 'required|string',
+                'data_size' => 'nullable|integer|min:0',
+                'override' => 'nullable|string',
+
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $data = $request->input("data");
         $section = $request->input("section");
@@ -682,9 +715,7 @@ class StaffController extends Controller
         $override = $request->input("override");
 
         $stList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false  
+
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
         $section_id = MyHelper::getSectionID($section);
@@ -699,16 +730,24 @@ class StaffController extends Controller
             }
         }
 
+        $errMsg = "";
+        $allAffected = 1; //interpreted as true. 0-->false 
         foreach ($stList as $st) {
             $name = $st["name"];
-            if($name == "null") {
+            $surname = $st["surname"];
+            if ($name == "null") {
                 $name = "";
+            }
+            if ($surname == "null") {
+                $surname = "";
             }
             $phone1 = $st["phone1"];
             $function = $st["function"];
             $civility = $st["civility"];
+            $sexe = $st["sexe"]; //M or F
             $login = $st["login"];
             $pwd = $st["pwd"];
+
             $acc = new Account();
             $acc->login = $login;
             $acc->pwd = $pwd;
@@ -731,7 +770,7 @@ class StaffController extends Controller
                 //Account exists already
                 //LET'S CHANGE THE LOGIN TO EXPECT HAVING IT SAVED without violating the integrity
                 //$acc->login = $login."".$type."".$name;
-                $acc->login = $login."".rand(1000, 9999);
+                $acc->login = $login . "" . rand(1000, 9999);
             }
 
 
@@ -740,6 +779,7 @@ class StaffController extends Controller
                 $acc->save();
                 $staff = new Staff();
                 $staff->name = $name;
+                $staff->surname = $surname;
                 if (empty($phone1) || $phone1 == "0") {
                     //WE ARE NOT ASSIGNING PHONE1 IN THIS CASE
                 } else {
@@ -748,6 +788,7 @@ class StaffController extends Controller
                 $staff->acc_id = $acc->acc_id;
                 $staff->function = $function;
                 $staff->civility = $civility;
+                $staff->sexe = $sexe;
                 try {
                     $staff->save();
                     $syear = new StaffYear();
@@ -756,155 +797,77 @@ class StaffController extends Controller
                     //echo "\$sy_id = $sy_id | \$staff_id = $staff->staff_id";
                     try {
                         $syear->save();
-                    } catch (Exception $e3) {
-                        echo "<br/>" . $e3->getMessage() . "<br/>";
-                        echo "-4"; //failed to save Staff_year;
+                    } catch (\Throwable $e3) {
+                        // echo "<br/>" . $e3->getMessage() . "<br/>";
+                        // echo "-4"; //failed to save Staff_year;
+                        $errMsg = $e3->getMessage();
                         $allAffected = 0;
-                        try { 
-                            $staff->delete();                            
-                        } catch (Exception $ex) { //DO NOTHING
-                            echo "<br/>\$ex" . $e3->getMessage() . "<br/>";
+                        try {
+                            $staff->delete();
+                        } catch (\Throwable $ex) { //DO NOTHING
+                            //echo "<br/>\$ex" . $e3->getMessage() . "<br/>";
+                            $errMsg = $e3->getMessage();
                             $allAffected = 0;
                         }
                     }
-                } catch (Exception $e2) {
-                    echo "<br/>" . $e2->getMessage() . "<br/>";
-                    echo "-3"; //failed to save Staff;
+                } catch (\Throwable $e2) {
+                    // echo "<br/>" . $e2->getMessage() . "<br/>";
+                    // echo "-3"; //failed to save Staff;
+                    $errMsg = $e2->getMessage();
                     $allAffected = 0;
                     try {
                         $acc->delete();
-                    } catch (Exception $exx) { //DO NOTHING
-                        //$allAffected = 0;
-                    }
-                }
-            } catch (Exception $e1) {
-                echo "<br/>" . $e1->getMessage() . "<br/>";
-                echo "-2"; //failed to save account
-                $allAffected = 0;
-            }
-        }
-        echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
-        self::arrangeSGSimple();
-    }
-
-    public function saveManyStaffsWithPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $section = $request->input("section");
-        $data_size = $request->input("data_size");
-        $year = $request->input("year");
-        $override = $request->input("override");
-
-        $stList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false  
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        $section_id = MyHelper::getSectionID($section);
-
-        if ($override == "1") {
-            //DELETE ALL STAFF
-            $allStaffs = Staff::all();
-            if (!is_null($allStaffs)) {
-                foreach ($allStaffs as $st) {
-                    MyHelper::deleteAStaff($sy_id, $section_id, $st->staff_id);
-                }
-            }
-        }
-
-        foreach ($stList as $st) {
-            $name = $st["name"];
-            if($name == "null") {
-                $name = "";
-            }
-            $phone1 = $st["phone1"];
-            $function = $st["function"];
-            $civility = $st["civility"];
-            $login = $st["login"];
-            $pwd = $st["pwd"];
-            $acc = new Account();
-            $acc->login = $login;
-            $acc->pwd = $pwd;
-            $type = MyHelper::getAccountType($function);
-            $acc->type = $type;
-
-            //Garanty the unicity of phone;
-            $x = Staff::all()
-                ->where("phone1", $phone1)
-                ->first();
-            if (!is_null($x)) {
-                $phone1 = null;
-            }
-
-            //GARANTY THE UNICITY OF ACC LOGIN
-            $accTmp = Account::all()
-                ->where('login', '=', $login)
-                ->first();
-            if (!is_null($accTmp)) {
-                //Account exists already
-                //LET'S CHANGE THE LOGIN TO EXPECT HAVING IT SAVED without violating the integrity
-                //$acc->login = $login."".$type."".$name;
-                $acc->login = $login."".rand(1000, 9999);
-            }
-
-
-            try {
-                //Save account
-                $acc->save();
-                $staff = new Staff();
-                $staff->name = $name;
-                if (empty($phone1) || $phone1 == "0") {
-                    //WE ARE NOT ASSIGNING PHONE1 IN THIS CASE
-                } else {
-                    $staff->phone1 = $phone1;
-                }
-                $staff->acc_id = $acc->acc_id;
-                $staff->function = $function;
-                $staff->civility = $civility;
-                try {
-                    $staff->save();
-                    $syear = new StaffYear();
-                    $syear->staff_id = $staff->staff_id;
-                    $syear->sy_id = $sy_id;
-                    //echo "\$sy_id = $sy_id | \$staff_id = $staff->staff_id";
-                    try {
-                        $syear->save();
-                    } catch (Exception $e3) {
-                        echo "<br/>" . $e3->getMessage() . "<br/>";
-                        echo "-4"; //failed to save Staff_year;
+                    } catch (\Throwable $exx) { //DO NOTHING
+                        $errMsg = $exx->getMessage();
                         $allAffected = 0;
-                        try { 
-                            $staff->delete();                            
-                        } catch (Exception $ex) { //DO NOTHING
-                            echo "<br/>\$ex" . $e3->getMessage() . "<br/>";
-                            $allAffected = 0;
-                        }
-                    }
-                } catch (Exception $e2) {
-                    echo "<br/>" . $e2->getMessage() . "<br/>";
-                    echo "-3"; //failed to save Staff;
-                    $allAffected = 0;
-                    try {
-                        $acc->delete();
-                    } catch (Exception $exx) { //DO NOTHING
-                        //$allAffected = 0;
                     }
                 }
-            } catch (Exception $e1) {
-                echo "<br/>" . $e1->getMessage() . "<br/>";
-                echo "-2"; //failed to save account
+            } catch (\Throwable $e1) {
+                // echo "<br/>" . $e1->getMessage() . "<br/>";
+                // echo "-2"; //failed to save account
+                $errMsg = $e1->getMessage();
                 $allAffected = 0;
             }
         }
-        echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
+
         self::arrangeSGSimple();
+        //echo "$allAffected"; //1--> All classes successfully modified; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All staff saved successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to save at least one staff: \n[' . $errMsg . ']',
+            ], 500);
+        }
     }
+
+
 
     public function saveStaff(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'name' => 'required|string|max:80|min:2',
+                'surname' => 'nullable|string|max:80|min:2',
+                'phone1' => 'nullable|string|max:20|min:2',
+                'login' => 'required|string|max:25|min:4',
+                'pwd' => 'required|string|max:25|min:4',
+                'sexe' => 'required|string|max:1|min:1',
+                'function' => 'required|integer|max:10|min:0',
+                'civility' => 'nullable|string|max:5|min:2',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year = $request->input("year");
         $name = $request->input("name");
@@ -917,13 +880,6 @@ class StaffController extends Controller
         $civility = $request->input("civility"); //Mr , Mme, M ..
         config(["database.default" => $connection]);
 
-        //if(empty($phone1)){
-        //   echo"\$phone is empty";
-        //    $phone1 = null;
-        //}
-        //echo "Connection: $connection <br/>Year: $year <br/>name: $name"
-        //    . "<br/>surname: $surname <br/>phone1: $phone1<br/>login: $login <br/>"
-        //    . "pwd: $pwd <br/>function: $function<br/>civility: $civility";
 
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
@@ -964,36 +920,46 @@ class StaffController extends Controller
                         //echo "\$sy_id = $sy_id | \$staff_id = $staff->staff_id";
                         try {
                             $syear->save();
-                            echo 1;
-                        } catch (Exception $e3) {
-                            echo "<br/>" . $e3->getMessage() . "<br/>";
-                            echo "-4"; //failed to save Staff_year;
+                            return response()->json([
+                                'status' => true,
+                                'message' => 'Staff saved successfully',
+                            ], 200);
+                        } catch (\Throwable $e3) {
                             try {
-                                //$acc->delete();
                                 $staff->delete();
-                            } catch (Exception $ex) { //DO NOTHING
-                                echo "<br/>\$ex" . $e3->getMessage() . "<br/>";
+                            } catch (\Throwable $ex) { //DO NOTHING
+                                //"<br/>\$ex" . $e3->getMessage() . "<br/>";
                             }
+                            return response()->json([
+                                'status' => false,
+                                'message' => 'Failed to save staff year: Consequently, staff was not saved: ' . $e3->getMessage(),
+                            ], 500);
                         }
-                    } catch (Exception $e2) {
-                        echo "<br/>" . $e2->getMessage() . "<br/>";
-                        echo "-3"; //failed to save Staff;
+                    } catch (\Throwable $e2) {
                         try {
                             $acc->delete();
-                        } catch (Exception $exx) { //DO NOTHING
+                        } catch (\Throwable $exx) { //DO NOTHING
                         }
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'Failed to save staff: ' . $e2->getMessage(),
+                        ], 500);
                     }
-                } catch (Exception $e1) {
-                    echo "<br/>" . $e1->getMessage() . "<br/>";
-                    echo "-2"; //failed to save account
+                } catch (\Throwable $e1) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Failed to save staff account: ' . $e1->getMessage(),
+                    ], 500);
                 }
             }
-        } catch (Exception $e) {
-            echo '<br/>Message: ' . $e->getMessage();
-            echo "-5"; //Error occurs
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while saving staff: ' . $e->getMessage(),
+            ], 500);
         }
     }
-    
+
     public function allStaffs1(Request $request)
     {
         $connection = $request->input("connection");
@@ -1019,12 +985,12 @@ class StaffController extends Controller
                                     ORDER BY staff.name, staff.function, staff.civility;"
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
     }
-    
+
     public function allStaffs2(Request $request)
     {
         //TEACHER STAFF ARE ARE THOSE HAVING FUNCTIONS IN(0[ENS.], 1[SG], 2[CENSEUR], 6[CHIEF OF WORK])
@@ -1039,10 +1005,10 @@ class StaffController extends Controller
                 "SELECT staff.staff_id, staff.name FROM `staff`
                 WHERE staff_id IN(SELECT staff_year.staff_id FROM staff_year 
 		                WHERE staff_year.sy_id = $sy_id)
-                    ORDER BY staff.name;" 
+                    ORDER BY staff.name;"
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
@@ -1054,13 +1020,13 @@ class StaffController extends Controller
         $acc_id = $request->input("acc_id");
         config(["database.default" => $connection]);
         //echo "Connection: $connection -- Year: $year -- Section: $sectionParam \n";
-        try { 
+        try {
 
             $staff = DB::select(
                 "SELECT*FROM staff WHERE staff.acc_id = $acc_id"
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
@@ -1090,7 +1056,7 @@ class StaffController extends Controller
 		                        AND subject_classe.section_id = $section_id))  "
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
@@ -1119,7 +1085,7 @@ class StaffController extends Controller
                         AND staff.staff_id = $staff_id"
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
@@ -1143,7 +1109,7 @@ class StaffController extends Controller
                     ORDER BY staff.name;" // 0==>Enseignant; 2==>Censeur; 1==>Sg; 6==>Chef of work
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
@@ -1167,7 +1133,7 @@ class StaffController extends Controller
                     ORDER BY staff.name;" // 0==>Enseignant; 2==>Censeur; 1==>Sg; 6==>Chef of work
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
@@ -1192,7 +1158,7 @@ class StaffController extends Controller
                     ORDER BY staff.name;" // 0==>Enseignant; 2==>Censeur; 1==>Sg; 6==>Chef of work
             );
             return response()->json($staff, 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo '<br/>ERROR: ' . $e->getMessage();
             return response()->json([], 500); //ERROR OCCURS
         }
@@ -1250,94 +1216,112 @@ class StaffController extends Controller
     {
         //
     }
-    
+
     public function arrangeSG()
     {
-        $schools = array(  
+        $schools = array(
+            //"CES_DE_DABAYE", 
+            //"CES_DE_KILWO",
             "CES_DE_LDIRI",
+            "CES_DE_MOUROUM",
+            "CES_DE_SEDEK",
+            "CES_DE_YOLDEO",
             "CES_DE_ZIMADO",
             "CETIC_DE_BOGO",
             "CETIC_DE_DARGALA",
-            "CETIC_DE_GADOUA",  
+            "CETIC_DE_DOUBANE",
+            "CETIC_DE_GADOUA",
+            //"CETIC_DE_GODOLA",
             "CETIC_DE_MAKARY",
+            "COLLEGE_DE_LA_FRATERNITE",
+            "COLBIPPOLFOSH",
             "ENIEG_DE_GUIDER",
             "ENIEG_BILINGUE_DE_MAROUA",
-            "GBTHS_MEWOULOU", 
-            "GHS_MINAWAO",          
-            "LB_BOGO",  
+            "GBHS_MINAWAO",
+            "GBTHS_MEWOULOU",
+            "LB_BOGO",
+            //"LB_GUISSA",
+            //"LB_KARTOUA",
+            "LB_KOZA",
             "LB_MAKALINGAI",
-            "LB_ZAMAI", 
+            "LB_ZAMAI",
+            //"LT_BIDZAR",
+            "LT_DOUALARE",
             "LT_GAZAWA",
             "LT_KOZA",
             "LT_LOGONE_BIRNI",
             "LT_MERI",
             "LT_MINDIF",
             "LT_MORA",
-            "LYCEE_CLASSIQUE_DE_MAROUA", 
-            "LYCEE_DE_BALAZA_ALCALI",  
+            "LYCEE_DE_BALAZA_ALCALI",
+            "LYCEE_CLASSIQUE_DE_MAROUA",
+            //"LYCEE_DE_BIDZAR",
+            "LYCEE_DE_DOGBA",
+            "LYCEE_DE_DOMO",
             "LYCEE_DE_DOUALARE",
             "LYCEE_DE_GABOUA",
             "LYCEE_DE_GODOLA",
             "LYCEE_DE_GUIDER",
             "LYCEE_DE_HARDE_MAROUA",
             "LYCEE_DE_HOULA",
+            "LYCEE_DE_KAHEO",
             "LYCEE_DE_KALLIAO",
             "LYCEE_DE_KOTRABA",
             "LYCEE_DE_LOGONE_BIRNI",
             "LYCEE_DE_MAKABAYE",
+            "LYCEE_DE_MAROUA_SALAK",
             "LYCEE_DE_MASSAKAL",
-            "LYCEE_DE_MAROUA_SALAK",            
             "LYCEE_DE_MOGOM",
-            "LYCEE_DE_MEME",
+            //"LYCEE_DE_MEME",
             "LYCEE_DE_MERI",
-            "LYCEE_DE_MESKINE",
+            //"LYCEE_DE_MESKINE",
             "LYCEE_DE_MOKIO",
             "LYCEE_DE_PITOA",
-            "LYCEE_DE_WAZA", 
-            "TEST"
+            "LYCEE_DE_WAZA",
+            "TEST",
+            "TEST_PLAY"
         );
-        
-        /*
-        $schools = array(
-            "mysql",
-        );*/
+
 
         for ($k = 0; $k < count($schools); $k++) {
             $connection = $schools[$k];
-            echo ("$connection <br/>");
-            config(["database.default" => $connection]);
-            $staffs = DB::select("SELECT *FROM staff");
-            if (!is_null($staffs)) {
-                echo "<br/>";
-                foreach ($staffs as $st) {
-                    if ($st->function == "1") {
-                        echo $st->name . "<br/>";
-                        $acc_id = $st->acc_id;
-                        $accounts = DB::select("SELECT*FROM account WHERE account.acc_id = $acc_id");
-                        if(!is_null($accounts)) {
-                            foreach ($accounts as $acc) {
-                                $id = $acc->acc_id;
-                                $ref = Account::find($id );
-                                $ref->type = 3;
-                                try {
-                                  $ref->update();
-                                } catch (Exception $e) { 
-                                    echo "<br/>".$e;
+            echo ("\n$connection ");
+            try {
+                config(["database.default" => $connection]);
+                $staffs = DB::select("SELECT *FROM staff");
+                if (!is_null($staffs)) {
+                    echo "<br/>";
+                    foreach ($staffs as $st) {
+                        if ($st->function == "1") {
+                            echo $st->name . "<br/>";
+                            $acc_id = $st->acc_id;
+                            $accounts = DB::select("SELECT*FROM account WHERE account.acc_id = $acc_id");
+                            if (!is_null($accounts)) {
+                                foreach ($accounts as $acc) {
+                                    $id = $acc->acc_id;
+                                    $ref = Account::find($id);
+                                    $ref->type = 3;
+                                    try {
+                                        $ref->update();
+                                    } catch (\Throwable $e) {
+                                        echo "<br/>" . $e;
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            } catch (\Throwable $e) {
+                echo "<br/>" . $e->getMessage() . "<br/>";
             }
         }
     }
-    
-    
+
+
     public function arrangeSGSimple()
     {
         $staffs = DB::select("SELECT *FROM staff");
         if (!is_null($staffs)) {
-            echo "<br/>";
             foreach ($staffs as $st) {
                 //SG == 1 (acc: 3); Enseignant == 0 (acc: 5); Censeur == 2 (acc: 8) 
                 $type = 5;
@@ -1366,7 +1350,7 @@ class StaffController extends Controller
                         $ref->type = $type;
                         try {
                             $ref->update();
-                        } catch (Exception $e) {
+                        } catch (\Throwable $e) {
                             echo "<br/>" . $e;
                         }
                     }
@@ -1374,8 +1358,4 @@ class StaffController extends Controller
             }
         }
     }
-    
-    
-    
-    
 }
