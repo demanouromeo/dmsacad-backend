@@ -68,7 +68,20 @@ class ClasseController extends Controller
 
     public function processRedoublants(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'next_year' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
@@ -77,13 +90,13 @@ class ClasseController extends Controller
 
         $stList = json_decode($data, true);
         $n = count($stList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]<br/>";
-        $allAffected = 1; //interpreted as true. 0-->false  
+
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
         $sy_next_id = MyHelper::getSchoolYearID($next_year);
 
         $count  = 1;
+        $allAffected = 1; //interpreted as true. 0-->false 
         foreach ($stList as $stud) {
             //echo"-----> Processing stud No.[$count]<br/>";
             $count++;
@@ -101,57 +114,25 @@ class ClasseController extends Controller
                 if (count($x) == 0) {
                     $sc->save();
                 }
-            } catch (\Exception $e) {
-                echo "<br/>" . $e->getMessage() . "<br/>";
-                echo "-1"; //failed to save student_classe;
+            } catch (\Throwable $e) {
+                //echo "<br/>" . $e->getMessage() . "<br/>";
+                //echo "-1"; //failed to save student_classe;
                 $allAffected = 0;
             }
         } //END FOR
-        echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
-    }
 
-    public function processRedoublantsWithPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-        $next_year = $request->input("next_year");
-        $year = $request->input("year");
-
-        $stList = json_decode($data, true);
-        $n = count($stList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]<br/>";
-        $allAffected = 1; //interpreted as true. 0-->false  
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        $sy_next_id = MyHelper::getSchoolYearID($next_year);
-
-        $count  = 1;
-        foreach ($stList as $stud) {
-            //echo"-----> Processing stud No.[$count]<br/>";
-            $count++;
-            $sc = new StudentClasse();
-            $sc->stud_id = $stud['stud_id'];
-            $sc->sy_id = $sy_next_id; //NEXT SCHOOL YEAR
-            $sc->repeating = 1;
-            $sc->cas_social = $stud['cas_social'];
-            $sc->classe_id = $stud['classe_id'];
-            try {
-                //$old_classe_id = $stud['classe_id'];
-                $stud_id = $stud['stud_id'];
-                $x = DB::select("SELECT*FROM student_classe WHERE student_classe.sy_id = $sy_next_id
-                        AND student_classe.stud_id = $stud_id AND student_classe.classe_id = $sc->classe_id");
-                if (count($x) == 0) {
-                    $sc->save();
-                }
-            } catch (\Exception $e) {
-                echo "<br/>" . $e->getMessage() . "<br/>";
-                echo "-1"; //failed to save student_classe;
-                $allAffected = 0;
-            }
-        } //END FOR
-        echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
+        //echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Successfully processed redoublants for all students.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to process redoublants for at least one student.',
+            ], 500);
+        }
     }
 
 
@@ -408,7 +389,21 @@ class ClasseController extends Controller
 
     public function saveChanges(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'next_year' => 'required|string',
+                'data' => 'required|json',
+                'data_size' => 'nullable|integer|min:0',
+
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
@@ -418,12 +413,13 @@ class ClasseController extends Controller
         $stList = json_decode($data, true);
         $n = count($stList);
         //echo "DATA Lenght = $n [size transmitted is $data_size]<br/>";
-        $allAffected = 1; //interpreted as true. 0-->false  
+
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
         $sy_next_id = MyHelper::getSchoolYearID($next_year);
 
         $count  = 1;
+        $allAffected = 1; //interpreted as true. 0-->false
         foreach ($stList as $stud) {
             //echo"-----> Processing stud No.[$count]<br/>";
             $count++;
@@ -440,55 +436,26 @@ class ClasseController extends Controller
                         AND student_classe.stud_id = $stud_id");
                 $sc->save();
             } catch (\Exception $e) {
-                echo "<br/>" . $e->getMessage() . "<br/>";
-                echo "-1"; //failed to save student_classe;
+                //echo "<br/>" . $e->getMessage() . "<br/>";
+                //echo "-1"; //failed to save student_classe;
                 $allAffected = 0;
             }
         } //END FOR
-        echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
+        //echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Successfully applied changes for all students.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to apply changes for at least one student.',
+            ], 500);
+        }
     }
 
-    public function saveChangesWithPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-        $next_year = $request->input("next_year");
-        $year = $request->input("year");
 
-        $stList = json_decode($data, true);
-        $n = count($stList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]<br/>";
-        $allAffected = 1; //interpreted as true. 0-->false  
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        $sy_next_id = MyHelper::getSchoolYearID($next_year);
-
-        $count  = 1;
-        foreach ($stList as $stud) {
-            //echo"-----> Processing stud No.[$count]<br/>";
-            $count++;
-            $sc = new StudentClasse();
-            $sc->stud_id = $stud['stud_id'];
-            $sc->sy_id = $sy_next_id; //NEXT SCHOOL YEAR
-            $sc->repeating = 0;
-            $sc->cas_social = $stud['cas_social'];
-            $sc->classe_id = $stud['promuEn'];
-            try {
-                //$old_classe_id = $stud['classe_id'];
-                $stud_id = $stud['stud_id'];
-                DB::select("DELETE FROM student_classe WHERE student_classe.sy_id = $sy_next_id
-                        AND student_classe.stud_id = $stud_id");
-                $sc->save();
-            } catch (\Exception $e) {
-                echo "<br/>" . $e->getMessage() . "<br/>";
-                echo "-1"; //failed to save student_classe;
-                $allAffected = 0;
-            }
-        } //END FOR
-        echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
-    }
 
     public function basculerSpecial(Request $request)
     {

@@ -265,13 +265,42 @@ class AccountController extends Controller
                 ], 404); //404 = Not Found
             }
 
-            // 4. Generate new access token
+            $role = MyHelper::findRole($account->type);
+            $user_name = "";
+            $user_id = 1;
+            if ($account->type == 1) { //ADMINISTRATOR 
+                $admin = Administrateur::where('acc_id', $account->acc_id)->first();
+                if (!$admin) {
+                    $user_name = "ADMINISTRATEUR"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
+                } else {
+                    $user_name = $admin->nom . ' ' . $admin->prenom;
+                    $user_name = trim($user_name);
+                    $user_id = $admin->admin_id;
+                }
+            } else { //CONNECTED USER  
+                $user_name = "NAME_CONNECTED_USER";
+                $staff = Staff::where('acc_id', $account->acc_id)->first();
+                if (!$staff) {
+                    $user_name = "PERSONNEL"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
+                } else {
+                    $user_name = $staff->name . ' ' . $staff->surname;
+                    $user_name = trim($user_name);
+                    $user_id = $staff->staff_id;
+                }
+            }
+
+            // -----------------------------
+            // Generate Access Token (JWT)
+            // -----------------------------
             $accessTokenPayload = [
-                'iss' => 'your-app',
-                'sub' => $account->id,
+                'iss' => 'your-app',          // issuer
+                'sub' => $account->acc_id,           // user ID
                 'email' => $account->email,
-                'iat' => time(),
-                'exp' => time() + $access_token_duration
+                'role' => $role, //"ROLE_CONNECTED_USER",
+                'name' => $user_name, //"NAME_CONNECTED_USER",
+                'user_id' => $user_id, //this represents the actual user id in the staff or admin table, not the account id
+                'iat' => time(),              // issued at
+                'exp' => time() + $access_token_duration        // expires in 1 hour
             ];
 
             $newAccessToken = JWT::encode($accessTokenPayload, $jwt_secret, 'HS256');
@@ -302,7 +331,7 @@ class AccountController extends Controller
         //echo 'sy_id='. $obj->sy_id .'\n';
         return response()->json($accounts, 200);
     }
-    
+
     public function index()
     {
         $Accounts = Account::all();
