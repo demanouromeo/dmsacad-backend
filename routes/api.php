@@ -72,10 +72,9 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/classes/basculerSpecial', [ClasseController::class, 'basculerSpecial']); //OK
     Route::post('/classes/processRedoublants', [ClasseController::class, 'processRedoublants']); //OK
     Route::post('/classes/saveChanges', [ClasseController::class, 'saveChanges']); //OK !=applyBasculement utilisé pour enregistrer les modifications: lors du basculement
-    Route::get('/classes/cancelAllBasculement', [ClasseController::class, 'cancelAllBasculement']);
-    Route::get('/classes/clearExclus', [ClasseController::class, 'clearExclus']);
-    Route::post('/classes/clearExclusWithPOST', [ClasseController::class, 'clearExclusWithPOST']);
-    Route::post('/classes/updateApcLevel', [ClasseController::class, 'updateApcLevel']);
+    Route::delete('/classes/cancelAllBasculement', [ClasseController::class, 'cancelAllBasculement']); //OK
+    Route::post('/classes/clearExclus', [ClasseController::class, 'clearExclus']); //OK // Take 'data' from request body and 'next_year' then delete all student_classe of next_year that contain students in 'data'
+    Route::post('/classes/updateApcLevel', [ClasseController::class, 'updateApcLevel']); //OK. here activated in request body can be 0(true) or 1(false).
 });
 
 
