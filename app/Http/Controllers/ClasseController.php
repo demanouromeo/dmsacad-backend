@@ -492,12 +492,24 @@ class ClasseController extends Controller
 
     public function basculerSpecial(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'next_year' => 'required|string'
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $next_year = $request->input("next_year");
 
-        $allAffected = 1; //interpreted as true. 0-->false  
+
         config(["database.default" => $connection]);
         $sy_next_id = MyHelper::getSchoolYearID($next_year);
         $sy_id = MyHelper::getSchoolYearID($year);
@@ -505,6 +517,7 @@ class ClasseController extends Controller
         //$stList = MyHelper::fetchStudentClasseByLevel(6, $sy_id);
         $stList = MyHelper::fetchStudentClasse1ereTle($sy_id);
         $count = 0;
+        $allAffected = 1; //interpreted as true. 0-->false 
         foreach ($stList as $stud) {
             $count++;
             //echo"-----> Processing stud No.[$count]<br/>";
@@ -523,28 +536,29 @@ class ClasseController extends Controller
                     AND student_classe.classe_id = $old_classe_id 
                     AND student_classe.stud_id = $stud_id"
             );
-            /*
-                $obj = StudentClasse::all()
-                ->where("sy_id", $sy_id)
-                ->where("classe_id",$old_classe_id )
-                ->where("stud_id",$stud_id)
-                ->first();*/
-            try {
 
-                if (count($obj) == 0) {
-                    DB::select("UPDATE student_classe SET student_classe.basculated = 1, 
+            try {
+                DB::select("UPDATE student_classe SET student_classe.basculated = 1, 
                         student_classe.basculated_classe_id = $old_classe_id /*Les eleve 1ere et tle sont basculés sur place*/
                         WHERE student_classe.classe_id = $old_classe_id AND student_classe.sy_id = $sy_id
                         AND student_classe.stud_id = $stud_id");
+                if (count($obj) == 0) {
                     $sc->save();
+                } else {
+                    //$allAffected = 0; /*Les eleve 1ere et tle sont basculés sur place - That is why it is commentted*/
+                    //echo "<br/>Student with stud_id=$stud_id already exists in student_classe for sy_id=$sy_next_id and classe_id=$old_classe_id. Skipping insertion.<br/>";
                 }
             } catch (\Exception $e) {
-                //echo "<br/>" . $e->getMessage() . "<br/>";
+                echo "<br/>" . $e->getMessage() . "<br/>";
                 //echo "-1"; //failed to save student_classe;
-                //$allAffected = 0;
+                //$allAffected = 0;/*Les eleve 1ere et tle sont basculés sur place - That is why it is commentted*/
             }
         } //END FOR
-        echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
+        //echo "$allAffected"; //1--> All successfully saved; < 0--> Failed for least one
+        return response()->json([
+            'status' => true,
+            'message' => 'Successfully applied special basculement for all students of 1ere and Tle.',
+        ], 200);
     }
 
     public function updateClassSettings(Request $request)
