@@ -153,7 +153,11 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/th/thParamOfYear', [ThParamController::class, 'thParamOfYear']); //OK
 
     //==> ANY CONNECTED USER ON CLASSIFIEDPARAM
-    Route::get('/settings/classifiedParamOfYear', [ClassifiedparamController::class, 'classifiedParamOfYear']);
+    Route::get('/settings/classifiedParamOfYear', [ClassifiedparamController::class, 'classifiedParamOfYear']); //OK
+
+    //==> ANY CONNECTED USER ON LOCK
+    Route::get('/lock/locksOfYear', [LockController::class, 'locksOfYear']);
+    Route::post('/lock/saveOrUpdateLocks', [LockController::class, 'saveOrUpdateLocks']);
 });
 //===================================================================== END ANY CONNECTED USER ROUTES =====================================================================================================
 
@@ -271,9 +275,8 @@ Route::post('/students/uploadCompMarksWithPOST', [StudentController::class, 'upl
 
 
 
-//--------------------- LOCK
-Route::get('/lock/locksOfYear', [LockController::class, 'locksOfYear']);
-Route::get('/lock/saveOrUpdateLocks', [LockController::class, 'saveOrUpdateLocks']);
+
+
 
 
 

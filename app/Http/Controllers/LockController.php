@@ -12,66 +12,101 @@ class LockController extends Controller
 {
     public function locksOfYear(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
-        $year = $request->input("year"); 
-        config(["database.default" => $connection]); 
+        $year = $request->input("year");
+        config(["database.default" => $connection]);
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
             $locks = DB::select(
-                "SELECT * FROM  lock_sequence WHERE sy_id = $sy_id"
+                "SELECT `id`, `seq`, `sy_id`, `is_blocked`, `is_lock_classbased` FROM  lock_sequence WHERE sy_id = $sy_id"
             );
             if (count($locks) > 0) {
                 return response()->json($locks, 200);
             } else {
-                return [];
+                return response()->json([], 200);
             }
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Error retrieving locks: ' . $e->getMessage(),
+            ], 500);
         }
     }
+
     public function saveOrUpdateLocks(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'data' => 'required|json',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $data = $request->input("data");
-        //$data = $request->input("year");
         $data_size = $request->input("data_size");
         $year = $request->input("year");
 
         $lockList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false 
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
+
+        $errMsg = "";
+        $allAffected = 1;
         foreach ($lockList as $lockData) {
             $is_blocked = $lockData["is_blocked"];
-            $seq = $lockData["seq"];  
-             
-            try {                 
+            $seq = $lockData["seq"];
+
+            try {
                 $lockRef = LockSequence::where('sy_id', $sy_id)
-                -> where('seq', $seq)
-                ->first();
-                 if(is_null($lockRef)){
+                    ->where('seq', $seq)
+                    ->first();
+                if (is_null($lockRef)) {
                     //Let's create a new lock;
                     $newLock = new LockSequence();
                     $newLock->sy_id = $sy_id;
                     $newLock->seq = $seq;
                     $newLock->is_blocked = $is_blocked;
                     $newLock->save();
-                 }else{
+                } else {
                     //Update the existing lock
                     $lockRef->is_blocked = $is_blocked;
                     $lockRef->update();
-                 }
-                
+                }
             } catch (Exception $ex) {
-                echo $ex->getMessage();
+                $errMsg = $ex->getMessage();
                 $allAffected = 0;
-            } 
+            }
         }
-        echo "$allAffected"; //1--> All Locks successfully modified; 0--> Failed to save at least one
+        //echo "$allAffected"; //1--> All Locks successfully modified; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Locks saved successfully.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to lock at least a sequence: ' . $errMsg,
+            ], 500);
+        }
     }
 
     public function index()
