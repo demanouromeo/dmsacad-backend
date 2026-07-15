@@ -119,15 +119,15 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::delete('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']); //OK
     Route::post('/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']); //OK
     Route::post('/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']); //OK 
-    Route::post('/subjects/updateACompetence', [SubjectController::class, 'updateACompetence']);//OK
-    Route::post('/subjects/deleteManyCompetences', [SubjectController::class, 'deleteManyCompetences']);
-    Route::post('/subjects/calquerCompetences', [SubjectController::class, 'calquerCompetences']);
-    Route::post('/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']);
-    Route::post('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
-    Route::post('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
-    Route::post('/subjects/saveManyAttricutionsWithPost', [SubjectController::class, 'saveManyAttricutionsWithPost']);
-    Route::post('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']);
-    Route::post('/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
+    Route::post('/subjects/updateACompetence', [SubjectController::class, 'updateACompetence']); //OK
+    Route::post('/subjects/deleteManyCompetences', [SubjectController::class, 'deleteManyCompetences']); //OK
+    Route::delete('/subjects/deleteACompetence', [SubjectController::class, 'deleteACompetence']); //OK
+    Route::post('/subjects/calquerCompetences', [SubjectController::class, 'calquerCompetences']); //OK
+    Route::post('/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']); //OK
+    Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']); //OK
+    Route::post('/subjects/saveManyAttributions', [SubjectController::class, 'saveManyAttributions']); // MAY BE SIMILAR TO asignCoure of /staffs I'll check later
+    Route::delete('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']);//OK
+    Route::delete('/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
 

@@ -16,9 +16,55 @@ use Illuminate\Support\Facades\DB;
 class SubjectController extends Controller
 {
 
+    public function saveManyAttributions(Request $request)
+    {   //SAVES MANY ATTRIBUTIONS
+        $connection = $request->input("connection");
+        $data = $request->input("data");
+        $data_size = $request->input("data_size");
+
+
+        $scList = json_decode($data, true);
+        config(["database.default" => $connection]);
+
+        $msg = "";
+        $k = 1; //1--> Success. 0--> Some classes not saved [Exists allready in other sections or contain wrong characters]
+        foreach ($scList as $sc) {
+            $subject_classe_id = $sc["subject_classe_id"];
+            $staff_id = $sc["staff_id"];
+            //echo "subject_id: $subject_id | classe_id: $classe_id | coef: $coef | groupe_id: $groupe_id |";
+
+            $ref = new SubjectClasseStaff();
+            $ref->subject_classe_id = $subject_classe_id;
+            $ref->staff_id = $staff_id;
+            try {
+                $ref->save();
+            } catch (Exception $ex) {
+                $msg = $msg . "" . $ex->getMessage() . "<br/>";
+                $k = 0;
+            }
+        } //END FOR
+
+        return response()->json([
+            'status' => $k == 1,
+            'message' => $k == 1 ? 'All attributions successfully saved.' : "Failed to save at least an attribution. " . $msg,
+        ], $k == 1 ? 200 : 400);
+    }
+
     public function deleteCompetencesWithNoMarks(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'data' => 'required|string',
+                'data_size' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $year  = $request->input("year");
         $data = $request->input("data");
@@ -27,13 +73,14 @@ class SubjectController extends Controller
         $compList = json_decode($data, true);
         $n = count($compList);
         //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        //$allAffected = 1; //interpreted as true. 0-->false
+
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
-        //echo "sy_id: $section</br>"; 
+
+        $msg = "";
+        $allAffected = 1; //interpreted as true. 0-->false 
         foreach ($compList as $sub) {
             $comp_id = $sub["subject_competence_id"];
-            $allAffected = 1;
             try {
                 $x = DB::select(
                     "DELETE FROM subject_competences 
@@ -42,11 +89,13 @@ class SubjectController extends Controller
                 );
             } catch (\Throwable $ex) {
                 $allAffected = 0;
-                //echo "ERROR " . $ex->getMessage();
+                $msg = $msg . "" . $ex->getMessage() . "<br/>";
             }
         } //END FOR
-        //return response($allAffected, 200);
-        echo (string) $allAffected; //1--> All competences successfully deleted; 0--> Failed to delete at least one
+        return response()->json([
+            'status' => $allAffected == 1,
+            'message' => $allAffected == 1 ? 'All competences successfully deleted.' : "Failed to delete at least a competence. " . $msg,
+        ], $allAffected == 1 ? 200 : 400);
     }
 
 
@@ -142,23 +191,75 @@ class SubjectController extends Controller
 
     public function deleteCompetencesOfAClasse(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'classe_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $classe_id = $request->input("classe_id");
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
+
         try {
-            //DELETE ALL STUD_COMP_MARKS RELATED
-            //$res = StudCompMark::
-            //where("subject_competence_id", "$subject_competence_id")
-            //->delete();
             $res = DB::select("DELETE FROM subject_competences 
                 WHERE classe_id = $classe_id and sy_id = $sy_id");
-            echo "1";
+            return response()->json([
+                'status' => true,
+                'message' => 'All competences of the classe successfully deleted.',
+            ], 200);
         } catch (\Throwable $e) {
-            echo "<br/>" . $e->getMessage();
-            echo "-1";
+            return response()->json([
+                'status' => false,
+                'message' => "Failed to delete competences of the classe " . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    public function deleteACompetence(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'subject_competence_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input("connection");
+        $subject_competence_id = $request->input("subject_competence_id");
+        config(["database.default" => $connection]);
+
+        $compRef = SubjectCompetence::find($subject_competence_id);
+        try {
+            DB::select("DELETE FROM stud_comp_mark 
+                WHERE stud_comp_mark.subject_competence_id = $subject_competence_id");
+            if (!is_null($compRef)) {
+                $compRef->delete();
+            }
+            return response()->json([
+                'status' => true,
+                'message' => 'Competence successfully deleted.',
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => "Failed to delete competence " . $e->getMessage(),
+            ], 400);
         }
     }
 
@@ -543,12 +644,29 @@ class SubjectController extends Controller
 
     public function calquerSubjects(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'classe_id' => 'required|integer|min:1',  //Class From
+                'classe_name' => 'required|string',  //Class To
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section = $request->input("section");
-        $classe_id = $request->input("classe_id"); //Classe from
-        $classe_name = $request->input("classe_name"); //Classe to
+        $classe_id = $request->input("classe_id"); //Class From  
+        $classe_name = $request->input("classe_name"); //Class To
         config(["database.default" => $connection]);
+
+        $msg = "";
         $ok = 1;
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
@@ -586,19 +704,30 @@ class SubjectController extends Controller
                     try {
                         $newSc->save();
                     } catch (\Throwable $ex1) {
-                        echo '<br/>ERROR: ' . $ex1->getMessage();
+                        $msg .= '<br/>ERROR: ' . $ex1->getMessage();
                         $ok = 0; //Failed to save at least one
                     }
                 }
             } else {
-                echo "\$classeTo or \$subClassFrom is null<br/>";
+                $msg .= "\nclasseTo or subClassFrom is null<br/>";
                 $ok = 0;
             }
         } catch (\Throwable $e) {
-            //echo '<br/>ERROR: ' . $e->getMessage(); 
+            $msg .= '<br/>ERROR: ' . $e->getMessage();
             $ok = 0;
         }
-        echo $ok;
+
+        if ($ok == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All subjects successfully copied.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => "Failed to copy at least a subject " . $msg,
+            ], 500);
+        } //K=1--> All subjects successfully modified; K=0--> Failed to save at least one   
     } //END calquerSubjects
 
 
@@ -761,6 +890,22 @@ class SubjectController extends Controller
 
     public function calquerCompetencesOfTerm(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'data' => 'required|string',
+                'classe_id_from' => 'required|integer|min:1',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'term' => 'required|integer|min:1|max:3',
+
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
         $connection = $request->input("connection");
         $data = $request->input("data");
         $classe_id_from = $request->input("classe_id_from");
@@ -769,9 +914,6 @@ class SubjectController extends Controller
         $term_id = $request->input("term");
 
         $classe_ids = json_decode($data, true);
-        //$n = count($subList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false
         config(["database.default" => $connection]);
 
         $sy_id = MyHelper::getSchoolYearID($year);
@@ -783,60 +925,67 @@ class SubjectController extends Controller
                         AND classe_id = $classe_id_from
                         AND term_id = $term_id");
 
+        $allAffected = 1; //interpreted as true. 0-->false
         if (count($competences) > 0) {
             foreach ($classe_ids as $cl) {
                 $classe_id_to = $cl["classe_id"];
                 //echo "$classe_id_to<br/>";
                 $scList = MySubjectHelper::subjectClasseList($sy_id, $classe_id_to);
-                if (is_null($scList) || count($scList) == 0) {
-                    //The classe to has no subject class yet
-                    //Continue with next class
-                } else {
-                    foreach ($competences as $cmp) {
-                        foreach ($scList as $sc) {
-                            if ($sc->subject_id == $cmp->subject_id) {
-                                //$subjectExists = true;
-                                $competence_text = $cmp->competence_text;
-                                $subject_id = $cmp->subject_id;
-                                //$term_id = $cmp->term_id;//Pour cette methode on utilise plutot la competence passee en parametre
-                                try {
-                                    //remember to chech if the competence text exixts already in that classe before saving
-                                    $ref = new SubjectCompetence();
-                                    $ref->sy_id = $sy_id;
-                                    $ref->subject_id = $subject_id;
-                                    $ref->term_id = $term_id;
-                                    $ref->section_id = $section_id;
-                                    $ref->competence_text = $competence_text;
-                                    $ref->classe_id = $classe_id_to;
-                                    $res = MySubjectHelper::checkCompetenceText(
-                                        $sy_id,
-                                        $classe_id_to,
-                                        $subject_id,
-                                        $term_id,
-                                        $competence_text
-                                    );
-                                    //$ref->save();
-                                    DB::insert(
-                                        'insert into subject_competences (classe_id, sy_id, term_id, subject_id, section_id, competence_text) values (?, ?, ?, ?, ?, ?)',
-                                        [$classe_id_to, $sy_id, $term_id, $subject_id, $section_id, $competence_text]
-                                    );
-                                } catch (\Throwable $e) {
-                                    //echo '<br/>ERROR: ' . $e->getMessage();
-                                    $allAffected = 0;
+                try {
+                    if (is_null($scList) || count($scList) == 0) {
+                        //The classe to has no subject class yet
+                        //Continue with next class
+                    } else {
+                        foreach ($competences as $cmp) {
+                            foreach ($scList as $sc) {
+                                if ($sc->subject_id == $cmp->subject_id) {
+                                    //$subjectExists = true;
+                                    $competence_text = $cmp->competence_text;
+                                    $subject_id = $cmp->subject_id;
+                                    //$term_id = $cmp->term_id;//Pour cette methode on utilise plutot la competence passee en parametre
+                                    try {
+                                        //remember to chech if the competence text exixts already in that classe before saving
+                                        $ref = new SubjectCompetence();
+                                        $ref->sy_id = $sy_id;
+                                        $ref->subject_id = $subject_id;
+                                        $ref->term_id = $term_id;
+                                        $ref->section_id = $section_id;
+                                        $ref->competence_text = $competence_text;
+                                        $ref->classe_id = $classe_id_to;
+                                        $res = MySubjectHelper::checkCompetenceText(
+                                            $sy_id,
+                                            $classe_id_to,
+                                            $subject_id,
+                                            $term_id,
+                                            $competence_text
+                                        );
+                                        //$ref->save();
+                                        DB::insert(
+                                            'insert into subject_competences (classe_id, sy_id, term_id, subject_id, section_id, competence_text) values (?, ?, ?, ?, ?, ?)',
+                                            [$classe_id_to, $sy_id, $term_id, $subject_id, $section_id, $competence_text]
+                                        );
+                                    } catch (\Throwable $e) {
+                                        //echo '<br/>ERROR: ' . $e->getMessage();
+                                        $allAffected = 0;
+                                    }
+                                    break;
+                                } else {
+                                    //$subjectExists = false;
                                 }
-                                break;
-                            } else {
-                                //$subjectExists = false;
                             }
                         }
                     }
+                    //The classe to has no subject class yet
+                } catch (\Throwable $th) {
+                    $allAffected = 0;
                 }
-                //The classe to has no subject class yet
-
             }
         }
 
-        echo $allAffected;
+        return response()->json([
+            'status' => $allAffected == 1,
+            'message' => $allAffected == 1 ? 'All competences successfully copied.' : 'Failed to copy at least one competence.',
+        ], $allAffected == 1 ? 200 : 500);
     }
 
 

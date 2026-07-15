@@ -559,7 +559,6 @@ class StaffController extends Controller
         } //K=1--> All attributions Applied; K=0, -1 ou -2. --> Failed to save at least one
     }
 
-
     public function deleteManyStaffs(Request $request)
     {
         try {
@@ -614,8 +613,6 @@ class StaffController extends Controller
             ], 500);
         }
     }
-
-
 
     public function updateManyStaffs(Request $request)
     {
@@ -870,7 +867,6 @@ class StaffController extends Controller
             ], 500);
         }
     }
-
 
 
     public function saveStaff(Request $request)
