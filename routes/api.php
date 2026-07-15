@@ -107,15 +107,19 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/groupes/updateManyGroupes', [GroupeController::class, 'updateManyGroupes']);
 
     //==> ADMIN ON SUBJECT
-    Route::post('/subjects/saveSubject', [SubjectController::class, 'saveSubject']);
-    Route::post('/subjects/saveManySC', [SubjectController::class, 'saveManySC']);
-    Route::get('/subjects/updateManySubjects', [SubjectController::class, 'updateManySubjects']);
-    Route::get('/subjects/deleteManySubjects', [SubjectController::class, 'deleteManySubjects']);
-    Route::get('/subjects/saveManySubjects', [SubjectController::class, 'saveManySubjects']);
-    Route::get('/subjects/deleteAllSubjectsOfSectionAndYear', [SubjectController::class, 'deleteAllSubjectsOfSectionAndYear']);
-    Route::delete('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']);
-    Route::post('/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']);
-    Route::post('/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']);
+    Route::post('/subjects/saveSubject', [SubjectController::class, 'saveSubject']); //OK
+    Route::post('/subjects/saveManySubjects', [SubjectController::class, 'saveManySubjects']); //OK
+    Route::post('/subjects/saveManySC', [SubjectController::class, 'saveManySC']); //OK    
+    Route::post('/subjects/updateSubject', [SubjectController::class, 'updateSubject']); //OK
+    Route::post('/subjects/updateManySubjects', [SubjectController::class, 'updateManySubjects']); //OK
+    Route::delete('/subjects/deleteASubject', [SubjectController::class, 'deleteASubject']); //OK
+    Route::post('/subjects/deleteManySubjects', [SubjectController::class, 'deleteManySubjects']); //OK
+
+    Route::delete('/subjects/deleteAllSubjectsOfSectionAndYear', [SubjectController::class, 'deleteAllSubjectsOfSectionAndYear']); //OK
+    Route::delete('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']); //OK
+    Route::post('/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']); //OK
+    Route::post('/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']); //OK 
+    Route::post('/subjects/updateACompetence', [SubjectController::class, 'updateACompetence']);//OK
     Route::post('/subjects/deleteManyCompetences', [SubjectController::class, 'deleteManyCompetences']);
     Route::post('/subjects/calquerCompetences', [SubjectController::class, 'calquerCompetences']);
     Route::post('/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']);
