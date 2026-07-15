@@ -5,6 +5,7 @@
 /public/storage
 /storage/*.key
 /vendor
+/dms_acad_react
 .env
 .env.backup
 .env.production
