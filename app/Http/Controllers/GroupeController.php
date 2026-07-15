@@ -13,9 +13,74 @@ class GroupeController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function deleteAGroupes(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'groupe_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input("connection");
+        $year  = $request->input("year");
+        $groupe_id = $request->input("groupe_id");
+        config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+
+        $grpRef = Groupe::find($groupe_id);
+        if (is_null($grpRef)) {
+            return response()->json([
+                'status' => true,
+                'message' => "Groupe with ID $groupe_id does not exist. But just consider it as deleted.",
+            ], 200);
+        } else {
+
+            try {
+                $res = GroupeYear::where("groupe_id", '=', $groupe_id)
+                    ->where('sy_id', '=', $sy_id)
+                    ->first();
+
+                $tmp = 0;
+                if (!is_null($res)) { //VERY IMPORTANT TO CHECH IF NULL
+                    $tmp = $res->delete(); //To delete the groupe_year found
+                }
+                DB::select("DELETE FROM `groupe` WHERE groupe.`groupe_id` not IN(select groupe_year.groupe_id from groupe_year)");
+            } catch (\Throwable $th) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Groupe with ID $groupe_id could not be deleted becausean exception: " . $th->getMessage(),
+                ], 500);
+            }
+        }
+        return response()->json([
+            'status' => true,
+            'message' => "Groupe with ID $groupe_id has been deleted successfully.",
+        ], 200);
+    }
     public function deleteManyGroupes(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'data' => 'required|string',
+                'data_size' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year  = $request->input("year");
         $data = $request->input("data");
@@ -23,15 +88,18 @@ class GroupeController extends Controller
 
         $groupList = json_decode($data, true);
         $n = count($groupList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        //$allAffected = 1; //interpreted as true. 0-->false
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
-        //echo "sy_id: $sy_id</br>";
+
+        $errMsg = "";
+        $allAffected = 1; //interpreted as true. 0-->false
         foreach ($groupList as $group) {
             $groupe_id = $group["groupe_id"];
             $grpRef = Groupe::find($groupe_id);
-            $allAffected = 1;
+            if (is_null($grpRef)) {
+                $errMsg .= "Groupe with ID $groupe_id does not exist. We simply consider it as deleted. ";
+                continue; //Skip to the next groupe
+            }
             try {
                 $res = GroupeYear::where("groupe_id", '=', $groupe_id)
                     ->where('sy_id', '=', $sy_id)
@@ -40,9 +108,9 @@ class GroupeController extends Controller
                 if (!is_null($res)) { //VERY IMPORTANT TO CHECH IF NULL
                     $tmp = $res->delete(); //To delete the groupe_year found
                 }
-                //echo "rows affected AFTTER deleting group_year [$tmp]<br/>";
 
-                if ($tmp == 1) { //The speciality year has been deleted successfully
+
+                if ($tmp == 1) { //The groupe_year has been deleted successfully
                     //On peut eventuellement supprimer le groupe s'il n'est pas dans un autre schoolyear
                     $grpList = GroupeYear::where("groupe_id", '=', $groupe_id)
                         ->get();
@@ -56,53 +124,108 @@ class GroupeController extends Controller
                 } else {
                     //Le groupe ne sera pas supprimé
                     $allAffected = 0;
-                    //echo "spId: $groupe_id will not be affected Since res = $res<br/> ";
+                    $errMsg .= "Groupe with ID $groupe_id could not be deleted. because we failed to delete the corresponding groupe_year. ";
                 }
             } catch (Exception $ex) {
                 $allAffected = 0;
-                //echo "ERROR " . $ex->getMessage();
+                $errMsg .= "Groupe with ID $groupe_id could not be deleted due to an exception: " . $ex->getMessage() . " ";
             }
         } //END FOR
-        //return response($allAffected, 200);
-        echo (string) $allAffected; //1--> All groupes successfully deleted; 0--> Failed to save at least one
+
+        //echo (string) $allAffected; //1--> All groupes successfully deleted; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All groupes successfully deleted.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'ERROR:' . $errMsg,
+            ], 500);
+        }
     }
 
     public function updateManyGroupes(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'data' => 'required|string',
+                'data_size' => 'nullable|integer|min:0',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
 
         $groupList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false
         config(["database.default" => $connection]);
+
+        $msg = "";
+        $allAffected = 1; //interpreted as true. 0-->false
         foreach ($groupList as $grp) {
             // code
             $groupe_id = $grp["groupe_id"];
             $groupe_name = $grp["groupe_name"];
-            $affected = DB::table('groupe')
-                ->where('groupe_id', $groupe_id)
-                ->update(['groupe_name' => $groupe_name]);
-            if ($affected != 1) {
+            $ref = Groupe::find($groupe_id);
+            if (is_null($ref)) {
                 $allAffected = 0;
+                $msg .= "\nGroupe with ID $groupe_id does not exist. ";
+                continue; //Skip to the next groupe
+            }
+            try {
+                DB::table('groupe')
+                    ->where('groupe_id', $groupe_id)
+                    ->update(['groupe_name' => $groupe_name]);
+            } catch (\Throwable $th) {
+                $allAffected = 0;
+                $msg .= "\nGroupe with ID $groupe_id could not be updated due to an exception: " . $th->getMessage() . " ";
             }
         }
-        echo "$allAffected"; //1--> All groupes successfully modified; 0--> Failed to save at least one
+        if ($allAffected == 1) {
+            return response()->json([
+                'status' => true,
+                'message' => 'All groupes successfully updated.',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update at least one groupe.' . $msg,
+            ], 500);
+        }
     }
-    
-    
+
+
     public function saveGroupe(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'groupe_name' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $groupe_name = $request->input("groupe_name");
         $section_name = $request->input("section");
+
         config(["database.default" => $connection]);
-        //echo "Connection: $connection <br/>Year: $year <br/>sp_name: $speciality_name"
-        //    . "<br/>Filiere: $nom_filiere <br/>Description: $desc<br/>Section: $section_name <br/>";
+
         try {
             $sy_id = MyHelper::getSchoolYearID($year);
             $section_id = MyHelper::getSectionID($section_name);
@@ -115,18 +238,21 @@ class GroupeController extends Controller
             try {
                 $groupeTmp = Groupe::where("groupe_name", "=", $groupe_name)
                     ->first();
-                if (is_null($groupeTmp)){
+                if (is_null($groupeTmp)) {
                     $grp->save();
                     $groupe_id = $grp->groupe_id; //ID OF gropueYear CAN ONLY BE OBTAINED AFTER SAVING the grp (Groupe)
-                }else{
+                } else {
                     $groupe_id = $groupeTmp->groupe_id;
                 }
-                
-                $grpYear->groupe_id = $groupe_id; 
+
+                $grpYear->groupe_id = $groupe_id;
                 $grpYear->sy_id = $sy_id;
                 $grpYear->section_id = $section_id;
                 $grpYear->save();
-                echo "1"; //Operation is successfull*/
+                return response()->json([
+                    'status' => true,
+                    'message' => "Groupe '$groupe_name' has been saved successfully.",
+                ], 200);
             } catch (Exception $ex) {
                 //A groupe with may exist already
                 //If exception then grp or grpYear failed to save. We delete them to avoid inconsitency
@@ -136,18 +262,36 @@ class GroupeController extends Controller
                 } catch (Exception $exx) {
                 }
                 //echo '<br/>Message: ' . $ex->getMessage() . '<br>';
-                echo "-2"; //Operation failed OR groupe exists already
+                return response()->json([
+                    'status' => false,
+                    'message' => "A groupe with name '$groupe_name' already exists in the current section or in another section" . $ex->getMessage(),
+                ], 400);
             }
         } catch (Exception $e) {
-            //echo '<br/>Message: ' . $e->getMessage();
-            echo "-1"; //Le groupe existe déja
+            return response()->json([
+                'status' => false,
+                'message' => "Error while saving groupe: " . $e->getMessage(),
+            ], 500);
         }
     }
-    
+
 
     public function allGroupes(Request $request)
     {
         //-------------------- THIS METHOD FETCHES ALL GROUPES OF THE SECTIONS IN The current schoolyear
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -160,14 +304,29 @@ class GroupeController extends Controller
             $groupes = MyHelper::getGroupesOfYearOfSection($sy_id, $section_id);
             return response()->json($groupes, 200);
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Error fetching groupes: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function groupesOfYearAndSection(Request $request)
     {   //REPETITION CETTE METHODE EXISTE DEJA AU NOM DE allGroupes
         //-------------------- THIS METHOD FETCHES ALL GROUPES OF THE SECTIONS IN The current schoolyear
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -183,8 +342,10 @@ class GroupeController extends Controller
                         AND groupe_year.section_id = $section_id)");
             return response()->json($subjects, 200);
         } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+            return response()->json([
+                'status' => false,
+                'message' => 'Error fetching groupes: ' . $e->getMessage(),
+            ], 500);
         }
     }
 

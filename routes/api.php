@@ -96,6 +96,15 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
 
     //==> ADMIN ON CLASSIFIEDPARAM
     Route::post('/settings/saveClassifiedParamOfYear', [ClassifiedparamController::class, 'saveClassifiedParamOfYear']); //OK
+
+    //==> ADMIN ON LOCK
+    Route::post('/lock/saveOrUpdateLocks', [LockController::class, 'saveOrUpdateLocks']);
+
+    //==> ADMIN ON GROUPE
+    Route::post('/groupes/deleteAGroupes', [GroupeController::class, 'deleteAGroupes']); //OK
+    Route::post('/groupes/deleteManyGroupes', [GroupeController::class, 'deleteManyGroupes']); //OK
+    Route::post('/groupes/saveGroupe', [GroupeController::class, 'saveGroupe']); //OK| but in DB the groupe_name is unique. So it is not possible to save group with same as one even in a differnt section
+    Route::post('/groupes/updateManyGroupes', [GroupeController::class, 'updateManyGroupes']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
 
@@ -157,19 +166,18 @@ Route::middleware(['jwt.auth'])->group(function () {
 
     //==> ANY CONNECTED USER ON LOCK
     Route::get('/lock/locksOfYear', [LockController::class, 'locksOfYear']);
-    Route::post('/lock/saveOrUpdateLocks', [LockController::class, 'saveOrUpdateLocks']);
+
+    //==> ANY CONNECTED USER ON GROUPE 
+    Route::get('/groupes/allGroupes', [GroupeController::class, 'allGroupes']); //OK
+    Route::get('/groupes/groupesOfYearAndSection', [GroupeController::class, 'groupesOfYearAndSection']); //OK    
+
 });
 //===================================================================== END ANY CONNECTED USER ROUTES =====================================================================================================
 
 
 
 
-//--------------------- GROUPE
-Route::get('/subjects/allGroupes', [GroupeController::class, 'allGroupes']);
-Route::get('/subjects/deleteManyGroupes', [GroupeController::class, 'deleteManyGroupes']);
-Route::get('/subjects/saveGroupe', [GroupeController::class, 'saveGroupe']);
-Route::get('/subjects/updateManyGroupes', [GroupeController::class, 'updateManyGroupes']);
-Route::get('/subjects/groupesOfYearAndSection', [GroupeController::class, 'groupesOfYearAndSection']);
+
 
 //--------------------- SUBJECTS
 Route::get('/subjects/allSubjectOfSectionAndYear', [SubjectController::class, 'allSubjectOfSectionAndYear']);
