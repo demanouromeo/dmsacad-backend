@@ -40,7 +40,7 @@ class SubjectController extends Controller
                 WHERE subject_competence_id = ?",
                     [$comp_id]
                 );
-            } catch (Exception $ex) {
+            } catch (\Throwable $ex) {
                 $allAffected = 0;
                 //echo "ERROR " . $ex->getMessage();
             }
@@ -49,105 +49,7 @@ class SubjectController extends Controller
         echo (string) $allAffected; //1--> All competences successfully deleted; 0--> Failed to delete at least one
     }
 
-    public function deleteCompetencesWithNoMarksPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $year  = $request->input("year");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
 
-        $compList = json_decode($data, true);
-        $n = count($compList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        //$allAffected = 1; //interpreted as true. 0-->false
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        //echo "sy_id: $section</br>"; 
-        foreach ($compList as $sub) {
-            $comp_id = $sub["subject_competence_id"];
-            $allAffected = 1;
-            try {
-                $x = DB::select(
-                    "DELETE FROM subject_competences 
-                WHERE subject_competence_id = ?",
-                    [$comp_id]
-                );
-            } catch (Exception $ex) {
-                $allAffected = 0;
-                //echo "ERROR " . $ex->getMessage();
-            }
-        } //END FOR
-        //return response($allAffected, 200);
-        echo (string) $allAffected; //1--> All competences successfully deleted; 0--> Failed to delete at least one
-    }
-
-    public function saveManySubjectsWithPOST(Request $request)
-    {
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-        $year = $request->input("year");
-        $section = $request->input("section");
-
-        $subList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $k = 1; //1--> Success. 0--> Some classes not saved [Exists allready in other sections or contain wrong characters]
-        $allAffected2 = 1;
-
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        $section_id = MyHelper::getSectionID($section);
-        $msg = "";
-        foreach ($subList as $sub) {
-            $subject_title = $sub["subject_title"];
-            $subTmp = Subject::where("subject_title", "=", $subject_title)->first();
-            try {
-                $sub = new Subject();
-                $subYear = new SubjectYear();
-
-                $sub->subject_title = $subject_title;
-                //$sub->subject_code = null; //SET SUBJECT CODE TO NULL FOR NOW
-                $subTmp = Subject::where("subject_title", "=", $subject_title)->first();
-                try {
-                    $id = 1;
-                    if (is_null($subTmp)) {
-                        $sub->save();
-                        $id = $sub->subject_id;
-                    } else {
-                        $id = $subTmp->subject_id;
-                    }
-                    $subYear->subject_id = $id;
-                    $subYear->sy_id = $sy_id;
-                    $subYear->section_id = $section_id;
-                    $subYear->save();
-                    //Operation is successfull FOR CURRENT SUBJECT
-                } catch (Exception $ex) {
-                    $k = 0; //To mean AT LEAST ONE SUBJECT FAILED TO SAVE
-                    try {
-                        $sub->delete();
-                    } catch (Exception $exx) {
-                    }
-                    try {
-                        $subYear->delete();
-                    } catch (Exception $exx) {
-                    }
-                    //echo '<br/>Message: ' . $ex->getMessage() . '<br>';
-                    //Operation failed FOR CURRENT SUBJECT
-                }
-            } catch (Exception $exx) {
-                $msg = $msg . "\n" . $exx->getMessage() . "\n";
-                $k = -1; //Exception surfaces
-            }
-        } //END FOR
-
-        if ($k == 1) {
-            echo $k;
-        } else {
-            echo "$k|$msg";
-        } //K=1--> All subjects successfully modified; K=0--> Failed to save at least one
-    }
 
     public function saveManySubjects(Request $request)
     {
@@ -190,20 +92,20 @@ class SubjectController extends Controller
                     $subYear->section_id = $section_id;
                     $subYear->save();
                     //Operation is successfull FOR CURRENT SUBJECT
-                } catch (Exception $ex) {
+                } catch (\Throwable $ex) {
                     $k = 0; //To mean AT LEAST ONE SUBJECT FAILED TO SAVE
                     try {
                         $sub->delete();
-                    } catch (Exception $exx) {
+                    } catch (\Throwable $exx) {
                     }
                     try {
                         $subYear->delete();
-                    } catch (Exception $exx) {
+                    } catch (\Throwable $exx) {
                     }
                     //echo '<br/>Message: ' . $ex->getMessage() . '<br>';
                     //Operation failed FOR CURRENT SUBJECT
                 }
-            } catch (Exception $exx) {
+            } catch (\Throwable $exx) {
                 $msg = $msg . "\n" . $exx->getMessage() . "\n";
                 $k = -1; //Exception surfaces
             }
@@ -232,7 +134,7 @@ class SubjectController extends Controller
             $res = DB::select("DELETE FROM subject_competences 
                 WHERE classe_id = $classe_id and sy_id = $sy_id");
             echo "1";
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo "<br/>" . $e->getMessage();
             echo "-1";
         }
@@ -269,7 +171,7 @@ class SubjectController extends Controller
                 WHERE stud_comp_mark.subject_competence_id = $subject_competence_id");
                 //echo"<br/>$res<br/>";
                 $affected = $compRef->delete();
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $affected = 0;
                 echo "<br/>" . $e->getMessage();
             }
@@ -312,6 +214,20 @@ class SubjectController extends Controller
 
     public function allCompetences(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'term_id' => 'required|integer|min:1|max:3',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -330,14 +246,29 @@ class SubjectController extends Controller
                         AND section_id = $section_id 
                         AND term_id = $term_id");
             return response()->json($competences, 200);
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allCompetencesOfSection(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -354,14 +285,32 @@ class SubjectController extends Controller
                     FROM subject_competences WHERE sy_id = $sy_id
                         AND section_id = $section_id");
             return response()->json($competences, 200);
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allCompetences1(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'classe_id' => 'required|integer',
+                'subject_id' => 'required|integer',
+                'term_id' => 'required|integer|min:1|max:3',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -386,14 +335,32 @@ class SubjectController extends Controller
                         AND subject_id = $subject_id
                         AND term_id = $term_id");
             return response()->json($competences, 200);
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
         }
     }
 
     public function allCompetences2(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'classe_id' => 'required|integer',
+                'subject_id' => 'required|integer',
+                'term_id' => 'required|integer|min:1|max:3',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -416,9 +383,11 @@ class SubjectController extends Controller
                         AND classe_id = $classe_id
                         AND subject_id = $subject_id");
             return response()->json($competences, 200);
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
         }
     }
     public function saveCompetence(Request $request)
@@ -448,7 +417,7 @@ class SubjectController extends Controller
             $comp->competence_text = $competence_text;
             $query = $comp->save();
             echo $query; //1->Operation is successfull
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             //echo '<br/>Message: ' .$e->getMessage();
             echo "-2"; //La competence existe déja. Tres improblable dans notre 
             //cas car la matiere peut avoir plusieurs competences au cours d'une année et dans un trimestre donné
@@ -499,7 +468,7 @@ class SubjectController extends Controller
                     $newSc->groupe_id = $sc->groupe_id;
                     try {
                         $newSc->save();
-                    } catch (Exception $ex1) {
+                    } catch (\Throwable $ex1) {
                         echo '<br/>ERROR: ' . $ex1->getMessage();
                         $ok = 0; //Failed to save at least one
                     }
@@ -508,7 +477,7 @@ class SubjectController extends Controller
                 echo "\$classeTo or \$subClassFrom is null<br/>";
                 $ok = 0;
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             //echo '<br/>ERROR: ' . $e->getMessage(); 
             $ok = 0;
         }
@@ -581,7 +550,7 @@ class SubjectController extends Controller
                                     [$classe_id_to, $sy_id, $term_id, $subject_id, $section_id, $competence_text]
                                 );
                             }
-                        } catch (Exception $e) {
+                        } catch (\Throwable $e) {
                             echo '<br/>ERROR: ' . $e->getMessage();
                             $allAffected = 0;
                         }
@@ -654,7 +623,7 @@ class SubjectController extends Controller
                                         'insert into subject_competences (classe_id, sy_id, term_id, subject_id, section_id, competence_text) values (?, ?, ?, ?, ?, ?)',
                                         [$classe_id_to, $sy_id, $term_id, $subject_id, $section_id, $competence_text]
                                     );
-                                } catch (Exception $e) {
+                                } catch (\Throwable $e) {
                                     //echo '<br/>ERROR: ' . $e->getMessage();
                                     $allAffected = 0;
                                 }
@@ -734,7 +703,7 @@ class SubjectController extends Controller
                                         'insert into subject_competences (classe_id, sy_id, term_id, subject_id, section_id, competence_text) values (?, ?, ?, ?, ?, ?)',
                                         [$classe_id_to, $sy_id, $term_id, $subject_id, $section_id, $competence_text]
                                     );
-                                } catch (Exception $e) {
+                                } catch (\Throwable $e) {
                                     //echo '<br/>ERROR: ' . $e->getMessage();
                                     $allAffected = 0;
                                 }
@@ -811,78 +780,7 @@ class SubjectController extends Controller
                     $scTmp->update();
                 }
                 //echo "  Found[$found] group_id is '".($scTmp->groupe_id)."' | SC_id[".($scTmp->subject_classe_id)."]<br/>";
-            } catch (Exception $exx) {
-                $msg = $msg . "\n" . "failed to save SC of" . $subject_id . "" . $exx->getMessage() . "\n";
-                $k = 0; //Exception surfaces
-                echo "  Error[$msg]<br/>";
-            }
-        } //END FOR
-
-        if ($k == 1) {
-            echo $k;
-        } else {
-            echo "$k|$msg";
-        } //K=1--> All subjects successfully modified; K=0--> Failed to save at least one
-    }
-
-    public function saveManySCWithPost(Request $request)
-    {   //update MANY SUBJECT_CLASSES
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-        $year = $request->input("year");
-        $section = $request->input("section");
-
-        $scList = json_decode($data, true);
-        $n = count($scList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size] <br/>";
-        $k = 1; //1--> Success. 0--> Some classes not saved [Exists allready in other sections or contain wrong characters]
-
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        $section_id = MyHelper::getSectionID($section);
-        $msg = "";
-        foreach ($scList as $sc) {
-            $found = false;
-            $subject_id = $sc["subject_id"];
-            $coef = $sc["coef"];
-            $classe_id = $sc["classe_id"];
-            $groupe_id = $sc["groupe_id"];
-            //echo "subject_id: $subject_id | classe_id: $classe_id | coef: $coef | groupe_id: $groupe_id |";
-            $scTmp = SubjectClasse::where("subject_id", "=", $subject_id)
-                ->where("sy_id", "=", $sy_id)
-                ->where("section_id", "=", $section_id)
-                ->where("classe_id", "=", "$classe_id")
-                ->first();
-
-            //$scTmp = DB::select("");
-
-            try {
-                if (is_null($scTmp)) { //subjectClasse not found
-                    if ($subject_id == "null" || $classe_id == "null") {
-                        //Sc can't be saved in this case  
-                        $k = 0;
-                    } else {
-                        $scToSave = new SubjectClasse();
-                        $scToSave->subject_id = $subject_id;
-                        $scToSave->sy_id = $sy_id;
-                        $scToSave->section_id = $section_id;
-                        $scToSave->coef = $coef;
-                        $scToSave->classe_id = $classe_id;
-                        $scToSave->groupe_id = $groupe_id;
-                        $scToSave->save();
-                    }
-                    $found = false;
-                } else {
-                    //update instead
-                    $found = true;
-                    $scTmp->coef = $coef;
-                    $scTmp->update();
-                    $scTmp->groupe_id =  $groupe_id;
-                    $scTmp->update();
-                }
-                //echo "  Found[$found] group_id is '".($scTmp->groupe_id)."' | SC_id[".($scTmp->subject_classe_id)."]<br/>";
-            } catch (Exception $exx) {
+            } catch (\Throwable $exx) {
                 $msg = $msg . "\n" . "failed to save SC of" . $subject_id . "" . $exx->getMessage() . "\n";
                 $k = 0; //Exception surfaces
                 echo "  Error[$msg]<br/>";
@@ -897,45 +795,6 @@ class SubjectController extends Controller
     }
 
 
-    public function saveManyAttricutionsWithPost(Request $request)
-    {   //SAVES MANY ATTRIBUTIONS
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-        //$year = $request->input("year");
-        //$section = $request->input("section");
-
-        $scList = json_decode($data, true);
-        //$n = count($fList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $k = 1; //1--> Success. 0--> Some classes not saved [Exists allready in other sections or contain wrong characters]
-
-        config(["database.default" => $connection]);
-        //$sy_id = MyHelper::getSchoolYearID($year);
-        //$section_id = MyHelper::getSectionID($section);
-        $msg = "";
-        foreach ($scList as $sc) {
-            $subject_classe_id = $sc["subject_classe_id"];
-            $staff_id = $sc["staff_id"];
-            //echo "subject_id: $subject_id | classe_id: $classe_id | coef: $coef | groupe_id: $groupe_id |";
-
-            $ref = new SubjectClasseStaff();
-            $ref->subject_classe_id = $subject_classe_id;
-            $ref->staff_id = $staff_id;
-            try {
-                $ref->save();
-            } catch (Exception $ex) {
-                $msg = $msg . "" . $ex->getMessage() . "<br/>";
-                $k = 0;
-            }
-        } //END FOR
-
-        if ($k == 1) {
-            echo $k;
-        } else {
-            echo "$k|$msg";
-        } //K=1--> All attributions successfully saved; K=0--> Failed to save at least one
-    }
 
 
     public function deleteAllSubjectsOfSectionAndYear(Request $request)
@@ -972,7 +831,7 @@ class SubjectController extends Controller
             $allAffected = 1;
             try {
                 $res = MySubjectHelper::deleteASubject($sy_id, $section_id, $subject_id);
-            } catch (Exception $ex) {
+            } catch (\Throwable $ex) {
                 $allAffected = 0;
                 //echo "ERROR " . $ex->getMessage();
             }
@@ -980,37 +839,8 @@ class SubjectController extends Controller
         //return response($allAffected, 200);
         echo (string) $allAffected; //1--> All groupes successfully deleted; 0--> Failed to save at least one
     }
-    public function deleteManySubjectsWithPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $year  = $request->input("year");
-        $section  = $request->input("section");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
 
-        $subList = json_decode($data, true);
-        $n = count($subList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        //$allAffected = 1; //interpreted as true. 0-->false
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-        //echo "sy_id: $section</br>";
-        $section_id = MyHelper::getSectionID($section);
-        foreach ($subList as $sub) {
-            $subject_id = $sub["subject_id"];
-            $subRef = Subject::find($subject_id);
-            $allAffected = 1;
-            try {
-                $res = MySubjectHelper::deleteASubject($sy_id, $section_id, $subject_id);
-            } catch (Exception $ex) {
-                $allAffected = 0;
-                //echo "ERROR " . $ex->getMessage();
-            }
-        } //END FOR
-        //return response($allAffected, 200);
-        echo (string) $allAffected; //1--> All groupes successfully deleted; 0--> Failed to save at least one
-    }
+
 
     public function updateManySubjects(Request $request)
     {
@@ -1038,31 +868,6 @@ class SubjectController extends Controller
         echo "$allAffected"; //1--> All groupes successfully modified; 0--> Failed to save at least one
     }
 
-    public function updateManySubjectsWithPOST(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-
-        $subList = json_decode($data, true);
-        //$n = count($subList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]";
-        $allAffected = 1; //interpreted as true. 0-->false
-        config(["database.default" => $connection]);
-        foreach ($subList as $sub) {
-            // code
-            $subject_id = $sub["subject_id"];
-            $subject_title = $sub["subject_title"];
-            $affected = DB::table('subject')
-                ->where('subject_id', $subject_id)
-                ->update(['subject_title' => $subject_title]);
-            if ($affected != 1) {
-                $allAffected = 0;
-            }
-        }
-        echo "$allAffected"; //1--> All groupes successfully modified; 0--> Failed to save at least one
-    }
 
     public function saveSubject(Request $request)
     {
@@ -1094,18 +899,18 @@ class SubjectController extends Controller
                 $subYear->section_id = $section_id;
                 $subYear->save();
                 echo "1"; //Operation is successfull*/
-            } catch (Exception $ex) {
+            } catch (\Throwable $ex) {
                 //A subject with may exist already [in another section school_year]
                 //If exception then sub or subYear failed to save. We delete them to avoid inconsitency
                 $sub->delete();
                 try {
                     $subYear->delete();
-                } catch (Exception $exx) {
+                } catch (\Throwable $exx) {
                 }
                 echo '<br/>Message: ' . $ex->getMessage() . '<br>';
                 echo "-2"; //Operation failed OR groupe exists already
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             echo "-1"; //Le groupe existe déja
             //echo '<br/>Message: ' . $e->getMessage();
         }
@@ -1113,6 +918,19 @@ class SubjectController extends Controller
 
     public function allSubjectOfSectionAndYear(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -1124,14 +942,30 @@ class SubjectController extends Controller
 
             $subjects = MySubjectHelper::getSubjectsOfYearOfSection($sy_id, $section_id);
             return response()->json($subjects, 200);
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function subjectsNotOfClasse(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'classe_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -1149,14 +983,30 @@ class SubjectController extends Controller
                                 AND subject_id NOT IN(SELECT subject_classe.subject_id FROM subject_classe 
                                     WHERE subject_classe.classe_id =$classe_id AND subject_classe.sy_id = $sy_id)");
             return response()->json($subjects, 200);
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function subjectOfClasse(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+                'classe_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -1185,14 +1035,29 @@ class SubjectController extends Controller
 
 
             return response()->json($subjects, 200);
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     public function allSubjectOfClasse(Request $request)
     {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $year = $request->input("year");
         $section_name = $request->input("section");
@@ -1219,9 +1084,11 @@ class SubjectController extends Controller
 
 
             return response()->json($subjects, 200);
-        } catch (Exception $e) {
-            //echo '<br/>ERROR: ' .$e->getMessage();
-            return response()->json([], 500); //ERROR OCCURS
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -1240,7 +1107,7 @@ class SubjectController extends Controller
             //echo "sy_id: $sy_id | section_id: $section_id | subject_id: $subject_id | classe_id: $classe_id";
             $res = MySubjectHelper::deleteASubjectOfAClasse($sy_id, $section_id, $subject_id, $classe_id);
             echo $res;
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             //echo '<br/>ERROR: ' .$e->getMessage();
             //return response()->json([], 500); //ERROR OCCURS
             echo -2; //Error occurs

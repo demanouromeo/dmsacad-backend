@@ -105,6 +105,25 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/groupes/deleteManyGroupes', [GroupeController::class, 'deleteManyGroupes']); //OK
     Route::post('/groupes/saveGroupe', [GroupeController::class, 'saveGroupe']); //OK| but in DB the groupe_name is unique. So it is not possible to save group with same as one even in a differnt section
     Route::post('/groupes/updateManyGroupes', [GroupeController::class, 'updateManyGroupes']);
+
+    //==> ADMIN ON SUBJECT
+    Route::post('/subjects/saveSubject', [SubjectController::class, 'saveSubject']);
+    Route::post('/subjects/saveManySC', [SubjectController::class, 'saveManySC']);
+    Route::get('/subjects/updateManySubjects', [SubjectController::class, 'updateManySubjects']);
+    Route::get('/subjects/deleteManySubjects', [SubjectController::class, 'deleteManySubjects']);
+    Route::get('/subjects/saveManySubjects', [SubjectController::class, 'saveManySubjects']);
+    Route::get('/subjects/deleteAllSubjectsOfSectionAndYear', [SubjectController::class, 'deleteAllSubjectsOfSectionAndYear']);
+    Route::delete('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']);
+    Route::post('/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']);
+    Route::post('/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']);
+    Route::post('/subjects/deleteManyCompetences', [SubjectController::class, 'deleteManyCompetences']);
+    Route::post('/subjects/calquerCompetences', [SubjectController::class, 'calquerCompetences']);
+    Route::post('/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']);
+    Route::post('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
+    Route::post('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
+    Route::post('/subjects/saveManyAttricutionsWithPost', [SubjectController::class, 'saveManyAttricutionsWithPost']);
+    Route::post('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']);
+    Route::post('/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
 
@@ -171,46 +190,17 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/groupes/allGroupes', [GroupeController::class, 'allGroupes']); //OK
     Route::get('/groupes/groupesOfYearAndSection', [GroupeController::class, 'groupesOfYearAndSection']); //OK    
 
+    //==> ANY CONNECTED USER ON SUBJECT
+    Route::get('/subjects/allSubjectOfSectionAndYear', [SubjectController::class, 'allSubjectOfSectionAndYear']); //OK 
+    Route::get('/subjects/allCompetencesOfSection', [SubjectController::class, 'allCompetencesOfSection']); //OK
+    Route::get('/subjects/subjectsNotOfClasse', [SubjectController::class, 'subjectsNotOfClasse']); //OK
+    Route::get('/subjects/subjectOfClasse', [SubjectController::class, 'subjectOfClasse']); //OK
+    Route::get('/subjects/allSubjectOfClasse', [SubjectController::class, 'allSubjectOfClasse']); //OK
+    Route::get('/subjects/allCompetences', [SubjectController::class, 'allCompetences']); //OK
+    Route::get('/subjects/allCompetences1', [SubjectController::class, 'allCompetences1']); //OK 
+    Route::get('/subjects/allCompetences2', [SubjectController::class, 'allCompetences2']); //OK allCompetences1 VS allCompetences1????
 });
 //===================================================================== END ANY CONNECTED USER ROUTES =====================================================================================================
-
-
-
-
-
-
-//--------------------- SUBJECTS
-Route::get('/subjects/allSubjectOfSectionAndYear', [SubjectController::class, 'allSubjectOfSectionAndYear']);
-Route::get('/subjects/saveSubject', [SubjectController::class, 'saveSubject']);
-Route::get('/subjects/updateManySubjects', [SubjectController::class, 'updateManySubjects']);
-Route::get('/subjects/deleteManySubjects', [SubjectController::class, 'deleteManySubjects']);
-Route::get('/subjects/saveManySubjects', [SubjectController::class, 'saveManySubjects']);
-Route::get('/subjects/deleteAllSubjectsOfSectionAndYear', [SubjectController::class, 'deleteAllSubjectsOfSectionAndYear']);
-Route::get('/subjects/subjectsNotOfClasse', [SubjectController::class, 'subjectsNotOfClasse']);
-Route::get('/subjects/subjectOfClasse', [SubjectController::class, 'subjectOfClasse']);
-Route::get('/subjects/allSubjectOfClasse', [SubjectController::class, 'allSubjectOfClasse']);
-Route::get('/subjects/saveManySC', [SubjectController::class, 'saveManySC']);
-Route::get('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']);
-Route::get('/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']);
-Route::get('/subjects/allCompetences', [SubjectController::class, 'allCompetences']);
-Route::get('/subjects/allCompetences1', [SubjectController::class, 'allCompetences1']);
-Route::get('/subjects/allCompetences2', [SubjectController::class, 'allCompetences2']);
-Route::get('/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']);
-Route::get('/subjects/deleteManyCompetences', [SubjectController::class, 'deleteManyCompetences']);
-Route::get('/subjects/calquerCompetences', [SubjectController::class, 'calquerCompetences']);
-Route::get('/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']);
-Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
-Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']);
-Route::get('/subjects/subjectOfSection', [SubjectController::class, 'subjectOfSection']);
-Route::post('/subjects/deleteManySubjectsWithPOST', [SubjectController::class, 'deleteManySubjectsWithPOST']);
-Route::post('/subjects/updateManySubjectsWithPOST', [SubjectController::class, 'updateManySubjectsWithPOST']);
-Route::post('/subjects/saveManySubjectsWithPOST', [SubjectController::class, 'saveManySubjectsWithPOST']);
-Route::post('/subjects/saveManySCWithPost', [SubjectController::class, 'saveManySCWithPost']);
-Route::post('/subjects/saveManyAttricutionsWithPost', [SubjectController::class, 'saveManyAttricutionsWithPost']);
-Route::get('/subjects/allCompetencesOfSection', [SubjectController::class, 'allCompetencesOfSection']);
-Route::get('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']);
-Route::get('/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
-Route::post('/subjects/deleteCompetencesWithNoMarksPOST', [SubjectController::class, 'deleteCompetencesWithNoMarksPOST']);
 
 
 
@@ -302,21 +292,3 @@ Route::get('/test/deleteManyStudClasse', [TestController::class, 'deleteManyStud
 Route::post('/test/deleteManyStudClassePOST', [TestController::class, 'deleteManyStudClassePOST']);
 Route::get('/test/alterStaff', [TestController::class, 'alterStaff']);
 Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
-
-
-//--------------------- SCHOOL CONFIG [DONE]
-//Route::get('/modules/schoolConfig/allSchools', [SchoolInfoController::class, 'allSchools']); //THIS API doesn't need Authentication
-//Route::get('/modules/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); ALREADY SECURED & TESTES
-//Route::post('/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); SECURED NOT TESTED YET 
-//Route::get('/modules/schoolConfig/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //SECURED - tested and working
-//Route::get('/modules/schoolConfig/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']);//SECURED - tested and working
-//Route::get('/modules/schoolConfig/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']);//SECURED - tested and working
-//Route::post('/configs/upload', [SchoolInfoController::class, 'upload']);//SECURED 
-
-
-
-//--------------------- ACCOUNTS [DONE]
-// Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']);
-// Route::post('/accounts/connect', [AccountController::class, 'login']);
-// Route::post('/accounts/refresh', [AccountController::class, 'refresh']);
-// Route::get('/modules/account/updateAccount', [AccountController::class, 'updateAccount']);
