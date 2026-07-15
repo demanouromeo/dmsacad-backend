@@ -133,23 +133,23 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     //==> ADMIN ON STUDENT
     Route::get('/students/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
     Route::get('/students/deleteStudents', [StudentController::class, 'deleteStudents']);
-    Route::get('/students/saveStudents', [StudentController::class, 'saveStudents']);
-    Route::get('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
-    Route::get('/students/updateStudents', [StudentController::class, 'updateStudents']);
-    Route::get('/students/saveSeqMarks', [StudentController::class, 'saveSeqMarks']);
-    Route::get('/students/saveCompMarks', [StudentController::class, 'saveCompMarks']);
+    Route::post('/students/saveStudents', [StudentController::class, 'saveStudents']);
+    Route::post('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
+    Route::post('/students/updateStudents', [StudentController::class, 'updateStudents']);
+    Route::post('/students/saveSeqMarks', [StudentController::class, 'saveSeqMarks']);
+    Route::post('/students/saveCompMarks', [StudentController::class, 'saveCompMarks']);
     Route::get('/students/copyCompMarks', [StudentController::class, 'copyCompMarks']);
     Route::get('/students/copySeqMarks', [StudentController::class, 'copySeqMarks']);
     Route::get('/students/copyCompMarks2', [StudentController::class, 'copyCompMarks2']);
     Route::get('/students/copySeqMarks2', [StudentController::class, 'copySeqMarks2']);
-    Route::get('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
+    Route::post('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
     Route::get('/students/resetPromotionInfo', [StudentController::class, 'resetPromotionInfo']);
-    Route::get('/students/updatePromotionInfo', [StudentController::class, 'updatePromotionInfo']);
-    Route::get('/students/updateDismiss', [StudentController::class, 'updateDismiss']);
-    Route::get('/students/updateSolvable', [StudentController::class, 'updateSolvable']);
+    Route::post('/students/updatePromotionInfo', [StudentController::class, 'updatePromotionInfo']);
+    Route::post('/students/updateDismiss', [StudentController::class, 'updateDismiss']);
+    Route::post('/students/updateSolvable', [StudentController::class, 'updateSolvable']);
     Route::get('/students/addStudentToRepeatList', [StudentController::class, 'addStudentToRepeatList']);
     Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
-    Route::get('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
+    Route::post('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
     Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
@@ -255,45 +255,25 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/students/getAllDisciplines2', [StudentController::class, 'getAllDisciplines2']);
     Route::get('/students/allStudentsOfClasseOfSection', [StudentController::class, 'allStudentsOfClasseOfSection']);
     Route::get('/students/allStudClassOfYear', [StudentController::class, 'allStudClassOfYear']);
-    Route::get('/students/uploadSeqMarks', [StudentController::class, 'uploadSeqMarks']);
-    Route::get('/students/uploadCompMarks', [StudentController::class, 'uploadCompMarks']);
+    Route::post('/students/uploadSeqMarks', [StudentController::class, 'uploadSeqMarks']);
+    Route::post('/students/uploadCompMarks', [StudentController::class, 'uploadCompMarks']);
+
+
+    //==> ANY CONNECTED USER ON BACKUP
+    Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
+
+    //==> ANY CONNECTED USER ON TEST
+    Route::get('/test', [TestController::class, 'test']);
+    Route::post('/test/getData', [TestController::class, 'getData']);
+    Route::get('/test/lockTerms', [TestController::class, 'lockTerms']);
+    Route::get('/test/addCenseurToClasses', [TestController::class, 'addCenseurToClasses']);
+    Route::get('/test/updateStudentClasseStructure', [TestController::class, 'updateStudentClasseStructure']);
+    Route::get('/test/updateClasseYearStructure', [TestController::class, 'updateClasseYearStructure']);
+    Route::get('/test/add2627', [TestController::class, 'add2627']);
+    Route::get('/test/prepareNewYear', [TestController::class, 'prepareNewYear']);
+    Route::get('/test/deleteStudClasse', [TestController::class, 'deleteStudClasse']);
+    Route::get('/test/deleteManyStudClasse', [TestController::class, 'deleteManyStudClasse']);
+    Route::post('/test/deleteManyStudClassePOST', [TestController::class, 'deleteManyStudClassePOST']);
+    Route::get('/test/alterStaff', [TestController::class, 'alterStaff']);
 });
 //===================================================================== END ANY CONNECTED USER ROUTES =====================================================================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//test API
-Route::get('/test', [TestController::class, 'test']);
-Route::post('/test/getData', [TestController::class, 'getData']);
-Route::get('/test/lockTerms', [TestController::class, 'lockTerms']);
-Route::get('/test/addCenseurToClasses', [TestController::class, 'addCenseurToClasses']);
-Route::get('/test/updateStudentClasseStructure', [TestController::class, 'updateStudentClasseStructure']);
-Route::get('/test/updateClasseYearStructure', [TestController::class, 'updateClasseYearStructure']);
-Route::get('/test/add2627', [TestController::class, 'add2627']);
-Route::get('/test/prepareNewYear', [TestController::class, 'prepareNewYear']);
-Route::get('/test/deleteStudClasse', [TestController::class, 'deleteStudClasse']);
-Route::get('/test/deleteManyStudClasse', [TestController::class, 'deleteManyStudClasse']);
-Route::post('/test/deleteManyStudClassePOST', [TestController::class, 'deleteManyStudClassePOST']);
-Route::get('/test/alterStaff', [TestController::class, 'alterStaff']);
-Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
