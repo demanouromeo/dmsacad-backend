@@ -1052,7 +1052,7 @@ class StaffController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
 
             $staff = DB::select(
-                "SELECT staff.staff_id, staff.name FROM `staff`
+                "SELECT staff.staff_id, staff.name, staff.surname FROM `staff`
                 WHERE staff_id IN(SELECT staff_year.staff_id FROM staff_year 
 		                WHERE staff_year.sy_id = $sy_id)
                     ORDER BY staff.name;"
@@ -1123,7 +1123,7 @@ class StaffController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
             $section_id = MyHelper::getSectionID($section);
             $staff = DB::select(
-                "SELECT staff.staff_id, staff.name FROM staff WHERE staff.staff_id 
+                "SELECT staff.staff_id, staff.name, staff.surname, staff.civility FROM staff WHERE staff.staff_id
                     IN (SELECT subject_classe_staff.staff_id FROM subject_classe_staff
                         WHERE subject_classe_staff.subject_classe_id 
                         IN(SELECT subject_classe.subject_classe_id FROM subject_classe 
@@ -1279,7 +1279,7 @@ class StaffController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
 
             $staff = DB::select(
-                "SELECT staff.staff_id, staff.name FROM `staff`
+                "SELECT staff.staff_id, staff.name, staff.surname, staff.civility FROM `staff`
                 WHERE (staff.function = 0 OR staff.function = 2 
                     OR staff.function = 1 OR staff.function = 6)
                     AND staff_id IN(SELECT staff_year.staff_id FROM staff_year 

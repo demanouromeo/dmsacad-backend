@@ -101,7 +101,8 @@ class ThParamController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
 
             $students = DB::select(
-                "SELECT* FROM thparam WHERE sy_id = $sy_id"
+                "SELECT  `th_id`, `lb`, `ub`, `lb_default`, `ub_default`, `seuil_abs`, 
+                `seuil_abs_default`, `sy_id`, `val1` FROM thparam WHERE sy_id = $sy_id"
             );
             return response()->json($students, 200);
         } catch (Exception $e) {
