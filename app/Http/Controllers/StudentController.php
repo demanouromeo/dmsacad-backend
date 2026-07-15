@@ -100,7 +100,7 @@ class StudentController extends Controller
         // "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
         return response()->json([
             'status' => $allAffected === 1,
-            'message' => $allAffected === 1 ? 'All records updated successfully.' : 'Failed to update some records.',
+            'message' => $allAffected === 1 ? 'All solvable records updated successfully.' : 'Failed to update some solvable records.',
             'error_details' => $msg
         ], $allAffected === 1 ? 200 : 500);
     }
@@ -525,7 +525,7 @@ class StudentController extends Controller
         }
     }
 
-    public function saveOrUpdateABS2(Request $request)
+    public function saveOrUpdateABS(Request $request)
     {
         try {
             $request->validate([
@@ -598,7 +598,7 @@ class StudentController extends Controller
         //"$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
         return response()->json([
             'status' => $allAffected === 1,
-            'message' => $allAffected === 1 ? 'All records saved/updated successfully.' : 'Failed to save/update some records.',
+            'message' => $allAffected === 1 ? 'All ABS saved/updated successfully.' : 'Failed to save/update some ABS.',
             'error_details' => $msg
         ], $allAffected === 1 ? 200 : 500);
     }
@@ -1006,7 +1006,7 @@ class StudentController extends Controller
         } //END FOR
         return response()->json([
             'status' => $allAffected === 1,
-            'message' => $allAffected === 1 ? 'All records updated successfully.' : 'Failed to update some records.',
+            'message' => $allAffected === 1 ? 'All Promotion Information updated successfully.' : 'Failed to update some Promotion Information.',
             'error_details' => $msg
         ], $allAffected === 1 ? 200 : 500);
     }
@@ -1125,8 +1125,8 @@ class StudentController extends Controller
             ], 500); //ERROR OCCURS
         }
     }
- 
-    public function saveCompSeqMarks(Request $request)
+
+    public function saveCompMarks(Request $request)
     {
         try {
             $request->validate([
@@ -1207,14 +1207,29 @@ class StudentController extends Controller
         //"$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
         return response()->json([
             'status' => $allAffected === 1,
-            'message' => $allAffected === 1 ? 'All records saved/updated successfully.' : 'Failed to save/update some records.',
+            'message' => $allAffected === 1 ? 'All compMarks saved/updated successfully.' : 'Failed to save/update some compMarks.',
             'error_details' => $msg
         ], $allAffected === 1 ? 200 : 500);
     }
 
-    public function saveManySeqMarks2(Request $request)
+    public function saveSeqMarks(Request $request)
     {
-        //echo "Starting...\n";
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'data' => 'required|string',
+                'data_size' => 'nullable|integer|min:0',
+                'year' => 'required|string',
+                'subject_id' => 'required|integer|min:1',
+                'sequence' => 'required|integer|min:1|max:6',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
@@ -1224,12 +1239,12 @@ class StudentController extends Controller
 
         $stList = json_decode($data, true);
         $n = count($stList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]<br/>";
-        $allAffected = 1; //interpreted as true. 0-->false  
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
 
+        $msg = "";
         $count  = 1;
+        $allAffected = 1; //interpreted as true. 0-->false  
         foreach ($stList as $st) {
             //echo"-----> Processing stud No.[$count]<br/>";
             $count++;
@@ -1237,18 +1252,10 @@ class StudentController extends Controller
             $mark = $st["mark"]; //if mark is not double here operation shall fail
             $isEmpty = $st["isEmpty"];
             try {
-                /*
-                $studSubTmp = StudentSubject::all()
-                    ->where("sy_id", $sy_id)
-                    ->where("stud_id", $stud_id)
-                    ->where("subject_id", $subject_id)
-                    ->where("sequence", $sequence)
-                    ->first();
-                */
+
                 $studs = DB::select("SELECT*FROM student_subject 
                 WHERE sy_id = $sy_id AND subject_id = $subject_id 
                 AND sequence = $sequence AND stud_id = $stud_id");
-                //if (!is_null($studs)) { 
                 if (count($studs) > 0) {
                     if ($isEmpty == 1) {
                         $mark = 0;
@@ -1256,8 +1263,6 @@ class StudentController extends Controller
                     DB::select("UPDATE student_subject SET mark = $mark, isEmpty = $isEmpty 
                     WHERE sy_id = $sy_id AND subject_id = $subject_id 
                     AND sequence = $sequence AND stud_id = $stud_id");
-
-                    //echo "updated";
                 } else {
                     $studSub = new StudentSubject();
                     if ($isEmpty == 1) {
@@ -1272,85 +1277,18 @@ class StudentController extends Controller
                     $studSub->stud_id = $stud_id;
                     $studSub->sy_id = $sy_id;
                     $studSub->save();
-                    //echo "saved";
                 }
             } catch (\Throwable $e2) {
-                echo "<br/>" . $e2->getMessage() . "<br/>";
-                echo "-1"; //failed to save/update;
+                $msg .= "<br/>" . $e2->getMessage() . "<br/>";
                 $allAffected = 0;
             }
         } //END FOR
-        echo "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
-    }
-
-    public function saveManySeqMarksWithPOST2(Request $request)
-    {
-        //echo "Starting...\n";
-        $connection = $request->input("connection");
-        $data = $request->input("data");
-        $data_size = $request->input("data_size");
-        $year = $request->input("year");
-        $subject_id = $request->input("subject_id");
-        $sequence = $request->input("sequence");
-
-        $stList = json_decode($data, true);
-        $n = count($stList);
-        //echo "DATA Lenght = $n [size transmitted is $data_size]<br/>";
-        $allAffected = 1; //interpreted as true. 0-->false  
-        config(["database.default" => $connection]);
-        $sy_id = MyHelper::getSchoolYearID($year);
-
-        $count  = 1;
-        foreach ($stList as $st) {
-            //echo"-----> Processing stud No.[$count]<br/>";
-            $count++;
-            $stud_id = $st["stud_id"]; //Stud_id shouldn't be null here if it is the case ==> Fatal ERROR
-            $mark = $st["mark"]; //if mark is not double here operation shall fail
-            $isEmpty = $st["isEmpty"];
-            try {
-                /*
-                $studSubTmp = StudentSubject::all()
-                    ->where("sy_id", $sy_id)
-                    ->where("stud_id", $stud_id)
-                    ->where("subject_id", $subject_id)
-                    ->where("sequence", $sequence)
-                    ->first();
-                */
-                $studs = DB::select("SELECT*FROM student_subject 
-                WHERE sy_id = $sy_id AND subject_id = $subject_id 
-                AND sequence = $sequence AND stud_id = $stud_id");
-                if (count($studs) > 0) {
-                    if ($isEmpty == 1) {
-                        $mark = 0;
-                    }
-                    DB::select("UPDATE student_subject SET mark = $mark, isEmpty = $isEmpty 
-                    WHERE sy_id = $sy_id AND subject_id = $subject_id 
-                    AND sequence = $sequence AND stud_id = $stud_id");
-
-                    //echo "updated";
-                } else {
-                    $studSub = new StudentSubject();
-                    if ($isEmpty == 1) {
-                        $studSub->mark = "0";
-                        $studSub->isEmpty = 1;
-                    } else {
-                        $studSub->mark = $mark;
-                        $studSub->isEmpty = 0;
-                    }
-                    $studSub->sequence = $sequence;
-                    $studSub->subject_id = $subject_id;
-                    $studSub->stud_id = $stud_id;
-                    $studSub->sy_id = $sy_id;
-                    $studSub->save();
-                    //echo "saved";
-                }
-            } catch (\Throwable $e2) {
-                echo "<br/>" . $e2->getMessage() . "<br/>";
-                echo "-1"; //failed to save/update;
-                $allAffected = 0;
-            }
-        } //END FOR
-        echo "$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
+        //"$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
+        return response()->json([
+            'status' => $allAffected === 1,
+            'message' => $allAffected === 1 ? 'All seqMarks saved/updated successfully.' : 'Failed to save/update some seqMarks.',
+            'error_details' => $msg
+        ], $allAffected === 1 ? 200 : 500);
     }
 
 
@@ -1429,7 +1367,7 @@ class StudentController extends Controller
         //"$allAffected"; //1--> All successfully saved/updated; < 0--> Failed for least one
         return response()->json([
             'status' => $allAffected === 1,
-            'message' => $allAffected === 1 ? 'All marks successfully saved/updated.' : 'Failed to save/update some marks. Details: ' . $msg,
+            'message' => $allAffected === 1 ? 'All seqMarks successfully uploaded.' : 'Failed to uploaded some seqMarks. Details: ' . $msg,
         ], $allAffected === 1 ? 200 : 500);
     }
 
@@ -1512,7 +1450,7 @@ class StudentController extends Controller
         } //END FOR
         return response()->json([
             'status' => $allAffected === 1,
-            'message' => $allAffected === 1 ? 'All marks successfully saved/updated.' : 'Failed to save/update some marks. Details: ' . $msg,
+            'message' => $allAffected === 1 ? 'All compMarks successfully uploaded.' : 'Failed to uploaded some compMarks. Details: ' . $msg,
         ], $allAffected === 1 ? 200 : 500);
     }
 
@@ -2072,7 +2010,7 @@ class StudentController extends Controller
         }
     }
 
-    public function saveManyStudents(Request $request)
+    public function saveStudents(Request $request)
     {
         try {
             $request->validate([
@@ -2303,7 +2241,7 @@ class StudentController extends Controller
     }
 
 
-    public function updateManyStudents(Request $request)
+    public function updateStudents(Request $request)
     {
         try {
             $request->validate([
@@ -2418,7 +2356,7 @@ class StudentController extends Controller
     }
 
 
-    public function deleteManyStudents(Request $request)
+    public function deleteStudents(Request $request)
     {
         try {
             $request->validate([

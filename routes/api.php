@@ -128,6 +128,29 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/subjects/saveManyAttributions', [SubjectController::class, 'saveManyAttributions']); // MAY BE SIMILAR TO asignCoure of /staffs I'll check later
     Route::delete('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']); //OK
     Route::delete('/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
+
+
+    //==> ADMIN ON STUDENT
+    Route::get('/students/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
+    Route::get('/students/deleteStudents', [StudentController::class, 'deleteStudents']);
+    Route::get('/students/saveStudents', [StudentController::class, 'saveStudents']);
+    Route::get('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
+    Route::get('/students/updateStudents', [StudentController::class, 'updateStudents']);
+    Route::get('/students/saveSeqMarks', [StudentController::class, 'saveSeqMarks']);
+    Route::get('/students/saveCompMarks', [StudentController::class, 'saveCompMarks']);
+    Route::get('/students/copyCompMarks', [StudentController::class, 'copyCompMarks']);
+    Route::get('/students/copySeqMarks', [StudentController::class, 'copySeqMarks']);
+    Route::get('/students/copyCompMarks2', [StudentController::class, 'copyCompMarks2']);
+    Route::get('/students/copySeqMarks2', [StudentController::class, 'copySeqMarks2']);
+    Route::get('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
+    Route::get('/students/resetPromotionInfo', [StudentController::class, 'resetPromotionInfo']);
+    Route::get('/students/updatePromotionInfo', [StudentController::class, 'updatePromotionInfo']);
+    Route::get('/students/updateDismiss', [StudentController::class, 'updateDismiss']);
+    Route::get('/students/updateSolvable', [StudentController::class, 'updateSolvable']);
+    Route::get('/students/addStudentToRepeatList', [StudentController::class, 'addStudentToRepeatList']);
+    Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
+    Route::get('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
+    Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
 
@@ -240,32 +263,11 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 
 
-//--------------------- STUDENT
 
 
 
-Route::get('/students/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
-Route::get('/students/updateManyStudents', [StudentController::class, 'updateManyStudents']);
-Route::get('/students/deleteManyStudents', [StudentController::class, 'deleteManyStudents']);
-Route::get('/students/saveManyStudents', [StudentController::class, 'saveManyStudents']);
-Route::get('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
-Route::get('/students/updateManyStudents', [StudentController::class, 'updateManyStudents']);
-Route::get('/students/saveManySeqMarks2', [StudentController::class, 'saveManySeqMarks2']);
-Route::get('/students/saveCompSeqMarks', [StudentController::class, 'saveCompSeqMarks']);
-Route::get('/students/copyCompMarks', [StudentController::class, 'copyCompMarks']);
-Route::get('/students/copySeqMarks', [StudentController::class, 'copySeqMarks']);
-Route::get('/students/copyCompMarks2', [StudentController::class, 'copyCompMarks2']);
-Route::get('/students/copySeqMarks2', [StudentController::class, 'copySeqMarks2']);
-Route::get('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
-Route::get('/students/resetPromotionInfo', [StudentController::class, 'resetPromotionInfo']);
-Route::get('/students/updatePromotionInfo', [StudentController::class, 'updatePromotionInfo']);
-Route::post('/students/saveManySeqMarksWithPOST2', [StudentController::class, 'saveManySeqMarksWithPOST2']); 
-Route::get('/students/updateDismiss', [StudentController::class, 'updateDismiss']);
-Route::get('/students/updateSolvable', [StudentController::class, 'updateSolvable']);
-Route::get('/students/addStudentToRepeatList', [StudentController::class, 'addStudentToRepeatList']);
-Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
-Route::get('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
-Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
+
+
 
 
 
