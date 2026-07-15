@@ -126,7 +126,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']); //OK
     Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']); //OK
     Route::post('/subjects/saveManyAttributions', [SubjectController::class, 'saveManyAttributions']); // MAY BE SIMILAR TO asignCoure of /staffs I'll check later
-    Route::delete('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']);//OK
+    Route::delete('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']); //OK
     Route::delete('/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
@@ -203,6 +203,37 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/subjects/allCompetences', [SubjectController::class, 'allCompetences']); //OK
     Route::get('/subjects/allCompetences1', [SubjectController::class, 'allCompetences1']); //OK 
     Route::get('/subjects/allCompetences2', [SubjectController::class, 'allCompetences2']); //OK allCompetences1 VS allCompetences1????
+
+
+    //==> ANY CONNECTED USER ON STUDENT
+    Route::get('/students/allStudents', [StudentController::class, 'allStudents']); //OK
+    Route::get('/students/allStudentsOfClasse', [StudentController::class, 'allStudentsOfClasse']); //OK
+    Route::get('/students/allStudentsOfClasse2', [StudentController::class, 'allStudentsOfClasse2']); //OK
+    Route::get('/students/allStudClassOfAClasse', [StudentController::class, 'allStudClassOfAClasse']); //OK
+    Route::get('/students/getSeqMarks', [StudentController::class, 'getSeqMarks']);
+    Route::get('/students/getSeqMarks2', [StudentController::class, 'getSeqMarks2']);
+    Route::get('/students/getCompMarks', [StudentController::class, 'getCompMarks']);
+    Route::get('/students/getCompMarks2', [StudentController::class, 'getCompMarks2']);
+    Route::get('/students/getCompMarks', [StudentController::class, 'getCompMarks']);
+    Route::get('/students/getAllSeqMarksSimple', [StudentController::class, 'getAllSeqMarksSimple']);
+    Route::get('/students/getAllCompMarksSimple', [StudentController::class, 'getAllCompMarksSimple']);
+    Route::get('/students/allStudentsForMarks', [StudentController::class, 'allStudentsForMarks']);
+    Route::get('/students/allStudentsOfClasse3', [StudentController::class, 'allStudentsOfClasse3']);
+    Route::get('/students/allStudentsOfClasseOfSchool', [StudentController::class, 'allStudentsOfClasseOfSchool']);
+    Route::get('/students/allStudentSubjectOfTerm', [StudentController::class, 'allStudentSubjectOfTerm']);
+    Route::get('/students/allStudentCompMarkOfTerm', [StudentController::class, 'allStudentCompMarkOfTerm']);
+    Route::get('/students/allStudentsOfClasseForAbs', [StudentController::class, 'allStudentsOfClasseForAbs']);
+    Route::get('/students/getDisciplineOfClasse', [StudentController::class, 'getDisciplineOfClasse']);
+    Route::get('/students/allStudentSubjectOfTerm2', [StudentController::class, 'allStudentSubjectOfTerm2']);
+    Route::get('/students/allStudentCompMarkOfTerm2', [StudentController::class, 'allStudentCompMarkOfTerm2']);
+    Route::get('/students/allStudentSubject', [StudentController::class, 'allStudentSubject']);
+    Route::get('/students/allStudentCompMark', [StudentController::class, 'allStudentCompMark']);
+    Route::get('/students/getAllDisciplines', [StudentController::class, 'getAllDisciplines']);
+    Route::get('/students/getAllDisciplines2', [StudentController::class, 'getAllDisciplines2']);
+    Route::get('/students/allStudentsOfClasseOfSection', [StudentController::class, 'allStudentsOfClasseOfSection']);
+    Route::get('/students/allStudClassOfYear', [StudentController::class, 'allStudClassOfYear']);
+    Route::get('/students/uploadSeqMarks', [StudentController::class, 'uploadSeqMarks']);
+    Route::get('/students/uploadCompMarks', [StudentController::class, 'uploadCompMarks']);
 });
 //===================================================================== END ANY CONNECTED USER ROUTES =====================================================================================================
 
@@ -210,65 +241,33 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 
 //--------------------- STUDENT
-Route::get('/students/allStudents', [StudentController::class, 'allStudents']);
-Route::get('/students/allStudentsOfClasse', [StudentController::class, 'allStudentsOfClasse']);
-Route::get('/students/allStudentsOfClasse2', [StudentController::class, 'allStudentsOfClasse2']);
+
+
+
 Route::get('/students/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
 Route::get('/students/updateManyStudents', [StudentController::class, 'updateManyStudents']);
 Route::get('/students/deleteManyStudents', [StudentController::class, 'deleteManyStudents']);
 Route::get('/students/saveManyStudents', [StudentController::class, 'saveManyStudents']);
 Route::get('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
 Route::get('/students/updateManyStudents', [StudentController::class, 'updateManyStudents']);
-Route::get('/students/allStudClassOfAClasse', [StudentController::class, 'allStudClassOfAClasse']);
 Route::get('/students/saveManySeqMarks2', [StudentController::class, 'saveManySeqMarks2']);
-Route::get('/students/getSeqMarks', [StudentController::class, 'getSeqMarks']);
-Route::get('/students/getSeqMarks2', [StudentController::class, 'getSeqMarks2']);
-Route::get('/students/getCompMarks', [StudentController::class, 'getCompMarks']);
-Route::get('/students/getCompMarks2', [StudentController::class, 'getCompMarks2']);
 Route::get('/students/saveCompSeqMarks', [StudentController::class, 'saveCompSeqMarks']);
-Route::get('/students/getCompMarks', [StudentController::class, 'getCompMarks']);
 Route::get('/students/copyCompMarks', [StudentController::class, 'copyCompMarks']);
 Route::get('/students/copySeqMarks', [StudentController::class, 'copySeqMarks']);
 Route::get('/students/copyCompMarks2', [StudentController::class, 'copyCompMarks2']);
 Route::get('/students/copySeqMarks2', [StudentController::class, 'copySeqMarks2']);
-Route::get('/students/getAllSeqMarksSimple', [StudentController::class, 'getAllSeqMarksSimple']);
-Route::get('/students/getAllCompMarksSimple', [StudentController::class, 'getAllCompMarksSimple']);
-Route::get('/students/allStudentsForMarks', [StudentController::class, 'allStudentsForMarks']);
-Route::get('/students/allStudentsOfClasse3', [StudentController::class, 'allStudentsOfClasse3']);
-Route::get('/students/allStudentsOfClasseOfSchool', [StudentController::class, 'allStudentsOfClasseOfSchool']);
-Route::get('/students/allStudentSubjectOfTerm', [StudentController::class, 'allStudentSubjectOfTerm']);
-Route::get('/students/allStudentCompMarkOfTerm', [StudentController::class, 'allStudentCompMarkOfTerm']);
-Route::get('/students/allStudentsOfClasseForAbs', [StudentController::class, 'allStudentsOfClasseForAbs']);
 Route::get('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
-Route::get('/students/getDisciplineOfClasse', [StudentController::class, 'getDisciplineOfClasse']);
-Route::get('/students/allStudentSubjectOfTerm2', [StudentController::class, 'allStudentSubjectOfTerm2']);
-Route::get('/students/allStudentCompMarkOfTerm2', [StudentController::class, 'allStudentCompMarkOfTerm2']);
-Route::get('/students/allStudentSubject', [StudentController::class, 'allStudentSubject']);
-Route::get('/students/allStudentCompMark', [StudentController::class, 'allStudentCompMark']);
-Route::get('/students/getAllDisciplines', [StudentController::class, 'getAllDisciplines']);
-Route::get('/students/getAllDisciplines2', [StudentController::class, 'getAllDisciplines2']);
 Route::get('/students/resetPromotionInfo', [StudentController::class, 'resetPromotionInfo']);
 Route::get('/students/updatePromotionInfo', [StudentController::class, 'updatePromotionInfo']);
-
-Route::post('/students/saveOrUpdateABSWithPOST2', [StudentController::class, 'saveOrUpdateABSWithPOST2']);
-Route::post('/students/saveManySeqMarksWithPOST2', [StudentController::class, 'saveManySeqMarksWithPOST2']);
-Route::post('/students/saveCompSeqMarksWithPOST2', [StudentController::class, 'saveCompSeqMarksWithPOST2']);
-Route::post('/students/saveManyStudentsWithPOST2', [StudentController::class, 'saveManyStudentsWithPOST2']);
-Route::post('/students/deleteManyStudentsWithPOST', [StudentController::class, 'deleteManyStudentsWithPOST']);
-Route::post('/students/updatePromotionInfoWithPOST', [StudentController::class, 'updatePromotionInfoWithPOST']);
+Route::post('/students/saveManySeqMarksWithPOST2', [StudentController::class, 'saveManySeqMarksWithPOST2']); 
 Route::get('/students/updateDismiss', [StudentController::class, 'updateDismiss']);
 Route::get('/students/updateSolvable', [StudentController::class, 'updateSolvable']);
-Route::post('/students/updateSolvablePOST', [StudentController::class, 'updateSolvablePOST']);
 Route::get('/students/addStudentToRepeatList', [StudentController::class, 'addStudentToRepeatList']);
 Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
-Route::get('/students/allStudentsOfClasseOfSection', [StudentController::class, 'allStudentsOfClasseOfSection']);
 Route::get('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
 Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
-Route::get('/students/allStudClassOfYear', [StudentController::class, 'allStudClassOfYear']);
-Route::get('/students/uploadSeqMarks', [StudentController::class, 'uploadSeqMarks']);
-Route::post('/students/uploadSeqMarksWithPOST', [StudentController::class, 'uploadSeqMarksWithPOST']);
-Route::get('/students/uploadCompMarks', [StudentController::class, 'uploadCompMarks']);
-Route::post('/students/uploadCompMarksWithPOST', [StudentController::class, 'uploadCompMarksWithPOST']);
+
+
 
 
 
