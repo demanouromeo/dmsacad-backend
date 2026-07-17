@@ -1363,6 +1363,14 @@ class ClasseController extends Controller
                 $cly->classe_master = $classe_master;
                 $allAffected2 = $cly->update();
             } catch (\Exception $ex) {
+                //classe_name has a UNIQUE index - a duplicate-entry SQL error means the new name is
+                //already taken by another classe, so surface that plainly instead of the generic failure below.
+                if (str_contains(strtolower($ex->getMessage()), 'duplicate')) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Operation failed: A classe with the same name [' . $classe_name . '] already exists.',
+                    ], 409);
+                }
                 //echo $ex->getMessage();
                 $allAffected = 0;
             }

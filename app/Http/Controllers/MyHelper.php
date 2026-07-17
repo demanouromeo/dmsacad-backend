@@ -19,6 +19,7 @@ use App\Models\StudentSubject;
 use App\Models\SubjectClasse;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class MyHelper extends Controller
@@ -295,10 +296,18 @@ class MyHelper extends Controller
     public static function getSpecialitiesOfYearOfSection($sy_id, $section_id)
     {
         try {
-            $ids = MyHelper::getSpYearIDsOfSection($sy_id, $section_id); //Les ids de toutes les speciality_year de la section
+            //Joined (rather than a plain whereIn) so the response also carries which filiere
+            //each speciality belongs to for this specific year/section - the frontend's edit
+            //form needs it to let the user reassign a speciality to a different filiere.
             $spList = DB::table('speciality')
-                ->whereIn('speciality_id', $ids)
-                ->orderBy('speciality_name', 'ASC')
+                ->join('speciality_year', function ($join) use ($sy_id, $section_id) {
+                    $join->on('speciality_year.speciality_id', '=', 'speciality.speciality_id')
+                        ->where('speciality_year.sy_id', '=', $sy_id)
+                        ->where('speciality_year.section_id', '=', $section_id);
+                })
+                ->join('filiere', 'filiere.filiere_id', '=', 'speciality_year.filiere_id')
+                ->select('speciality.*', 'filiere.filiere_id as filiere_id', 'filiere.nom_filiere')
+                ->orderBy('speciality.speciality_name', 'ASC')
                 ->get();
             return $spList;
         } catch (Exception $e) {
@@ -1206,6 +1215,25 @@ class MyHelper extends Controller
                 return "CENSEUR";
             default:
                 return "Unknown";
-        } 
+        }
+    }
+
+    // Uses the file cache store explicitly (not the "database" store configured by default),
+    // since the DB default connection is switched per-school on every request and can't be
+    // relied on to hold a stable, always-present `cache` table.
+    public static function blacklistToken($jti, $ttlSeconds)
+    {
+        if (!$jti || $ttlSeconds <= 0) {
+            return;
+        }
+        Cache::store('file')->put('jwt_blacklist:' . $jti, true, $ttlSeconds);
+    }
+
+    public static function isTokenBlacklisted($jti)
+    {
+        if (!$jti) {
+            return false;
+        }
+        return Cache::store('file')->has('jwt_blacklist:' . $jti);
     }
 }

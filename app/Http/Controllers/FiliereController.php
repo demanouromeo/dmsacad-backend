@@ -204,6 +204,14 @@ class FiliereController extends Controller
                 ], 200);
             }
         } catch (\Throwable $th) {
+            //nom_filiere has a UNIQUE index - a duplicate-entry SQL error means the new name is
+            //already taken by another filiere, so surface that plainly instead of the raw SQL message.
+            if (str_contains(strtolower($th->getMessage()), 'duplicate')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Operation failed: A filiere with the same name [' . $nom_filiere_new . '] already exists.',
+                ], 409); //409 = Conflict
+            }
             return response()->json([
                 'status' => false,
                 'message' => 'Error occurred: ' . $th->getMessage(),
@@ -287,10 +295,12 @@ class FiliereController extends Controller
         } catch (\Exception $e) {
             //echo '<br/>Message: ' .$e->getMessage();
             //echo "-1"; //La filiere existe déja
+            //nom_filiere has a UNIQUE index - this outer catch is reached almost exclusively via
+            //that constraint, so keep the message focused on that rather than the raw SQL text.
             return response()->json([
                 'status' => false,
-                'message' => 'Operation failed: A filiere with the same name [' . $nom_filiere . '] already exists. ' . $e->getMessage(),
-            ], 500);
+                'message' => 'Operation failed: A filiere with the same name [' . $nom_filiere . '] already exists.',
+            ], 409); //409 = Conflict
         }
     }
     public function index() {}

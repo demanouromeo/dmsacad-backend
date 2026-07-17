@@ -1,0 +1,8 @@
+# Logos/images under this folder are already served with no authentication (plain static files),
+# so this doesn't expose anything new - it only lets browser JS (running on a different origin,
+# e.g. the Vite dev server) read the pixel data it can already display in an <img> tag. Needed so
+# the frontend can embed the school logo into exported PDFs (jsPDF draws images via <canvas>,
+# which throws a SecurityError on cross-origin images without this header).
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>

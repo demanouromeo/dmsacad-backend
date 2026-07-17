@@ -169,6 +169,8 @@ class SpecialityController extends Controller
                 'connection' => 'required|string',
                 'data' => 'required|json',
                 'data_size' => 'integer',
+                'year' => 'required|string',
+                'section' => 'required|string',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -181,12 +183,16 @@ class SpecialityController extends Controller
         $data = $request->input("data");
         //$data = $request->input("year");
         $data_size = $request->input("data_size");
+        $year = $request->input("year");
+        $section_name = $request->input("section");
 
         $spList = json_decode($data, true);
         //$n = count($fList);
         //echo "DATA Lenght = $n [size transmitted is $data_size]";
         $allAffected = 1; //interpreted as true. 0-->false
         config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+        $section_id = MyHelper::getSectionID($section_name);
         foreach ($spList as $sp) {
             try {
                 $speciality_id = $sp["speciality_id"];
@@ -202,6 +208,21 @@ class SpecialityController extends Controller
                 $affected = DB::table('speciality')
                     ->where('speciality_id', $speciality_id)
                     ->update(['speciality_name' => $speciality_name, 'description' => $description]);
+
+                //nom_filiere is optional - only reassign the speciality_year's filiere when the
+                //caller actually sent one (lets this endpoint keep serving plain rename/description edits).
+                if (!empty($sp["nom_filiere"])) {
+                    $filiere = Filiere::where('nom_filiere', '=', $sp["nom_filiere"])->first();
+                    if (is_null($filiere)) {
+                        $allAffected = 0;
+                        continue;
+                    }
+                    DB::table('speciality_year')
+                        ->where('speciality_id', $speciality_id)
+                        ->where('sy_id', $sy_id)
+                        ->where('section_id', $section_id)
+                        ->update(['filiere_id' => $filiere->filiere_id]);
+                }
             } catch (\Throwable $th) {
                 $allAffected = 0;
             }

@@ -26,10 +26,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/configs/allSchools', [SchoolInfoController::class, 'allSchools']); //THIS API doesn't need Authentication
 Route::get('/configs/getSchoolYears', [SchoolInfoController::class, 'getSchoolYears']);
 
-//--------------------- ACCOUNTS
-Route::post('/accounts/connect', [AccountController::class, 'login']); //ok - NO NEED FOR AUTHENTICATION. ANYONE CAN LOGIN
-Route::post('/accounts/refresh', [AccountController::class, 'refresh']); //ok - NO NEED FOR AUTHENTICATION. ANYONE CAN REFRESH TOKEN. MEANWHILE, THE REFRESH TOKEN IS CHECKED IN THE CONTROLLER. IF IT'S INVALID, IT WILL RETURN 401 UNAUTHORIZED. IF IT'S VALID, IT WILL RETURN A NEW ACCESS TOKEN.
 
+//--------------------- ACCOUNTS
+Route::post('/accounts/connect', [AccountController::class, 'connect']); //ok - NO NEED FOR AUTHENTICATION. ANYONE CAN LOGIN
+Route::post('/accounts/refresh', [AccountController::class, 'refresh']); //ok - NO NEED FOR AUTHENTICATION. ANYONE CAN REFRESH TOKEN. MEANWHILE, THE REFRESH TOKEN IS CHECKED IN THE CONTROLLER. IF IT'S INVALID, IT WILL RETURN 401 UNAUTHORIZED. IF IT'S VALID, IT WILL RETURN A NEW ACCESS TOKEN.
+Route::post('/accounts/logout', [AccountController::class, 'logout']);
 
 //******* ADMIN ROUTES 
 Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
@@ -164,9 +165,10 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/configs/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); //ok
     Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']); //ok
     Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']); //ok
+    Route::get('/configs/allSchoolConfigOfYear', [SchoolInfoController::class, 'allSchoolConfigOfYear']);
 
     //==> ANY CONNECTED USER ON ACCOUNTS
-    Route::post('/accounts/updateAccountWithPOST', [AccountController::class, 'updateAccountWithPOST']); //ok. Any user can update its account
+    Route::post('/accounts/updateAccount', [AccountController::class, 'updateAccount']); //ok. Any user can update its account
 
     //==> ANY CONNECTED USER ON FILIERE
     Route::get('/filieres/allFilieres', [FiliereController::class, 'allFilieres']); //ok

@@ -156,6 +156,37 @@ class SchoolInfoController extends Controller
         }
     }
 
+    public function allSchoolConfigOfYear(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input("connection");
+        $year = $request->input("year"); //Will be used to find sy_id
+        config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+
+        try {
+            $config = DB::select("SELECT `id`, `number_of_sequences`, `classe_max_size`, `name_fr`, `name_en`,
+             `del_regionale_fr`, `del_regionale_en`,`del_dept_fr`, `del_dept_en`, `phone1`, 
+             `email`, `pobox`, `logo_path`, `type`, `date_signature`, `lieu_signature`, 
+             `school_matricule`, `school_matricule`, `str1` as ref_transfert, 
+             `str2` as ref_document FROM `basic_school_config` 
+             WHERE sy_id = $sy_id");
+            return response()->json($config, 200);
+        } catch (\Throwable $e) {
+            return response()->json([], 500); //ERROR OCCURS; 500 = Internal Server Error
+        }
+    }
+
     public function getSchoolYearID(Request $request)
     {
         try {
@@ -179,22 +210,24 @@ class SchoolInfoController extends Controller
     {
         try {
             $request->validate([
-                'sy' => 'required',
-                'connection' => 'required',
-                'logo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-                'schoolName' => 'required', //schoolName FR
-                'schoolNameEN' => 'required',
-                'delRegionFR' => 'required',
-                'delRegionEN' => 'required',
-                'delDeptFR' => 'required',
-                'delDeptEN' => 'required',
-                'phone' => 'required',
-                'email' => 'required|email',
-                'pobox' => 'required',
-                'type' => 'required|integer|min:1|max:20',
-                'signDate' => 'required',
-                'signPlace' => 'required',
-                'immt' => 'required',
+                'year' => 'required|string',
+                'connection' => 'required|string',
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'schoolName' => 'required|string|min:2|max:50', //schoolName FR
+                'schoolNameEN' => 'required|string|min:2|max:50',
+                'delRegionFR' => 'nullable|string|min:2|max:50',
+                'delRegionEN' => 'nullable|string|min:2|max:50',
+                'delDeptFR' => 'nullable|string|min:2|max:50',
+                'delDeptEN' => 'nullable|string|min:2|max:50',
+                'phone' => 'required|string|min:5|max:10',
+                'email' => 'nullable|email',
+                'pobox' => 'nullable|string|min:2|max:20',
+                'type' => 'required|string|min:2|max:50',
+                'signDate' => 'required|string|date_format:Y-m-d',
+                'signPlace' => 'required|string|min:2|max:30',
+                'immt' => 'nullable|string|min:2|max:50',
+                'str1' => 'nullable|string|min:2|max:50',
+                'str2' => 'nullable|string|min:2|max:50',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -204,48 +237,68 @@ class SchoolInfoController extends Controller
         }
 
 
-        $sy = $request->input('sy');
-        $sy_id = MyHelper::getSchoolYearID($sy);
+        $year = $request->input('year');
         $connection = $request->input('connection');
         config(["database.default" => $connection]);
-        $imageName = 'logo' . time() . '.' . $request->logo->extension();
-        try {
-            $request->logo->move(public_path("images/$connection/logo"), $imageName);
-        } catch (\Throwable $th) {
-            //throw $th;
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to upload logo: ' . $th->getMessage(),
-            ], 500);
+        $sy_id = MyHelper::getSchoolYearID($year);
+
+        $schoolConfigRef = BasicSchoolConfig::where('sy_id', '=', $sy_id)->first();
+
+        // The logo is optional on every save (matches the 'nullable' validation rule above) -
+        // only move/replace the file on disk and update logo_path when the client actually sent
+        // one. Without this check, resaving the form without re-picking a logo would either crash
+        // (no file to move) or blow away a perfectly good existing logo.
+        $logoPath = $schoolConfigRef->logo_path ?? null;
+        if ($request->hasFile('logo')) {
+            $imageName = 'logo.' . $request->logo->extension();
+            try {
+                $request->logo->move(public_path("images/$connection/logo"), $imageName);
+            } catch (\Throwable $th) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to upload logo: ' . $th->getMessage(),
+                ], 500);
+            }
+            //echo "Logo uploaded successfully to '$logoPath'";
+            $logoPath = "images/$connection/logo/" . $imageName;
         }
 
-        $schoolConfig = BasicSchoolConfig::where('sy_id', '=', $sy_id)->first();
-        //echo "School Config: " . json_encode($schoolConfig) . "<br/>";
-        if (is_null($schoolConfig)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'School configuration year not found for the provided year: ' . $sy,
-            ], 404);
+        $schoolConfig = new BasicSchoolConfig();
+        $schoolConfig->sy_id = $sy_id;
+        $schoolConfig->name_fr = $request->schoolName;
+        $schoolConfig->name_en = $request->schoolNameEN;
+        $schoolConfig->del_regionale_fr = $request->delRegionFR;
+        $schoolConfig->del_regionale_en = $request->delRegionEN;
+        $schoolConfig->del_dept_fr = $request->delDeptFR;
+        $schoolConfig->del_dept_en = $request->delDeptEN;
+        $schoolConfig->phone1 = $request->phone;
+        $schoolConfig->email = $request->email;
+        $schoolConfig->pobox = $request->pobox;
+        $schoolConfig->type = $request->type;
+        $schoolConfig->date_signature = $request->signDate;
+        $schoolConfig->lieu_signature = $request->signPlace;
+        $schoolConfig->school_matricule = $request->immt;
+        $schoolConfig->str1 = $request->str1;
+        $schoolConfig->str2 = $request->str2;
+        $schoolConfig->logo_path = $logoPath;
+
+        if (is_null($schoolConfigRef)) {
+            try {
+                $schoolConfig->save();
+            } catch (\Throwable $th) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to save School configuration for year: ' . $year . ' Error: ' . $th->getMessage(),
+                ], 500);
+            }
         } else {
-            echo "CONFIG: $request->schoolNameEN\n";
-            $schoolConfig->sy_id = $sy_id;
-            $schoolConfig->name_fr = $request->schoolName;
-            $schoolConfig->name_en = $request->schoolNameEN;
-            $schoolConfig->del_regionale_fr = $request->delRegionFR;
-            $schoolConfig->del_regionale_en = $request->delRegionEN;
-            $schoolConfig->del_dept_fr = $request->delDeptFR;
-            $schoolConfig->del_dept_en = $request->delDeptEN;
-            $schoolConfig->phone1 = $request->phone;
-            $schoolConfig->email = $request->email;
-            $schoolConfig->pobox = $request->pobox;
-            $schoolConfig->type = $request->type;
-            $schoolConfig->date_signature = $request->signDate;
-            $schoolConfig->lieu_signature = $request->signPlace;
-            $schoolConfig->school_matricule = $request->immt;
-            $schoolConfig->logo_path = "images/$connection/" . $imageName;
 
             try {
-                $query = $schoolConfig->update();
+                // $schoolConfig is a fresh, never-persisted instance (`exists` is false), so
+                // calling ->update() on it is a no-op (Eloquent short-circuits to `return
+                // false` without running any SQL). The record to update is $schoolConfigRef,
+                // fetched above - apply the newly-set attributes to that instead.
+                $query = $schoolConfigRef->update($schoolConfig->getAttributes());
                 if ($query) {
                     return response()->json([
                         'status' => true,
@@ -254,8 +307,8 @@ class SchoolInfoController extends Controller
                 } else {
                     return response()->json([
                         'status' => false,
-                        'message' => 'Failed to save config. No Exception thrown, but save returned false.',
-                    ], 409); // 409 Conflict. Maybe the record already exists or some other conflict occurred.
+                        'message' => 'Operation Failed. A configuration for year: ' . $year . ' exists already. So we tried to update the config but this did not work. No Exception thrown, but update returned false.',
+                    ], 500); // 409 Conflict. Maybe the record already exists or some other conflict occurred.
                 }
             } catch (\Throwable $th) {
                 return response()->json([
@@ -282,8 +335,8 @@ class SchoolInfoController extends Controller
         $connection = $request->input('connection');
         config(["database.default" => $connection]);
         $schoolConfig = new BasicSchoolConfig();
-        $year = SchoolYear::where('year', $request->year)->first();
-        $sy_id = $year->sy_id;
+        $year = $request->input('year');
+        $sy_id = MyHelper::getSchoolYearID($year);
         $name_fr = $request->schoolName;
         $name_en = $request->schoolNameEN;
         $del_regionale_fr = $request->delRegionFR;
@@ -314,6 +367,8 @@ class SchoolInfoController extends Controller
         $schoolConfig->date_signature = $date_signature;
         $schoolConfig->lieu_signature = $lieu_signature;
         $schoolConfig->school_matricule = $school_matricule;
+        $schoolConfig->str1 = $request->str1;
+        $schoolConfig->str2 = $request->str2;
 
         $query = 1;
         try {

@@ -682,7 +682,12 @@ class StaffController extends Controller
 
                 //LETS UPDATE THE RELATED ACCOUNT
                 $acc = Account::find($acc_id);
-                $acc->pwd = $pwd;
+                // Only rotate the password when a new one is actually supplied - otherwise an
+                // unrelated field edit (e.g. renaming a staff member) would silently blank/reset
+                // their login password on every save.
+                if (!empty($pwd)) {
+                    $acc->pwd = $pwd;
+                }
                 $acc->login = $login;
                 try {
                     $tmp2 = $acc->update();
@@ -911,7 +916,10 @@ class StaffController extends Controller
                 ->where('login', '=', $login)
                 ->first();
             if (!is_null($accTmp)) {
-                echo "-1 Account exists already"; //Account exists already
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Operation failed: An account with the login [' . $login . '] already exists.',
+                ], 409);
             } else {
                 //Save account
                 $acc = new Account();
@@ -933,7 +941,7 @@ class StaffController extends Controller
                     $staff->acc_id = $acc->acc_id;
                     $staff->function = $function;
                     $staff->civility = $civility;
-                    $staff->sexe = $staff->$sexe;
+                    $staff->sexe = $sexe;
                     try {
                         $staff->save();
                         $syear = new StaffYear();

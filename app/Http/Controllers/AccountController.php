@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Cookie;
 class AccountController extends Controller
 {
 
-    public function updateAccountWithPOST(Request $request)
+    public function updateAccount(Request $request)
     {
         try {
             $request->validate([
@@ -74,7 +74,7 @@ class AccountController extends Controller
         }
     }
 
-    public function login(Request $request)
+    public function connect(Request $request)
     {
         try {
             // Validate request
@@ -109,7 +109,7 @@ class AccountController extends Controller
                 $q->where('login', $login)
                     ->orWhere('email', $login);
             })
-                ->where('pwd', $pwd) // ⚠️ You should hash passwords later
+                ->where('pwd', $pwd) // I must hash password later⚠️ You should hash passwords later
                 ->first();
 
             /*--- Correction from claude
@@ -160,6 +160,7 @@ class AccountController extends Controller
             $accessTokenPayload = [
                 'iss' => 'your-app',          // issuer
                 'sub' => $account->acc_id,           // user ID
+                'jti' => bin2hex(random_bytes(16)), // unique token id, used to revoke this specific token on logout
                 'email' => $account->email,
                 'role' => $role, //"ROLE_CONNECTED_USER",
                 'name' => $user_name, //"NAME_CONNECTED_USER",
@@ -176,6 +177,7 @@ class AccountController extends Controller
             $refreshTokenPayload = [
                 'iss' => 'dmsacad_backend_dev', // issuer
                 'sub' => $account->acc_id,
+                'jti' => bin2hex(random_bytes(16)), // unique token id, used to revoke this specific token on logout
                 'role' => $role, //"ROLE_CONNECTED_USER",
                 'name' => $user_name, //"NAME_CONNECTED_USER",
                 'user_id' => $user_id, //this represents the actual user id in the staff or admin table, not the account id
@@ -202,6 +204,55 @@ class AccountController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Login failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Logs the current user out by revoking both the access token (from the
+     * Authorization header, if present) and the refresh token (from the
+     * 'refresh_token' cookie), so neither can be used again even though they
+     * haven't reached their natural expiry yet. The refresh_token cookie is
+     * also cleared client-side.
+     */
+    public function logout(Request $request)
+    {
+        try {
+            $jwt_secret = env('JWT_SECRET');
+
+            $accessToken = $request->bearerToken();
+            if ($accessToken) {
+                try {
+                    $decoded = JWT::decode($accessToken, new Key($jwt_secret, 'HS256'));
+                    if (isset($decoded->jti, $decoded->exp)) {
+                        MyHelper::blacklistToken($decoded->jti, $decoded->exp - time());
+                    }
+                } catch (\Throwable $e) {
+                    // Token already invalid/expired: nothing left to revoke
+                }
+            }
+
+            $refreshToken = $request->cookie('refresh_token');
+            if ($refreshToken) {
+                try {
+                    $decoded = JWT::decode($refreshToken, new Key($jwt_secret, 'HS256'));
+                    if (isset($decoded->jti, $decoded->exp)) {
+                        MyHelper::blacklistToken($decoded->jti, $decoded->exp - time());
+                    }
+                } catch (\Throwable $e) {
+                    // Token already invalid/expired: nothing left to revoke
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Logged out successfully',
+            ], 200)->withCookie('refresh_token', '', -1, null, null, false, true, false, 'Strict');
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Logout failed',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -255,6 +306,13 @@ class AccountController extends Controller
                 ], 401); //401 = Unauthorized
             }
 
+            if (isset($decoded->jti) && MyHelper::isTokenBlacklisted($decoded->jti)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Refresh token has been revoked'
+                ], 401); //401 = Unauthorized
+            }
+
             // 3. Retrieve user from DB
             $account = Account::find($decoded->sub); //sub is the acc_id of the account in the token
 
@@ -295,6 +353,7 @@ class AccountController extends Controller
             $accessTokenPayload = [
                 'iss' => 'your-app',          // issuer
                 'sub' => $account->acc_id,           // user ID
+                'jti' => bin2hex(random_bytes(16)), // unique token id, used to revoke this specific token on logout
                 'email' => $account->email,
                 'role' => $role, //"ROLE_CONNECTED_USER",
                 'name' => $user_name, //"NAME_CONNECTED_USER",
