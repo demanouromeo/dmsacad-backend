@@ -166,6 +166,7 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']); //ok
     Route::get('/configs/getClassificationParam', [SchoolInfoController::class, 'getClassificationParam']); //ok
     Route::get('/configs/allSchoolConfigOfYear', [SchoolInfoController::class, 'allSchoolConfigOfYear']);
+    Route::get('/configs/schoolLogo', [SchoolInfoController::class, 'schoolLogo']);
 
     //==> ANY CONNECTED USER ON ACCOUNTS
     Route::post('/accounts/updateAccount', [AccountController::class, 'updateAccount']); //ok. Any user can update its account

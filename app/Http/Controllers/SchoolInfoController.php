@@ -187,6 +187,37 @@ class SchoolInfoController extends Controller
         }
     }
 
+    // Streams the school logo file through the API rather than the client hitting the static
+    // public/images/{connection}/logo/logo.* path directly. The static path works fine for plain
+    // <img> display, but embedding the logo into an exported PDF requires reading it back out of a
+    // <canvas>, which the browser blocks (tainted canvas) unless the response carries
+    // Access-Control-Allow-Origin - the remote host's static-file CDN doesn't send that header and
+    // it isn't something this app can configure from here. Routes under /api/* already get it from
+    // Laravel's own CORS middleware (confirmed working remotely for every other endpoint), so
+    // serving the same file through here sidesteps the gap without needing any server config change.
+    public function schoolLogo(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input('connection');
+        $dir = public_path("images/{$connection}/logo");
+        foreach (['png', 'jpg', 'jpeg'] as $ext) {
+            $path = "{$dir}/logo.{$ext}";
+            if (file_exists($path)) {
+                return response()->file($path);
+            }
+        }
+        return response()->json(['status' => false, 'message' => 'Logo not found'], 404);
+    }
+
     public function getSchoolYearID(Request $request)
     {
         try {
