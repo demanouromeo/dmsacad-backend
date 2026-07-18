@@ -1100,9 +1100,11 @@ class MyHelper extends Controller
             $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
             $res = MyHelper::deleteStudentClasseOfYearAndSection($sy_id, $section_id); //Works
             $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
-            $res = MyHelper::deleteStudentNotInAClasse(); //Works
-            $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
-            $res = MyHelper::deleteClasseYearOfSection($sy_id, $section_id); //Works        
+            // Global, unscoped best-effort cleanup - see the identical comment in deleteAClasse()
+            // above. Not folded into $conclusion so an unrelated FK-constraint failure here doesn't
+            // get reported as "failed to delete these classes".
+            MyHelper::deleteStudentNotInAClasse();
+            $res = MyHelper::deleteClasseYearOfSection($sy_id, $section_id); //Works
             $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
             $res = MyHelper::deleteSubjectClasseStaffOfYearAndSection($sy_id, $section_id); //Works
             $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
@@ -1148,16 +1150,21 @@ class MyHelper extends Controller
 
         $res = MyHelper::deleteAClasseStudentClasseOfYearAndSection($sy_id, $section_id, $classe_id); //Works
         $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
-        $res = MyHelper::deleteStudentNotInAClasse(); //Works
-        $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
+        // deleteStudentNotInAClasse()/deleteClasseNotInClasseYear() are global, unscoped best-effort
+        // cleanup (not limited to $classe_id/$sy_id/$section_id) - they commonly fail with an FK
+        // constraint violation (e.g. a newly-orphaned student still has discipline/absence rows) for
+        // reasons unrelated to the classe actually being deleted here, whose own scoped rows are
+        // already fully removed by this point. Their result is intentionally NOT folded into
+        // $conclusion so an unrelated global-cleanup failure doesn't get reported as "failed to
+        // delete this classe".
+        MyHelper::deleteStudentNotInAClasse();
         $res = MyHelper::deleteAClasseClasseYearOfSection($sy_id, $section_id, $classe_id); //Works
         $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
         $res = MyHelper::deleteAClasseSubjectClasseStaffOfYearAndSection($sy_id, $section_id, $classe_id); //Works
         $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
         $res = MyHelper::deleteAClasseSubjectClasseOfYearAndSection($sy_id, $section_id, $classe_id); //Works
         $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
-        $res = MyHelper::deleteClasseNotInClasseYear(); //Works 
-        $conclusion = ($res < 0  || $conclusion < 0) ? -1 : 1;
+        MyHelper::deleteClasseNotInClasseYear();
         return $conclusion; //1-->success; (-1)--> Error occurs classe not deleted and some ref not deleted
     }
     public static function validateStr($str)
