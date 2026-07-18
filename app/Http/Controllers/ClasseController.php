@@ -1250,6 +1250,13 @@ class ClasseController extends Controller
             ], 500);
         }
 
+        if ($res < 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete at least one class for the specified year[' . $year . '] and section[' . $section . ']',
+            ], 500);
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Classes deleted successfully for the specified year[' . $year . '] and section[' . $section . ']',
