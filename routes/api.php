@@ -40,6 +40,12 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/configs/upload', [SchoolInfoController::class, 'upload']); //ok. I tested on POstman, Uploaded logo. I choose Body tab then --> form-data then key= image, value=choose file, other keys: connection and year. setting value for each.  
 
     //==> ADMIN ON ACCOUNTS
+    // NOTE: these two literal-path routes must stay registered before the /accounts/{connection}
+    // wildcard below, or Laravel's registration-order route matching would swallow them into
+    // allAccounts($connection = "allAdministrateurAccounts") - same gotcha as the old GET
+    // /accounts/connect route documented on the frontend's connect() call site.
+    Route::get('/accounts/allAdministrateurAccounts', [AccountController::class, 'allAdministrateurAccounts']);
+    Route::post('/accounts/adminUpdateAccount', [AccountController::class, 'adminUpdateAccount']);
     Route::get('/accounts/{connection}', [AccountController::class, 'allAccounts']); //ok
 
     //==> ADMIN ON FILIERE
@@ -91,6 +97,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/staffs/batchRemoveCourses', [StaffController::class, 'batchRemoveCourses']);
     Route::get('/staffs/arrangeSG', [StaffController::class, 'arrangeSG']); //OK - WORKs on REMOTE SERVER. NOT ON LOCAL XAMPP SERVER
     Route::get('/staffs/arrangeSGSimple', [StaffController::class, 'arrangeSGSimple']); //OK - WORKs on REMOTE SERVER. NOT ON LOCAL XAMPP SERVER
+    Route::post('/staffs/uploadStaffPhoto', [StaffController::class, 'uploadStaffPhoto']);
 
     //==> ADMIN ON THPARAM
     Route::post('/th/saveThParam', [ThParamController::class, 'saveThParam']); //OK
@@ -204,6 +211,7 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/staffs/teachFromAcc', [StaffController::class, 'teachFromAcc']); //OK
     Route::get('/staffs/AllAttributionsOfSection', [StaffController::class, 'AllAttributionsOfSection']); //ok
     Route::get('/staffs/subjectTaughtByaStaff2', [StaffController::class, 'subjectTaughtByaStaff2']); //OK
+    Route::get('/staffs/staffPhoto', [StaffController::class, 'staffPhoto']);
 
     //==> ANY CONNECTED USER ON SECTION
     Route::get('/section/getSections', [SectionYearController::class, 'getSections']); //OK

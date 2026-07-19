@@ -1299,6 +1299,86 @@ class StaffController extends Controller
         }
     }
 
+    // staff.photo is a mediumblob - raw bytes stored directly in the row, same convention as
+    // StudentController::uploadStudentPhoto/studentPhoto. The frontend always re-encodes the edited
+    // photo as JPEG (canvas.toBlob) and keeps it under 500KB client-side already; the max:500 rule
+    // here is defense-in-depth against a non-browser caller.
+    public function uploadStaffPhoto(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'staff_id' => 'required|integer|min:1',
+                'photo' => 'required|image|mimes:jpeg,png,jpg|max:500',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input('connection');
+        $staff_id = $request->input('staff_id');
+        config(["database.default" => $connection]);
+
+        $staff = Staff::find($staff_id);
+        if (is_null($staff)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Staff not found.',
+            ], 404);
+        }
+
+        try {
+            $staff->photo = file_get_contents($request->file('photo')->getRealPath());
+            $staff->save();
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to save photo: ' . $th->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Photo successfully saved.',
+        ], 200);
+    }
+
+    // Streams the raw blob back out through the API (mirrors StudentController::studentPhoto) -
+    // there's no static-file path for a DB-stored blob, so this is the only way to retrieve it.
+    // Content-Type is hardcoded to image/jpeg since uploadStaffPhoto only ever receives what the
+    // frontend's canvas editor already re-encoded as JPEG.
+    public function staffPhoto(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'staff_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input('connection');
+        $staff_id = $request->input('staff_id');
+        config(["database.default" => $connection]);
+
+        $staff = Staff::find($staff_id);
+        if (is_null($staff) || is_null($staff->photo)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Photo not found.',
+            ], 404);
+        }
+
+        return response($staff->photo, 200)->header('Content-Type', 'image/jpeg');
+    }
+
     public function index()
     {
         //

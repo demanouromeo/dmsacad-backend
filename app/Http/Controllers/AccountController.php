@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\DB;
 
 class AccountController extends Controller
 {
@@ -389,6 +390,111 @@ class AccountController extends Controller
         //$obj = SchoolYear::where('year', '2024/2025')->first();
         //echo 'sy_id='. $obj->sy_id .'\n';
         return response()->json($accounts, 200);
+    }
+
+    /**
+     * Accounts linked to the administrateur table (type=1/ADMIN) - not year-scoped, since
+     * administrateur has no administrateur_year table the way staff does. Shaped like
+     * StaffController::allStaffs1's joined response (id/name/acc_id/login/pwd/type/email) so the
+     * frontend can merge both lists into one table with the same row shape.
+     */
+    public function allAdministrateurAccounts(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input("connection");
+        config(["database.default" => $connection]);
+
+        try {
+            $admins = DB::select(
+                "SELECT administrateur.admin_id, administrateur.name, account.acc_id, account.login,
+                        account.pwd, account.type, account.email
+                    FROM administrateur, account
+                    WHERE administrateur.acc_id = account.acc_id
+                    ORDER BY administrateur.name;"
+            );
+            return response()->json($admins, 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while retrieving administrator accounts: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * ADMIN-only account maintenance: change an existing account's login/role(type) and
+     * optionally reset its password. Unlike updateAccount above (self-service, always requires a
+     * new password and has no ownership check of its own), this is explicitly reachable only via
+     * the ADMIN-gated route group and leaves the password untouched when new_pwd is
+     * empty/omitted, matching StaffController::updateManyStaffs' optional-password convention.
+     */
+    public function adminUpdateAccount(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'acc_id' => 'required|integer',
+                'login' => 'required|string',
+                'type' => 'required|integer',
+                'new_pwd' => 'nullable|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input("connection");
+        $acc_id = $request->input("acc_id");
+        $login = $request->input("login");
+        $type = $request->input("type");
+        $new_pwd = $request->input("new_pwd");
+        config(["database.default" => $connection]);
+
+        try {
+            $ref = Account::find($acc_id);
+            if (is_null($ref)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Account not found',
+                ], 404);
+            }
+
+            $existingAccount = Account::where('login', $login)
+                ->where('acc_id', '!=', $acc_id)
+                ->first();
+            if (!is_null($existingAccount)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Login already exists. Login is unique for each account. Please choose another login.',
+                ], 400);
+            }
+
+            $ref->login = $login;
+            $ref->type = $type;
+            if (!empty($new_pwd)) {
+                $ref->pwd = $new_pwd;
+            }
+            $ref->update();
+            return response()->json([
+                'status' => true,
+                'message' => 'Account updated successfully',
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function index()
