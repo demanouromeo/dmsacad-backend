@@ -2715,6 +2715,124 @@ class StudentController extends Controller
         }
     }
 
+    // Whole-section, whole-year fill-rate aggregate for non-APC classes: one row per
+    // (classe, subject, dbsequence 1-6) with roster_count/filled_count already summed in SQL,
+    // so the Fill rate module doesn't need to loop getSeqMarks per classe/subject/sequence.
+    public function fillRateNonApc(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input("connection");
+        $year = $request->input("year");
+        $section = $request->input("section");
+        config(["database.default" => $connection]);
+
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+            $section_id = MyHelper::getSectionID($section);
+
+            $rows = DB::select(
+                "SELECT classe.classe_id, classe.classe_name, classe.`level`,
+                        subject_classe.subject_id, subject.subject_title, dbseq.dbsequence,
+                        (SELECT COUNT(*) FROM student_classe
+                            WHERE student_classe.classe_id = classe.classe_id AND student_classe.sy_id = $sy_id) AS roster_count,
+                        COUNT(student_subject.student_subject_id) AS filled_count
+                    FROM classe
+                        INNER JOIN classe_year ON classe_year.classe_id = classe.classe_id AND classe_year.sy_id = $sy_id
+                        INNER JOIN subject_classe ON subject_classe.classe_id = classe.classe_id
+                            AND subject_classe.sy_id = $sy_id AND subject_classe.section_id = $section_id
+                        INNER JOIN subject ON subject.subject_id = subject_classe.subject_id
+                        CROSS JOIN (SELECT 1 AS dbsequence UNION ALL SELECT 2 UNION ALL SELECT 3
+                                    UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6) dbseq
+                        LEFT JOIN student_subject ON student_subject.subject_id = subject_classe.subject_id
+                            AND student_subject.sy_id = $sy_id AND student_subject.sequence = dbseq.dbsequence
+                            AND student_subject.isEmpty = 0
+                            AND student_subject.stud_id IN (SELECT stud_id FROM student_classe
+                                WHERE student_classe.classe_id = classe.classe_id AND student_classe.sy_id = $sy_id)
+                    WHERE classe_year.section_id = $section_id
+                    GROUP BY classe.classe_id, classe.classe_name, classe.`level`,
+                             subject_classe.subject_id, subject.subject_title, dbseq.dbsequence
+                    ORDER BY classe.`level`, classe.classe_name, subject.subject_title, dbseq.dbsequence"
+            );
+            return response()->json($rows, 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Same idea as fillRateNonApc but for APC classes: one row per (classe, subject, term,
+    // subject_competence), competence-level (not pre-averaged into a per-subject rate) so the
+    // frontend can reuse the same competence-averaging it already does in MarkEntryManager.
+    public function fillRateApc(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input("connection");
+        $year = $request->input("year");
+        $section = $request->input("section");
+        config(["database.default" => $connection]);
+
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+            $section_id = MyHelper::getSectionID($section);
+
+            $rows = DB::select(
+                "SELECT classe.classe_id, classe.classe_name, classe.`level`,
+                        subject_competences.subject_id, subject.subject_title,
+                        subject_competences.term_id, subject_competences.subject_competence_id,
+                        (SELECT COUNT(*) FROM student_classe
+                            WHERE student_classe.classe_id = classe.classe_id AND student_classe.sy_id = $sy_id) AS roster_count,
+                        COUNT(stud_comp_mark.stud_comp_mark_id) AS filled_count
+                    FROM classe
+                        INNER JOIN classe_year ON classe_year.classe_id = classe.classe_id AND classe_year.sy_id = $sy_id
+                        INNER JOIN subject_competences ON subject_competences.classe_id = classe.classe_id
+                            AND subject_competences.sy_id = $sy_id AND subject_competences.section_id = $section_id
+                        INNER JOIN subject ON subject.subject_id = subject_competences.subject_id
+                        LEFT JOIN stud_comp_mark ON stud_comp_mark.subject_competence_id = subject_competences.subject_competence_id
+                            AND stud_comp_mark.sy_id = $sy_id AND stud_comp_mark.term_id = subject_competences.term_id
+                            AND stud_comp_mark.isEmpty = 0
+                            AND stud_comp_mark.stud_id IN (SELECT stud_id FROM student_classe
+                                WHERE student_classe.classe_id = classe.classe_id AND student_classe.sy_id = $sy_id)
+                    WHERE classe_year.section_id = $section_id
+                    GROUP BY classe.classe_id, classe.classe_name, classe.`level`,
+                             subject_competences.subject_id, subject.subject_title, subject_competences.term_id,
+                             subject_competences.subject_competence_id
+                    ORDER BY classe.`level`, classe.classe_name, subject.subject_title, subject_competences.term_id"
+            );
+            return response()->json($rows, 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
