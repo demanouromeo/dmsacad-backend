@@ -259,6 +259,8 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/students/getAllDisciplines2', [StudentController::class, 'getAllDisciplines2']);
     Route::get('/students/allStudentsOfClasseOfSection', [StudentController::class, 'allStudentsOfClasseOfSection']);
     Route::get('/students/allStudentsSummaryOfSection', [StudentController::class, 'allStudentsSummaryOfSection']);
+    Route::get('/students/fillRateNonApc', [StudentController::class, 'fillRateNonApc']);
+    Route::get('/students/fillRateApc', [StudentController::class, 'fillRateApc']);
     Route::get('/students/studentPhoto', [StudentController::class, 'studentPhoto']);
     Route::get('/students/allStudClassOfYear', [StudentController::class, 'allStudClassOfYear']);
     Route::post('/students/uploadSeqMarks', [StudentController::class, 'uploadSeqMarks']);
