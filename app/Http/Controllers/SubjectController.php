@@ -78,12 +78,36 @@ class SubjectController extends Controller
         $sy_id = MyHelper::getSchoolYearID($year);
 
         $msg = "";
-        $allAffected = 1; //interpreted as true. 0-->false 
+        $allAffected = 1; //interpreted as true. 0-->false
         foreach ($compList as $sub) {
             $comp_id = $sub["subject_competence_id"];
             try {
-                $x = DB::select(
-                    "DELETE FROM subject_competences 
+                // subject_competences is missing here what deleteACompetence/deleteManyCompetences
+                // already do: stud_comp_mark.subject_competence_id has a FK constraint back to this
+                // table, so a plain DELETE on subject_competences fails (1451 integrity constraint
+                // violation) whenever any stud_comp_mark row still references this competence - even
+                // an isEmpty=1 placeholder row left over from a prior Save/Clear-all in Mark entry,
+                // which is exactly what "no marks" means from the caller's point of view. Re-check
+                // for a genuine (isEmpty=0) mark server-side too, rather than trusting the caller's
+                // own pre-check alone (SubjectCompetenceManager's handleDeleteWithNoMarks) - this is
+                // the one competence-delete route whose whole contract is "never touch real marks".
+                $realMark = DB::select(
+                    "SELECT 1 FROM stud_comp_mark
+                WHERE subject_competence_id = ? AND isEmpty = 0 LIMIT 1",
+                    [$comp_id]
+                );
+                if (!empty($realMark)) {
+                    $allAffected = 0;
+                    $msg = $msg . "Competence $comp_id has marks and was not deleted.<br/>";
+                    continue;
+                }
+                DB::select(
+                    "DELETE FROM stud_comp_mark
+                WHERE subject_competence_id = ?",
+                    [$comp_id]
+                );
+                DB::select(
+                    "DELETE FROM subject_competences
                 WHERE subject_competence_id = ?",
                     [$comp_id]
                 );
