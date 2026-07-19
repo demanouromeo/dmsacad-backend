@@ -91,7 +91,7 @@ class AccountController extends Controller
         }
 
         try {
-            $jwt_secret = env('JWT_SECRET');
+            $jwt_secret = config('services.jwt_secret');
             $access_token_duration = env('ACCESS_TOKEN_DURATION', 3600); // default to 1 hour or 3600 minutes
             $refresh_token_duration = env('REFRESH_TOKEN_DURATION', 60 * 24 * 7); // default to 7 days
 
@@ -219,7 +219,7 @@ class AccountController extends Controller
     public function logout(Request $request)
     {
         try {
-            $jwt_secret = env('JWT_SECRET');
+            $jwt_secret = config('services.jwt_secret');
 
             $accessToken = $request->bearerToken();
             if ($accessToken) {
@@ -294,7 +294,7 @@ class AccountController extends Controller
             config(["database.default" => $connection]);
 
             // 2. Decode refresh token
-            $jwt_secret = env('JWT_SECRET');
+            $jwt_secret = config('services.jwt_secret');
 
             try {
                 $decoded = JWT::decode($refreshToken, new Key($jwt_secret, 'HS256'));

@@ -50,7 +50,7 @@ class SubjectController extends Controller
         ], $k == 1 ? 200 : 400);
     }
 
-    public function deleteCompdeleteCompetencesWithNoMarksetencesWithNoMarks(Request $request)
+    public function deleteCompetencesWithNoMarks(Request $request)
     {
         try {
             $request->validate([

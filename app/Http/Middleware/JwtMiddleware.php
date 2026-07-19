@@ -24,7 +24,7 @@ class JwtMiddleware
         }
 
         try {
-            $decoded = JWT::decode($token, new Key(env('JWT_SECRET'), 'HS256'));
+            $decoded = JWT::decode($token, new Key(config('services.jwt_secret'), 'HS256'));
 
             if (isset($decoded->jti) && MyHelper::isTokenBlacklisted($decoded->jti)) {
                 return response()->json(['status' => false, 'message' => 'Token has been revoked'], 401);
