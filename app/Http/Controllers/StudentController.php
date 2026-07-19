@@ -2197,7 +2197,6 @@ class StudentController extends Controller
         $stud->sexe = $sexe;
         $stud->matricule = $matricule;
         $stud->handicape = $handicape;
-        $stud->cas_social = $cas_social;
 
         $msg = "";
         $allAffected = 1; //interpreted as true. 0-->false
@@ -2240,6 +2239,87 @@ class StudentController extends Controller
         ], $allAffected === 1 ? 200 : 500);
     }
 
+    // student.photo is a mediumblob - the raw bytes are stored directly in the row rather than a
+    // filesystem path (unlike basic_school_config.logo_path), so the photo travels inside the same
+    // per-school DB backup/restore boundary as the rest of the student's data. The frontend always
+    // re-encodes the edited photo as JPEG (canvas.toBlob) before uploading and keeps it under 500KB
+    // client-side already; the max:500 rule here is defense-in-depth against a non-browser caller.
+    public function uploadStudentPhoto(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'stud_id' => 'required|integer|min:1',
+                'photo' => 'required|image|mimes:jpeg,png,jpg|max:500',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input('connection');
+        $stud_id = $request->input('stud_id');
+        config(["database.default" => $connection]);
+
+        $student = Student::find($stud_id);
+        if (is_null($student)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Student not found.',
+            ], 404);
+        }
+
+        try {
+            $student->photo = file_get_contents($request->file('photo')->getRealPath());
+            $student->save();
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to save photo: ' . $th->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Photo successfully saved.',
+        ], 200);
+    }
+
+    // Streams the raw blob back out through the API (mirrors SchoolInfoController::schoolLogo) -
+    // there's no static-file path for a DB-stored blob, so this is the only way to retrieve it.
+    // Content-Type is hardcoded to image/jpeg since uploadStudentPhoto only ever receives what the
+    // frontend's canvas editor already re-encoded as JPEG.
+    public function studentPhoto(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'stud_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input('connection');
+        $stud_id = $request->input('stud_id');
+        config(["database.default" => $connection]);
+
+        $student = Student::find($stud_id);
+        if (is_null($student) || is_null($student->photo)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Photo not found.',
+            ], 404);
+        }
+
+        return response($student->photo, 200)->header('Content-Type', 'image/jpeg');
+    }
+
 
     public function updateStudents(Request $request)
     {
@@ -2248,7 +2328,7 @@ class StudentController extends Controller
                 'connection' => 'required|string',
                 'data' => 'required|string',
                 'data_size' => 'nullable|integer|min:1',
-                'year' => 'required|integer',
+                'year' => 'required|string',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -2575,6 +2655,56 @@ class StudentController extends Controller
                     FROM student WHERE stud_id 
                         IN(SELECT student_classe.stud_id from student_classe
                         WHERE student_classe.sy_id = $sy_id)"
+            );
+            return response()->json($students, 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error occurred: ' . $e->getMessage(),
+            ], 500); //ERROR OCCURS
+        }
+    }
+
+    // Lightweight per-student rows (sexe/repeating/classe_id/classe_name/level only) for every
+    // student enrolled in the given section+year - backs the "Effectifs par classe" report, which
+    // needs sexe/repeating tallies grouped by classe/cycle across a whole section rather than a
+    // single classe. Takes `section` as the literal francophone/anglophone string (same convention
+    // as allClasse1/getAPCLevels), not a section_id, unlike allStudentsOfClasseOfSection.
+    public function allStudentsSummaryOfSection(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'section' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input("connection");
+        $year = $request->input("year");
+        $section = $request->input("section");
+        config(["database.default" => $connection]);
+
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+            $section_id = MyHelper::getSectionID($section);
+
+            $students = DB::select(
+                "SELECT student.sexe, student_classe.repeating,
+                        student_classe.classe_id, classe.classe_name, classe.`level`
+                            FROM student, student_classe, classe, classe_year
+                            WHERE
+                                student.stud_id = student_classe.stud_id
+                                    AND student_classe.classe_id = classe.classe_id
+                                    AND student_classe.classe_id = classe_year.classe_id
+                                    AND student_classe.sy_id = $sy_id
+                                    AND classe_year.section_id = $section_id
+                        ORDER BY classe.`level`, classe.classe_name"
             );
             return response()->json($students, 200);
         } catch (\Throwable $e) {

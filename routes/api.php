@@ -133,7 +133,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
 
     //==> ADMIN ON STUDENT
     Route::get('/students/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
-    Route::get('/students/deleteStudents', [StudentController::class, 'deleteStudents']);
+    Route::post('/students/deleteStudents', [StudentController::class, 'deleteStudents']);
     Route::post('/students/saveStudents', [StudentController::class, 'saveStudents']);
     Route::post('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
     Route::post('/students/updateStudents', [StudentController::class, 'updateStudents']);
@@ -152,6 +152,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
     Route::post('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
     Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
+    Route::post('/students/uploadStudentPhoto', [StudentController::class, 'uploadStudentPhoto']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
 
@@ -257,6 +258,8 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/students/getAllDisciplines', [StudentController::class, 'getAllDisciplines']);
     Route::get('/students/getAllDisciplines2', [StudentController::class, 'getAllDisciplines2']);
     Route::get('/students/allStudentsOfClasseOfSection', [StudentController::class, 'allStudentsOfClasseOfSection']);
+    Route::get('/students/allStudentsSummaryOfSection', [StudentController::class, 'allStudentsSummaryOfSection']);
+    Route::get('/students/studentPhoto', [StudentController::class, 'studentPhoto']);
     Route::get('/students/allStudClassOfYear', [StudentController::class, 'allStudClassOfYear']);
     Route::post('/students/uploadSeqMarks', [StudentController::class, 'uploadSeqMarks']);
     Route::post('/students/uploadCompMarks', [StudentController::class, 'uploadCompMarks']);
