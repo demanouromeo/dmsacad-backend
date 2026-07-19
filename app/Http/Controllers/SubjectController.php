@@ -98,8 +98,6 @@ class SubjectController extends Controller
         ], $allAffected == 1 ? 200 : 400);
     }
 
-
-
     public function saveManySubjects(Request $request)
     {
         try {
