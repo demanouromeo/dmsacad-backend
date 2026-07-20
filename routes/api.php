@@ -178,6 +178,11 @@ Route::middleware(['jwt.auth'])->group(function () {
 
     //==> ANY CONNECTED USER ON ACCOUNTS
     Route::post('/accounts/updateAccount', [AccountController::class, 'updateAccount']); //ok. Any user can update its account
+    Route::post('/accounts/verifyOldPassword', [AccountController::class, 'verifyOldPassword']); //Any user can check its own old password before saving
+    // POST (not GET) so this literal path isn't shadowed by the ADMIN group's earlier-registered
+    // GET /accounts/{connection} wildcard (allAccounts) - same route-registration-order gotcha the
+    // old GET /accounts/connect route used to hit, see connect()'s own comment.
+    Route::post('/accounts/myAccount', [AccountController::class, 'myAccount']); //Any user can fetch its own login (no pwd)
 
     //==> ANY CONNECTED USER ON FILIERE
     Route::get('/filieres/allFilieres', [FiliereController::class, 'allFilieres']); //ok

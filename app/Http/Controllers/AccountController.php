@@ -16,14 +16,22 @@ use Illuminate\Support\Facades\DB;
 class AccountController extends Controller
 {
 
+    // Self-service credential change - any authenticated role (jwt.auth only, no role:ADMIN), used
+    // by the "Manage credential" screen. acc_id is deliberately taken from the caller's own JWT
+    // (auth_payload->sub, set by JwtMiddleware - same claim connect()/refresh() already treat as
+    // acc_id), never from the request body - the previous version trusted a client-supplied acc_id,
+    // which let any authenticated user edit any other account by passing a different id. old_pwd is
+    // now actually verified (plain-text equality, same convention as connect()) before anything is
+    // written - the previous version skipped this entirely despite its error message claiming to
+    // check it.
     public function updateAccount(Request $request)
     {
         try {
             $request->validate([
                 'connection' => 'required|string',
+                'old_pwd' => 'required|string',
                 'login' => 'required|string',
-                'new_pwd' => 'required|string',
-                'acc_id' => 'required|integer',
+                'new_pwd' => 'nullable|string',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -32,19 +40,26 @@ class AccountController extends Controller
             ], 422);
         }
         $connection = $request->input("connection");
+        $old_pwd = $request->input("old_pwd");
         $login = $request->input("login");
-        $pwd = $request->input("new_pwd");
-        $acc_id = $request->input("acc_id");
+        $new_pwd = $request->input("new_pwd");
         config(["database.default" => $connection]);
-        //echo "Connection: $connection -- Year: $year -- Nom_Filiere: $nom_filiere -- Section: $section";
 
         try {
+            $acc_id = $request->attributes->get('auth_payload')->sub;
             $ref = Account::find($acc_id);
             if (is_null($ref)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Invalid credentials [Old Password is wrong]',
-                ], 401); //ACCOUNT NOT FOUND
+                    'message' => 'Account not found',
+                ], 404);
+            }
+
+            if ($ref->pwd !== $old_pwd) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Old password is incorrect',
+                ], 401);
             }
 
             //Make sure no other account exists with the new login
@@ -58,20 +73,92 @@ class AccountController extends Controller
                 ], 400); //BAD REQUEST
             }
 
-
             $ref->login = $login;
-            $ref->pwd = $pwd;
+            if (!empty($new_pwd)) {
+                $ref->pwd = $new_pwd;
+            }
             $ref->update();
             return response()->json([
                 'status' => true,
                 'message' => 'Account updated successfully',
             ], 200);
         } catch (\Throwable $e) {
-            //echo '<br/>Message: ' .$e->getMessage();
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage(),
             ], 500); //INTERNAL SERVER ERROR
+        }
+    }
+
+    // Backs the "Manage credential" screen's on-blur check of the Old password field - no mutation,
+    // just tells the frontend whether it's currently correct before the user attempts to Save.
+    public function verifyOldPassword(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'old_pwd' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input("connection");
+        $old_pwd = $request->input("old_pwd");
+        config(["database.default" => $connection]);
+
+        try {
+            $acc_id = $request->attributes->get('auth_payload')->sub;
+            $ref = Account::find($acc_id);
+            $matches = !is_null($ref) && $ref->pwd === $old_pwd;
+            return response()->json(['status' => $matches], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Backs the "Manage credential" screen's initial New Login prefill - the JWT payload itself
+    // carries sub/role/name/user_id/email but no login, so this is the only way to show the caller
+    // their own current login without them having to retype it from memory. Never returns pwd.
+    public function myAccount(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input("connection");
+        config(["database.default" => $connection]);
+
+        try {
+            $acc_id = $request->attributes->get('auth_payload')->sub;
+            $ref = Account::find($acc_id);
+            if (is_null($ref)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Account not found',
+                ], 404);
+            }
+            return response()->json([
+                'acc_id' => $ref->acc_id,
+                'login' => $ref->login,
+                'email' => $ref->email,
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 
