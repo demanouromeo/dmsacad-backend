@@ -21,7 +21,7 @@ class ThParamController extends Controller
                 'lb_default' => 'required|numeric|min:0|max:20',
                 'ub_default' => 'required|numeric|min:0|max:20',
                 'seuil_abs' => 'required|numeric|min:0',
-                'val1' => 'required|numeric|min:0',
+                'val1' => 'required|numeric|min:1|max:3',
             ]);
         } catch (\Throwable $th) {
             return response()->json([

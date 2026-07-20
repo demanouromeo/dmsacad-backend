@@ -122,6 +122,38 @@ A large static utility class (despite living under `Controllers`, not `Helpers`)
 Most of its methods run raw `DB::select(...)` with interpolated variables rather than Eloquent — when
 touching this file, follow the existing style rather than converting to query builder/Eloquent unless asked.
 
+### Classified / Not Classified (NC) parameter (`classifiedparam`)
+
+`classifiedparam` holds at most **one row per school year** (`sy_id`, resolved via
+`MyHelper::getSchoolYearID($year)`) within a connection's own database — it's a per-tenant, per-year setting
+like `basic_school_config`, not a global one. Of the table's columns, only `nb_matieres_rate` (int, 1-100) and
+`classified` (0/1) are used today; `total_coef_rate`/`class_specific`/`term_specific` exist in the schema/model
+(`app/Models/Classifiedparam.php`) but nothing reads or writes them yet.
+
+`ClassifiedparamController` exposes exactly two endpoints:
+- `POST /api/settings/saveClassifiedParamOfYear` (`role:ADMIN` group) — find-or-create by `sy_id`: updates the
+  existing row for that school year if one exists, otherwise inserts a new one. Body: `connection`, `year`,
+  `classified` (0 or 1), `nbMatieresRate` (int).
+- `GET /api/settings/classifiedParamOfYear` (any authenticated role, `jwt.auth`-only group — report-card
+  generation will need to read this too, not just the ADMIN settings screen) — a raw `DB::select`, returning a
+  flat JSON array (`[]` when nothing has been saved yet for that year, not a 404) rather than a single object.
+
+**What `classified` means (this is the important, non-obvious part):** despite the column name, `classified=0`
+means *every* student is considered classified that year (no student is ever NC) — the per-student algorithm
+below is skipped entirely. `classified=1` means classification is *conditional*: a student's classified/NC
+status is computed per term from their actual mark participation rate against the `nb_matieres_rate` threshold
+percentage. A missing row (no `classifiedparam` saved yet for the year) is treated the same as `classified=0`
+— classify everyone — both by the frontend's settings screen default and by the algorithm's own fail-open
+behavior described below.
+
+This is consumed by report-card generation, which is not built yet. The full per-student algorithm (separate
+non-APC/APC formulas, driven by `student_subject`/`stud_comp_mark` marks the frontend already fetches via
+`MarkReader`) is documented in `dms_acad_react`'s `CLAUDE.md` under "Classified / Not Classified (NC)
+parameter" — implement report-card classification there rather than re-deriving the algorithm, since it will
+run client-side against data the frontend already has loaded, the same way `MarkEntryManager`'s fill-rate panel
+and `EffectifsManager`'s report already compute things client-side from fetched marks/rosters instead of
+adding a new backend aggregation endpoint.
+
 ### Models
 
 `app/Models` contains Reliese-generated Eloquent models (see `reliese/laravel` dev dependency) mirroring the
