@@ -448,6 +448,98 @@ class SchoolInfoController extends Controller
         ], 200);
     }
 
+    // val1 = annual report card average computation method (1 = Calcul simple, 0 = Calcul
+    // complexe), val2 = affichagePromotion (1 = show the student's next-year classe when promoted,
+    // 0 = leave it blank for manual fill-in). Both are whole-school settings - one row per school
+    // year on the same basic_school_config table School basic info already writes to - not
+    // per-user, so they don't belong in the frontend's localStorage. Purely additive to this
+    // controller: doesn't touch any existing method/route/column above.
+    public function getAnnualReportCardParams(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+
+        try {
+            $config = BasicSchoolConfig::where('sy_id', '=', $sy_id)->first();
+            if (is_null($config)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No school configuration found for year: ' . $year,
+                ], 404);
+            }
+            return response()->json([
+                'status' => true,
+                'computationMethod' => $config->val1,
+                'affichagePromotion' => $config->val2,
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve annual report card parameters: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Update-only: val1/val2 live on the same row School basic info creates, and that row requires
+    // several NOT NULL columns (name_fr, name_en, phone1) this endpoint has no value for - so unlike
+    // ClassifiedparamController's find-or-create pattern, a missing row here is a 404 asking the
+    // admin to fill in the school's basic information first, rather than inserting an incomplete row.
+    public function saveAnnualReportCardParams(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'computationMethod' => 'required|integer|min:0|max:1',
+                'affichagePromotion' => 'required|integer|min:0|max:1',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+        $sy_id = MyHelper::getSchoolYearID($year);
+
+        try {
+            $config = BasicSchoolConfig::where('sy_id', '=', $sy_id)->first();
+            if (is_null($config)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No school configuration found for year: ' . $year . '. Please save the school\'s basic information first.',
+                ], 404);
+            }
+            $config->val1 = $request->input('computationMethod');
+            $config->val2 = $request->input('affichagePromotion');
+            $config->update();
+            return response()->json([
+                'status' => true,
+                'message' => 'Annual report card parameters saved successfully.',
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to save annual report card parameters: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function upload(Request $request)
     {
         $request->validate([
