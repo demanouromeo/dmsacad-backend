@@ -20,7 +20,15 @@ return [
     'allowed_methods' => ['*'], //Allows all http methods (POST, GET, PUT, DELETE, etc.)
 
     //'allowed_origins' => ['*'],
-    'allowed_origins' => ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+    'allowed_origins' => [
+        'https://dmseduc.netlify.app',
+        'https://educ.dmsacad.com',
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'https://portfolio.dmsacad.com',
+        'https://dmsacad.com'
+    ],
+    //'allowed_origins' => ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
 
     'allowed_origins_patterns' => [],
 
