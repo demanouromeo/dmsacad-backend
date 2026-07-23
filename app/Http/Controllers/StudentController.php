@@ -2582,8 +2582,10 @@ class StudentController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
 
             $students = DB::select(
-                "SELECT `student_classe_id`, `stud_id`, `basculated`, position_classe, 
-                        `repeating`, `solvable1`,`solvable2`, `cas_social`,`abandon` FROM student_classe 
+                "SELECT `student_classe_id`, `stud_id`, `basculated`, position_classe,
+                        `repeating`, `solvable1`,`solvable2`, `cas_social`,`abandon`,
+                        `isMannullalyClassified`, `isMannullalyDismissed`, `mustRepeat`,
+                        `promuEn`, `codeExclusion` FROM student_classe
                         WHERE sy_id = $sy_id AND classe_id = $classe_id"
             );
             return response()->json($students, 200);
