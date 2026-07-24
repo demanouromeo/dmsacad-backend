@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Administrateur;
 use App\Models\Staff;
+use App\Models\StudParent;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -230,7 +231,16 @@ class AccountController extends Controller
                     $user_name = trim($user_name);
                     $user_id = $admin->admin_id;
                 }
-            } else { //CONNECTED USER  
+            } elseif ($account->type == 6) { //PARENT
+                $parent = StudParent::where('acc_id', $account->acc_id)->first();
+                if (!$parent) {
+                    $user_name = "PARENT"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE STUD_PARENT
+                } else {
+                    $user_name = $parent->p_name . ' ' . $parent->p_surname;
+                    $user_name = trim($user_name);
+                    $user_id = $parent->p_id;
+                }
+            } else { //CONNECTED USER
                 $user_name = "NAME_CONNECTED_USER";
                 $staff = Staff::where('acc_id', $account->acc_id)->first();
                 if (!$staff) {
@@ -423,7 +433,16 @@ class AccountController extends Controller
                     $user_name = trim($user_name);
                     $user_id = $admin->admin_id;
                 }
-            } else { //CONNECTED USER  
+            } elseif ($account->type == 6) { //PARENT
+                $parent = StudParent::where('acc_id', $account->acc_id)->first();
+                if (!$parent) {
+                    $user_name = "PARENT"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE STUD_PARENT
+                } else {
+                    $user_name = $parent->p_name . ' ' . $parent->p_surname;
+                    $user_name = trim($user_name);
+                    $user_id = $parent->p_id;
+                }
+            } else { //CONNECTED USER
                 $user_name = "NAME_CONNECTED_USER";
                 $staff = Staff::where('acc_id', $account->acc_id)->first();
                 if (!$staff) {

@@ -12,6 +12,7 @@ use App\Http\Controllers\SchoolInfoController;
 use App\Http\Controllers\SpecialityController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudParentController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\SectionYearController;
 use App\Http\Controllers\TestController;
@@ -100,6 +101,14 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/staffs/arrangeSG', [StaffController::class, 'arrangeSG']); //OK - WORKs on REMOTE SERVER. NOT ON LOCAL XAMPP SERVER
     Route::get('/staffs/arrangeSGSimple', [StaffController::class, 'arrangeSGSimple']); //OK - WORKs on REMOTE SERVER. NOT ON LOCAL XAMPP SERVER
     Route::post('/staffs/uploadStaffPhoto', [StaffController::class, 'uploadStaffPhoto']);
+
+    //==> ADMIN ON PARENT
+    Route::post('/parents/saveParent', [StudParentController::class, 'saveParent']);
+    Route::post('/parents/updateParent', [StudParentController::class, 'updateParent']);
+    Route::post('/parents/deleteManyParents', [StudParentController::class, 'deleteManyParents']);
+    Route::post('/parents/uploadParentPhoto', [StudParentController::class, 'uploadParentPhoto']);
+    Route::post('/parents/assignStudentsToParent', [StudParentController::class, 'assignStudentsToParent']);
+    Route::post('/parents/removeStudentsFromParent', [StudParentController::class, 'removeStudentsFromParent']);
 
     //==> ADMIN ON THPARAM
     Route::post('/th/saveThParam', [ThParamController::class, 'saveThParam']); //OK
@@ -219,6 +228,12 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/staffs/AllAttributionsOfSection', [StaffController::class, 'AllAttributionsOfSection']); //ok
     Route::get('/staffs/subjectTaughtByaStaff2', [StaffController::class, 'subjectTaughtByaStaff2']); //OK
     Route::get('/staffs/staffPhoto', [StaffController::class, 'staffPhoto']);
+
+    //==> ANY CONNECTED USER ON PARENT
+    Route::get('/parents/allParents', [StudParentController::class, 'allParents']);
+    Route::get('/parents/parentPhoto', [StudParentController::class, 'parentPhoto']);
+    Route::get('/parents/childrenOfParent', [StudParentController::class, 'childrenOfParent']);
+    Route::get('/parents/studentsOfClasseForAssignment', [StudParentController::class, 'studentsOfClasseForAssignment']);
 
     //==> ANY CONNECTED USER ON SECTION
     Route::get('/section/getSections', [SectionYearController::class, 'getSections']); //OK
