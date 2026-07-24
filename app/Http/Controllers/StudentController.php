@@ -984,20 +984,23 @@ class StudentController extends Controller
             $dismissalReason = $st["dismissalReason"]; //RAISON POUR laquelle l'eleve est exclu
             $promuEn = $st["promuEn"]; //id de la classe dans laquelle l'eleve sera promue.
             $codeExclusion = $st["codeExclusion"]; //CODE RAISON EXCLUSION: 1->Age; 2->Conduite; 3->Travail; 4->Ne peut trippler; 5->Abandon; 6->Insolvable
+            //promuEn is a nullable int column - must NOT be quoted as a string, otherwise clearing it
+            //(null) would write '' instead of NULL.
+            $promuEnSql = ($promuEn === null || $promuEn === '') ? 'NULL' : (int) $promuEn;
             /*
-            $str1 = $st["str1"];  
-            $str2 = $st["str2"];  
-            $str3 = $st["str3"];  
-            $val1 = $st["val1"];  
-            $val2 = $st["val2"]; 
-            $val3 = $st["val3"];  
+            $str1 = $st["str1"];
+            $str2 = $st["str2"];
+            $str3 = $st["str3"];
+            $val1 = $st["val1"];
+            $val2 = $st["val2"];
+            $val3 = $st["val3"];
             */
 
             try {
-                DB::select("UPDATE student_classe SET isMannullalyClassified = $isMannullalyClassified, 
-                        isMannullalyDismissed = $isMannullalyDismissed, mustRepeat = $mustRepeat, 
-                        dismissalReason = '$dismissalReason', promuEn='$promuEn', 
-                        codeExclusion=$codeExclusion 
+                DB::select("UPDATE student_classe SET isMannullalyClassified = $isMannullalyClassified,
+                        isMannullalyDismissed = $isMannullalyDismissed, mustRepeat = $mustRepeat,
+                        dismissalReason = '$dismissalReason', promuEn=$promuEnSql,
+                        codeExclusion=$codeExclusion
                         WHERE sy_id = $sy_id AND classe_id = $classe_id  AND stud_id = $stud_id");
             } catch (\Throwable $e) {
                 $msg .= "<br/>" . $e->getMessage();
