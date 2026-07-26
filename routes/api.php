@@ -72,7 +72,6 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::delete('/classes/removeAClassFromAVp', [ClasseController::class, 'removeAClassFromAVp']); //OK
     Route::get('/classes/allVpClasses', [ClasseController::class, 'allVpClasses']); //OK
     Route::post('/classes/saveClasse', [ClasseController::class, 'saveClasse']); //OK
-    Route::post('/classes/updateManyClasses', [ClasseController::class, 'updateManyClasses']); //OK
     Route::post('/classes/saveManyClasses', [ClasseController::class, 'saveManyClasses']); //OK
     Route::post('/classes/deleteManyClasses', [ClasseController::class, 'deleteManyClasses']); //OK
     Route::delete('/classes/deleteClassesOfSectionAndYear', [ClasseController::class, 'deleteClassesOfSectionAndYear']); //OK    
@@ -128,22 +127,19 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     //==> ADMIN ON SUBJECT
     Route::post('/subjects/saveSubject', [SubjectController::class, 'saveSubject']); //OK
     Route::post('/subjects/saveManySubjects', [SubjectController::class, 'saveManySubjects']); //OK
-    Route::post('/subjects/saveManySC', [SubjectController::class, 'saveManySC']); //OK    
     Route::post('/subjects/updateSubject', [SubjectController::class, 'updateSubject']); //OK
     Route::post('/subjects/updateManySubjects', [SubjectController::class, 'updateManySubjects']); //OK
     Route::delete('/subjects/deleteASubject', [SubjectController::class, 'deleteASubject']); //OK
     Route::post('/subjects/deleteManySubjects', [SubjectController::class, 'deleteManySubjects']); //OK
 
     Route::delete('/subjects/deleteAllSubjectsOfSectionAndYear', [SubjectController::class, 'deleteAllSubjectsOfSectionAndYear']); //OK
-    Route::delete('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']); //OK
     Route::post('/subjects/saveCompetence', [SubjectController::class, 'saveCompetence']); //OK
-    Route::post('/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']); //OK 
+    Route::post('/subjects/updateManyCompetences', [SubjectController::class, 'updateManyCompetences']); //OK
     Route::post('/subjects/updateACompetence', [SubjectController::class, 'updateACompetence']); //OK
     Route::post('/subjects/deleteManyCompetences', [SubjectController::class, 'deleteManyCompetences']); //OK
     Route::delete('/subjects/deleteACompetence', [SubjectController::class, 'deleteACompetence']); //OK
     Route::post('/subjects/calquerCompetences', [SubjectController::class, 'calquerCompetences']); //OK
     Route::post('/subjects/calquerCompetencesOfTerm', [SubjectController::class, 'calquerCompetencesOfTerm']); //OK
-    Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']); //OK
     Route::post('/subjects/saveManyAttributions', [SubjectController::class, 'saveManyAttributions']); // MAY BE SIMILAR TO asignCoure of /staffs I'll check later
     Route::delete('/subjects/deleteCompetencesOfAClasse', [SubjectController::class, 'deleteCompetencesOfAClasse']); //OK
     Route::delete('/subjects/deleteCompetencesWithNoMarks', [SubjectController::class, 'deleteCompetencesWithNoMarks']);
@@ -151,17 +147,12 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
 
     //==> ADMIN ON STUDENT
     Route::get('/students/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
-    Route::post('/students/deleteStudents', [StudentController::class, 'deleteStudents']);
-    Route::post('/students/saveStudents', [StudentController::class, 'saveStudents']);
-    Route::post('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
-    Route::post('/students/updateStudents', [StudentController::class, 'updateStudents']);
     Route::post('/students/saveSeqMarks', [StudentController::class, 'saveSeqMarks']);
     Route::post('/students/saveCompMarks', [StudentController::class, 'saveCompMarks']);
     Route::get('/students/copyCompMarks', [StudentController::class, 'copyCompMarks']);
     Route::get('/students/copySeqMarks', [StudentController::class, 'copySeqMarks']);
     Route::get('/students/copyCompMarks2', [StudentController::class, 'copyCompMarks2']);
     Route::get('/students/copySeqMarks2', [StudentController::class, 'copySeqMarks2']);
-    Route::post('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
     Route::get('/students/resetPromotionInfo', [StudentController::class, 'resetPromotionInfo']);
     Route::post('/students/updatePromotionInfo', [StudentController::class, 'updatePromotionInfo']);
     Route::post('/students/updateDismiss', [StudentController::class, 'updateDismiss']);
@@ -170,9 +161,37 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
     Route::post('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
     Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
-    Route::post('/students/uploadStudentPhoto', [StudentController::class, 'uploadStudentPhoto']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
+
+//******* ADMIN + CENSEUR (VP) ROUTES
+// CENSEUR is scoped client-side to only the classes assigned to them (classe_year.vp_id) - see
+// dms_acad_react's ClasseManager/SubjectClasseManager/StudentManager, which filter the classe list
+// they fetch before these write actions are ever reachable. The backend does not re-verify classe_id
+// ownership here, matching the same trust model already used for SG's Discipline scoping below.
+Route::middleware(['jwt.auth', 'role:ADMIN,CENSEUR'])->group(function () {
+    Route::post('/classes/updateManyClasses', [ClasseController::class, 'updateManyClasses']); //OK
+
+    Route::post('/subjects/saveManySC', [SubjectController::class, 'saveManySC']); //OK
+    Route::delete('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']); //OK
+    Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']); //OK
+
+    Route::post('/students/deleteStudents', [StudentController::class, 'deleteStudents']);
+    Route::post('/students/saveStudents', [StudentController::class, 'saveStudents']);
+    Route::post('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
+    Route::post('/students/updateStudents', [StudentController::class, 'updateStudents']);
+    Route::post('/students/uploadStudentPhoto', [StudentController::class, 'uploadStudentPhoto']);
+});
+//===================================================================== END ADMIN + CENSEUR ROUTES =====================================================================================================
+
+//******* ADMIN + SG + CENSEUR ROUTES
+Route::middleware(['jwt.auth', 'role:ADMIN,SG,CENSEUR'])->group(function () {
+    // Was ADMIN-only, which meant SG's discipline save already silently 403'd despite
+    // DisciplineManager/App.tsx assuming SG can save discipline entries for classes assigned to them
+    // as SG (Classe.sg_id) - fixed here alongside adding CENSEUR (Classe.vp_id) for the same reason.
+    Route::post('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
+});
+//===================================================================== END ADMIN + SG + CENSEUR ROUTES =====================================================================================================
 
 
 
