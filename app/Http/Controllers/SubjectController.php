@@ -1586,13 +1586,15 @@ class SubjectController extends Controller
 		                    AND
 		                    subject.subject_id = subject_classe.subject_id
 		                    AND
-		                    subject_classe.groupe_id = groupe.groupe_id		
+		                    subject_classe.groupe_id = groupe.groupe_id
 	                        AND
 	                        subject_year.sy_id = $sy_id
-	                        AND 
+	                        AND
 	                        subject_year.section_id = $section_id
-	                        AND 
-                            subject_classe.classe_id = $classe_id");
+	                        AND
+                            subject_classe.classe_id = $classe_id
+	                        AND
+	                        subject_classe.sy_id = $sy_id");
 
 
             return response()->json($subjects, 200);
