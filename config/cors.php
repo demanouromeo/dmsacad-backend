@@ -26,7 +26,15 @@ return [
         'http://localhost:5173',
         'http://localhost:5174',
         'https://portfolio.dmsacad.com',
-        'https://dmsacad.com'
+        'https://dmsacad.com',
+        // Capacitor-wrapped Android/iOS app origins (no port, not a real web origin) - the
+        // WebView serves the app from these fixed origins regardless of what backend target
+        // ("remote"/"local") the user picks in-app, so both must be whitelisted for the
+        // mobile app to ever reach either backend in CORS-enforced (i.e. non-Android-WebView-
+        // exempt) request paths.
+        'https://localhost',
+        'capacitor://localhost',
+        'http://localhost',
     ],
     //'allowed_origins' => ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
 
