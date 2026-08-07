@@ -39,7 +39,6 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/configs/schoolConfigSorU', [SchoolInfoController::class, 'saveSchoolInfo']); //ok. WORKs. Tested on Postman as post request. With Body tab --> The from-data. Logo image uploaded fro
     Route::get('/configs/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //ok
     Route::post('/configs/upload', [SchoolInfoController::class, 'upload']); //ok. I tested on POstman, Uploaded logo. I choose Body tab then --> form-data then key= image, value=choose file, other keys: connection and year. setting value for each.
-    Route::get('/configs/getAnnualReportCardParams', [SchoolInfoController::class, 'getAnnualReportCardParams']);
     Route::post('/configs/saveAnnualReportCardParams', [SchoolInfoController::class, 'saveAnnualReportCardParams']);
 
     //==> ADMIN ON ACCOUNTS
@@ -262,6 +261,10 @@ Route::middleware(['jwt.auth'])->group(function () {
 
     //==> ANY CONNECTED USER ON CLASSIFIEDPARAM
     Route::get('/settings/classifiedParamOfYear', [ClassifiedparamController::class, 'classifiedParamOfYear']); //OK
+
+    //==> ANY CONNECTED USER ON ANNUAL REPORT CARD PARAMS (report-card-consuming screens like the
+    // parent portal's child detail need to read this; only ADMIN can write it - see saveAnnualReportCardParams above)
+    Route::get('/configs/getAnnualReportCardParams', [SchoolInfoController::class, 'getAnnualReportCardParams']);
 
     //==> ANY CONNECTED USER ON LOCK
     Route::get('/lock/locksOfYear', [LockController::class, 'locksOfYear']);
