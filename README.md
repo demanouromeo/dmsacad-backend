@@ -1,66 +1,85 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# DMS ACAD Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Vue d'ensemble
 
-## About Laravel
+DMS ACAD Backend est une API REST développée en Laravel 11, servant de socle applicatif à un système de
+gestion académique multi-établissements. Il permet de gérer, pour plusieurs écoles indépendantes, l'ensemble
+des données pédagogiques et administratives : personnel, élèves, classes, matières, notes, absences, années
+scolaires, filières, etc. L'application est hébergée sous XAMPP/Apache (`http://localhost/dmsacad_backend_dev`),
+toutes les routes étant exposées sous le préfixe `/api`. Elle constitue le pendant serveur d'une application
+front-end React logée dans le sous-dossier `dms_acad_react`, avec laquelle certains traitements (comme la
+génération des bulletins) sont volontairement partagés côté client plutôt que dupliqués côté API.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Architecture multi-tenant : une base de données par établissement
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+La particularité structurante du projet est l'absence de base de données unique. `config/database.php`
+déclare une connexion MySQL nommée par établissement (`CES_DE_DABAYE`, `LYCEE_DE_MERI`, `LB_BOGO`, ...),
+chacune avec son propre hôte/base/identifiants. Une connexion générique `mysql` (`sm_db2`) héberge en
+parallèle les données transverses : comptes utilisateurs, personnel, administrateurs, liaison des comptes
+élèves, etc. Chaque base réplique le même schéma (`school_year`, `basic_school_config`, `classe`, `student`,
+`staff`, `subject`, ...).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Chaque contrôleur sélectionne la base cible à l'exécution en lisant un paramètre `connection`, puis en
+basculant la connexion par défaut de Laravel :
 
-## Learning Laravel
+```php
+$connection = $request->input("connection");
+config(["database.default" => $connection]);
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Ce motif se répète environ 190 fois à travers la quasi-totalité des contrôleurs : c'est l'idiome
+architectural central de l'application, pas un détail incident. Aucune validation n'est faite sur les valeurs
+de `connection` inconnues — un nom invalide se traduit par un échec de connexion remonté depuis le bloc
+`catch`.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Authentification : JWT maison, pas Sanctum
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+`laravel/sanctum` est installé mais inutilisé. L'authentification est implémentée à la main avec
+`firebase/php-jwt` :
 
-## Laravel Sponsors
+- `AccountController::login` valide `login`/`pwd`/`connection`, recherche le compte (mots de passe **en
+  clair**, TODO connu et volontairement reporté), résout un rôle via `MyHelper::findRole()`, et délivre un
+  jeton d'accès JWT court (1h par défaut) plus un jeton de rafraîchissement en cookie httpOnly (7 jours).
+- `AccountController::refresh` renouvelle le jeton d'accès à partir du cookie.
+- `JwtMiddleware` (`jwt.auth`) décode le Bearer token et l'expose sous `auth_payload`, sans vérifier de rôle.
+- `RoleMiddleware` (`role:ADMIN,...`) contrôle le rôle à partir de `auth_payload`, et doit s'exécuter après
+  `jwt.auth`.
+- Mapping type de compte → rôle : `1=ADMIN, 2=TOP_MANAGEMENT, 3=SG, 4=BURSAR, 5=TEACHER, 6=PARENT,
+  7=STUDENT, 8=CENSEUR`.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Le durcissement sécurité (JWT + RBAC) est un chantier en cours, ne couvrant qu'une poignée de routes ; la
+majorité des endpoints restent hérités et non protégés.
 
-### Premium Partners
+## Convention d'erreur : le 500 comme symptôme d'exception avalée
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+De nombreuses méthodes enveloppent leur logique dans un `try/catch` qui retourne `response()->json([], 500)`
+sans journaliser l'exception. La cause réelle (souvent un accès à une propriété nulle) n'est jamais visible
+côté HTTP ; le diagnostic passe par l'ajout temporaire d'un `Log::error()` dans le `catch` visé.
 
-## Contributing
+## `MyHelper` : le cœur utilitaire
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+`MyHelper.php` est une classe statique volumineuse utilisée par presque tous les contrôleurs pour : les
+suppressions en cascade (pas de contraintes DB, tout est géré manuellement à travers 10+ tables liées), les
+recherches par nom/année, et le mapping des rôles. Elle exécute majoritairement des `DB::select()` bruts
+plutôt que de l'Eloquent — style à respecter lors de toute modification.
 
-## Code of Conduct
+## Paramètre Classifié / Non Classifié (NC)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+`classifiedparam` contient au plus une ligne par année scolaire, par établissement, avec deux colonnes
+exploitées : `nb_matieres_rate` et `classified`. Point non évident : `classified = 0` signifie que tous les
+élèves sont classifiés (jamais de NC) ; `classified = 1` rend la classification conditionnelle, calculée par
+élève et par trimestre selon le taux de participation aux évaluations. L'absence de réglage équivaut à
+`classified = 0`. Cette logique alimente la génération des bulletins (pas encore développée), dont
+l'algorithme complet est documenté côté `dms_acad_react` et sera implémenté côté client, dans la continuité
+de calculs déjà faits côté front (`MarkEntryManager`, `EffectifsManager`).
 
-## Security Vulnerabilities
+## Modèles et périmètre fonctionnel
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+`app/Models` contient des modèles Eloquent générés par Reliese, reflétant le schéma partagé. Les contrôleurs
+couvrent : comptes, personnel, élèves, parents, classes, matières, sections, filières, groupes, spécialités,
+informations d'établissement, paramètres de seuils, classification NC, sauvegardes et verrouillage.
 
-## License
+## Documentation API et environnement
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Swagger (`l5-swagger`) est installé mais non annoté. Le projet tourne sous XAMPP (pas `artisan serve`) ; deux
+binaires PHP coexistent sur la machine, seul celui de XAMPP disposant de `pdo_mysql`.

@@ -320,20 +320,20 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 
     //==> ANY CONNECTED USER ON BACKUP
-    Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
+    // Route::get('/backup/backupDB', [BackupController::class, 'backupDB']);
 
-    //==> ANY CONNECTED USER ON TEST
-    Route::get('/test', [TestController::class, 'test']);
-    Route::post('/test/getData', [TestController::class, 'getData']);
-    Route::get('/test/lockTerms', [TestController::class, 'lockTerms']);
-    Route::get('/test/addCenseurToClasses', [TestController::class, 'addCenseurToClasses']);
-    Route::get('/test/updateStudentClasseStructure', [TestController::class, 'updateStudentClasseStructure']);
-    Route::get('/test/updateClasseYearStructure', [TestController::class, 'updateClasseYearStructure']);
-    Route::get('/test/add2627', [TestController::class, 'add2627']);
-    Route::get('/test/prepareNewYear', [TestController::class, 'prepareNewYear']);
-    Route::get('/test/deleteStudClasse', [TestController::class, 'deleteStudClasse']);
-    Route::get('/test/deleteManyStudClasse', [TestController::class, 'deleteManyStudClasse']);
-    Route::post('/test/deleteManyStudClassePOST', [TestController::class, 'deleteManyStudClassePOST']);
-    Route::get('/test/alterStaff', [TestController::class, 'alterStaff']);
+    // //==> ANY CONNECTED USER ON TEST
+    // Route::get('/test', [TestController::class, 'test']);
+    // Route::post('/test/getData', [TestController::class, 'getData']);
+    // Route::get('/test/lockTerms', [TestController::class, 'lockTerms']);
+    // Route::get('/test/addCenseurToClasses', [TestController::class, 'addCenseurToClasses']);
+    // Route::get('/test/updateStudentClasseStructure', [TestController::class, 'updateStudentClasseStructure']);
+    // Route::get('/test/updateClasseYearStructure', [TestController::class, 'updateClasseYearStructure']);
+    // Route::get('/test/add2627', [TestController::class, 'add2627']);
+    // Route::get('/test/prepareNewYear', [TestController::class, 'prepareNewYear']);
+    // Route::get('/test/deleteStudClasse', [TestController::class, 'deleteStudClasse']);
+    // Route::get('/test/deleteManyStudClasse', [TestController::class, 'deleteManyStudClasse']);
+    // Route::post('/test/deleteManyStudClassePOST', [TestController::class, 'deleteManyStudClassePOST']);
+    // Route::get('/test/alterStaff', [TestController::class, 'alterStaff']);
 });
 //===================================================================== END ANY CONNECTED USER ROUTES =====================================================================================================
