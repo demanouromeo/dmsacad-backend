@@ -10,6 +10,81 @@ toutes les routes étant exposées sous le préfixe `/api`. Elle constitue le pe
 front-end React logée dans le sous-dossier `dms_acad_react`, avec laquelle certains traitements (comme la
 génération des bulletins) sont volontairement partagés côté client plutôt que dupliqués côté API.
 
+## Prérequis
+
+- PHP 8.2+ avec l'extension `pdo_mysql` activée
+- Composer
+- MySQL/MariaDB (une base par établissement, plus une base transverse)
+- XAMPP (Apache + PHP + MySQL) — l'application n'est pas conçue pour tourner via `php artisan serve`
+- Node.js/npm (uniquement pour les quelques assets front compilés via Vite, l'essentiel du front vivant dans
+  `dms_acad_react`)
+
+⚠️ Si plusieurs binaires PHP sont installés sur la machine (ex. un PHP de XAMPP et un PHP autonome sur le
+`PATH`), assurez-vous d'utiliser celui de XAMPP pour toute commande touchant la base de données
+(`artisan migrate`, `artisan tinker`, ...) : c'est le seul à disposer de `pdo_mysql` dans ce projet.
+
+```bash
+"/c/xampp/php/php.exe" artisan migrate
+"/c/xampp/php/php.exe" artisan tinker --execute="..."
+```
+
+## Installation
+
+```bash
+composer install
+copy .env.example .env      # (ou cp .env.example .env sous bash)
+"/c/xampp/php/php.exe" artisan key:generate
+```
+
+## Configuration
+
+La configuration se fait via le fichier `.env`. Points spécifiques à ce projet :
+
+- `DB_*` : connexion générique `mysql` (base transverse : comptes, personnel, administrateurs, liaison des
+  comptes élèves, ...).
+- `<ETABLISSEMENT>_DB_*` : un jeu de variables par établissement (ex. `CES_DE_DABAYE_DB_*`), déclarées dans
+  `config/database.php`. Chaque établissement dispose de sa propre base, avec le même schéma.
+- `JWT_SECRET`, `ACCESS_TOKEN_DURATION`, `REFRESH_TOKEN_DURATION` : paramètres de l'authentification JWT
+  maison (voir plus bas).
+
+Placer le projet dans le répertoire servi par Apache (`htdocs`) sous XAMPP, de sorte qu'il soit accessible à
+l'URL `http://localhost/dmsacad_backend_dev`.
+
+## Lancement
+
+Ce projet tourne sous XAMPP/Apache, pas via `php artisan serve`. Il suffit de démarrer Apache et MySQL depuis
+le panneau de contrôle XAMPP ; le projet doit être placé dans `htdocs` pour être servi.
+
+## Tests
+
+```bash
+"/c/xampp/php/php.exe" artisan test
+```
+
+## Style de code
+
+```bash
+"/c/xampp/php/php.exe" vendor/bin/pint
+```
+
+## Documentation API
+
+Swagger (`darkaonline/l5-swagger` + `zircote/swagger-php`) est installé et configuré
+(`config/l5-swagger.php`), mais aucune annotation `@OA\*` n'existe encore dans le code : la génération
+Swagger n'est pas branchée pour l'instant.
+
+## Structure du projet
+
+- `app/Http/Controllers` — contrôleurs REST, un par domaine métier (comptes, élèves, personnel, classes,
+  matières, ...).
+- `app/Http/Controllers/MyHelper.php` — classe utilitaire statique centrale (voir plus bas).
+- `app/Http/Middleware` — `JwtMiddleware` (`jwt.auth`) et `RoleMiddleware` (`role:...`).
+- `app/Models` — modèles Eloquent générés par Reliese, reflétant le schéma partagé entre établissements.
+- `config/database.php` — déclaration des connexions MySQL (une par établissement + une générique).
+- `routes/api.php` — toutes les routes de l'API, montées via `bootstrap/app.php`.
+- `dms_acad_react` (sous-dossier, ignoré par Git dans ce dépôt) — application front-end React consommant
+  cette API.
+
 ## Architecture multi-tenant : une base de données par établissement
 
 La particularité structurante du projet est l'absence de base de données unique. `config/database.php`
@@ -78,8 +153,3 @@ de calculs déjà faits côté front (`MarkEntryManager`, `EffectifsManager`).
 `app/Models` contient des modèles Eloquent générés par Reliese, reflétant le schéma partagé. Les contrôleurs
 couvrent : comptes, personnel, élèves, parents, classes, matières, sections, filières, groupes, spécialités,
 informations d'établissement, paramètres de seuils, classification NC, sauvegardes et verrouillage.
-
-## Documentation API et environnement
-
-Swagger (`l5-swagger`) est installé mais non annoté. Le projet tourne sous XAMPP (pas `artisan serve`) ; deux
-binaires PHP coexistent sur la machine, seul celui de XAMPP disposant de `pdo_mysql`.
