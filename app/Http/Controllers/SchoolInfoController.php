@@ -99,6 +99,49 @@ class SchoolInfoController extends Controller
         return response()->json($schoolYears, 200);
     }
 
+    // ADMIN-only (see the role:ADMIN route group) - appends a new row to this connection's own
+    // school_year table. `year` has a UNIQUE index (sy_yearUnique) - relied on here the same way
+    // FiliereController::saveFiliere relies on nom_filiere's own unique index, rather than a
+    // separate SELECT-then-insert existence check. New years are never inserted as is_current=1
+    // (see the column's own DB comment: "Only one school year should be current") - nothing in this
+    // app currently flips is_current, so a freshly added year stays non-current like every other
+    // manually-inserted row (see TestController's own one-off INSERT precedent).
+    public function addSchoolYear(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => ['required', 'string', 'regex:/^\d{4}\/\d{4}$/'],
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+
+        try {
+            $schoolYear = new SchoolYear();
+            $schoolYear->year = $year;
+            $schoolYear->description = '';
+            $schoolYear->is_current = 0;
+            $schoolYear->save();
+            return response()->json([
+                'status' => true,
+                'message' => 'School year added successfully',
+                'sy_id' => $schoolYear->sy_id,
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Operation failed: A school year with the same name [' . $year . '] already exists.',
+            ], 409); //409 = Conflict
+        }
+    }
+
     public function getClassificationParam(Request $request)
     {
         try {

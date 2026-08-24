@@ -40,6 +40,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/configs/updateSchoolInfo', [SchoolInfoController::class, 'updateSchoolInfo']); //ok
     Route::post('/configs/upload', [SchoolInfoController::class, 'upload']); //ok. I tested on POstman, Uploaded logo. I choose Body tab then --> form-data then key= image, value=choose file, other keys: connection and year. setting value for each.
     Route::post('/configs/saveAnnualReportCardParams', [SchoolInfoController::class, 'saveAnnualReportCardParams']);
+    Route::post('/configs/addSchoolYear', [SchoolInfoController::class, 'addSchoolYear']);
 
     //==> ADMIN ON ACCOUNTS
     // NOTE: these two literal-path routes must stay registered before the /accounts/{connection}
