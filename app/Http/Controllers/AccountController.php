@@ -170,7 +170,8 @@ class AccountController extends Controller
             $data = $request->validate([
                 'login' => 'required|string',
                 'pwd' => 'required|string',
-                'connection' => 'required|string'
+                'connection' => 'required|string',
+                'year' => 'required|string'
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -189,6 +190,7 @@ class AccountController extends Controller
             $login = $data['login'];
             $pwd = $data['pwd'];
             $connection = $data['connection'];
+            $year = $data['year'];
 
             // Switch DB connection dynamically
             config(["database.default" => $connection]);
@@ -250,6 +252,21 @@ class AccountController extends Controller
                     $user_name = trim($user_name);
                     $user_id = $staff->staff_id;
                 }
+            }
+
+            // Mark the school year the user logged in with as the current one for this
+            // connection (school_year.is_current - "Only one school year among the list should
+            // be current", per the column's own DB comment). Guarded by an existence check so a
+            // stale/unknown $year from the client can't wipe out every row's is_current without
+            // setting a new one, and the whole thing is best-effort: a failure here must never
+            // turn an otherwise-successful login into a failed one.
+            try {
+                if (DB::table('school_year')->where('year', $year)->exists()) {
+                    DB::table('school_year')->where('year', '!=', $year)->update(['is_current' => 0]);
+                    DB::table('school_year')->where('year', $year)->update(['is_current' => 1]);
+                }
+            } catch (\Throwable $th) {
+                // Swallow - see comment above.
             }
 
             // -----------------------------
