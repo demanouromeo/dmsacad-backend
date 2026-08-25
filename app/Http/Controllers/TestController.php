@@ -689,6 +689,93 @@ class TestController extends Controller
         }
     }
 
-    
+    // Rolls out the Time table module's schema (tt_config, jours, staff_year.max_periods_per_week,
+    // subject_classe's weight/numnber_of_period_per_week/commoncourse, classe_period) across every
+    // tenant DB. Confirmed already applied on the local dev DB (sm_db2/"mysql" connection) except
+    // classe_period - each statement is wrapped in its own try/catch so it's safe to re-run against a
+    // school that already has some/all of these, same idempotent-by-observation approach as every
+    // other method in this file. Guard with role:ADMIN when wiring the route, run once, then comment
+    // the route back out - see routes/api.php's /test/* precedent.
+    public function createTimetableSchema()
+    {
+        for ($k = 0; $k < count($this->schools); $k++) {
+            $connection = $this->schools[$k];
+            echo ("processing '$connection' ..... ");
+            config(["database.default" => $connection]);
+
+            try {
+                DB::select("CREATE TABLE IF NOT EXISTS tt_config(
+                    tt_config_id INT AUTO_INCREMENT PRIMARY KEY,
+                    start_time varchar(5) NOT NULL DEFAULT '07h30',
+                    duration_break1 int(11) NOT NULL DEFAULT 15,
+                    duration_break2 int(11) NOT NULL DEFAULT 30,
+                    period_duration int(11) NOT NULL DEFAULT 60,
+                    number_of_period_before_break1_start int(11) NOT NULL DEFAULT 3,
+                    number_of_period_before_break2_start int(11) NOT NULL DEFAULT 2,
+                    sy_id int,
+                    FOREIGN KEY (sy_id) REFERENCES school_year(sy_id)
+                )");
+            } catch (Exception $e) {
+                echo "<br/> ERROR creating tt_config on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+
+            try {
+                DB::select("CREATE TABLE IF NOT EXISTS jours (
+                    jour_id INT AUTO_INCREMENT PRIMARY KEY,
+                    label VARCHAR(20) UNIQUE,
+                    num INT UNIQUE,
+                    number_of_periods INT DEFAULT 18,
+                    sy_id INT NOT NULL,
+                    FOREIGN KEY (sy_id) REFERENCES school_year(sy_id)
+                )");
+            } catch (Exception $e) {
+                echo "<br/> ERROR creating jours on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+
+            try {
+                DB::select("ALTER TABLE `staff_year` ADD `max_periods_per_week` INT NOT NULL DEFAULT '18' AFTER `sy_id`");
+            } catch (Exception $e) {
+                echo "<br/> ERROR altering staff_year on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+
+            try {
+                DB::select("ALTER TABLE `subject_classe` ADD `weight` INT NOT NULL DEFAULT 2");
+            } catch (Exception $e) {
+                echo "<br/> ERROR adding subject_classe.weight on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+            try {
+                DB::select("ALTER TABLE `subject_classe` ADD `numnber_of_period_per_week` INT NOT NULL DEFAULT 2");
+            } catch (Exception $e) {
+                echo "<br/> ERROR adding subject_classe.numnber_of_period_per_week on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+            try {
+                DB::select("ALTER TABLE `subject_classe` ADD `commoncourse` INT NOT NULL DEFAULT 0");
+            } catch (Exception $e) {
+                echo "<br/> ERROR adding subject_classe.commoncourse on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+
+            try {
+                DB::select("CREATE TABLE IF NOT EXISTS classe_period (
+                    classe_period_id INT AUTO_INCREMENT PRIMARY KEY,
+                    jour_id INT NOT NULL,
+                    period_number INT NOT NULL,
+                    sy_id INT NOT NULL,
+                    subject_id INT NOT NULL,
+                    staff_id INT NULL,
+                    classe_id INT NOT NULL,
+                    FOREIGN KEY (jour_id) REFERENCES jours(jour_id),
+                    FOREIGN KEY (sy_id) REFERENCES school_year(sy_id),
+                    FOREIGN KEY (subject_id) REFERENCES subject(subject_id),
+                    FOREIGN KEY (classe_id) REFERENCES classe(classe_id),
+                    FOREIGN KEY (staff_id) REFERENCES staff(staff_id),
+                    UNIQUE KEY uniq_classe_slot (classe_id, jour_id, period_number)
+                )");
+            } catch (Exception $e) {
+                echo "<br/> ERROR creating classe_period on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+
+            echo " Done. <br/>";
+        } //END MAIN FOR
+    }
 
 }

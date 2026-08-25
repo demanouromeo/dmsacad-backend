@@ -17,6 +17,7 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\SectionYearController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\ThParamController;
+use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\ClassifiedparamController;
 use App\Models\Speciality;
 use Illuminate\Http\Request;
@@ -161,6 +162,26 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
     Route::post('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
     Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
+
+    //==> ADMIN ON TIMETABLE
+    Route::get('/timetable/getTtConfig', [TimetableController::class, 'getTtConfig']);
+    Route::post('/timetable/saveTtConfig', [TimetableController::class, 'saveTtConfig']);
+    Route::get('/timetable/getJours', [TimetableController::class, 'getJours']);
+    Route::post('/timetable/saveJour', [TimetableController::class, 'saveJour']);
+    Route::post('/timetable/deleteJour', [TimetableController::class, 'deleteJour']);
+    Route::get('/timetable/getStaffMaxPeriods', [TimetableController::class, 'getStaffMaxPeriods']);
+    Route::post('/timetable/updateStaffMaxPeriods', [TimetableController::class, 'updateStaffMaxPeriods']);
+    Route::get('/timetable/getClasseSubjectSettings', [TimetableController::class, 'getClasseSubjectSettings']);
+    Route::post('/timetable/updateClasseSubjectSetting', [TimetableController::class, 'updateClasseSubjectSetting']);
+    Route::post('/timetable/generate', [TimetableController::class, 'generate']);
+    Route::get('/timetable/getClasseCells', [TimetableController::class, 'getClasseCells']);
+    Route::post('/timetable/updateCell', [TimetableController::class, 'updateCell']);
+
+    // One-off cross-tenant schema rollout for the Time table module (see
+    // TestController::createTimetableSchema's own docblock) - ADMIN-gated, unlike the legacy /test/*
+    // routes below which are commented out for the reason audit.md #8 documents. Uncomment, hit once
+    // against production, then comment back out again - same lifecycle as every other /test/* method.
+    // Route::get('/test/createTimetableSchema', [TestController::class, 'createTimetableSchema']);
 });
 //===================================================================== END ADMIN ROUTES =====================================================================================================
 
