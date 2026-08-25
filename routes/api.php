@@ -176,6 +176,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::post('/timetable/generate', [TimetableController::class, 'generate']);
     Route::get('/timetable/getClasseCells', [TimetableController::class, 'getClasseCells']);
     Route::post('/timetable/updateCell', [TimetableController::class, 'updateCell']);
+    Route::post('/timetable/sendTeacherEmails', [TimetableController::class, 'sendTeacherEmails']);
 
     // One-off cross-tenant schema rollout for the Time table module (see
     // TestController::createTimetableSchema's own docblock) - ADMIN-gated, unlike the legacy /test/*

@@ -10,72 +10,73 @@ use App\Models\Patient;
 
 class TestController extends Controller
 {
-    
+
     public $schools = array(
-            //"CES_DE_DABAYE", 
-            //"CES_DE_KILWO",
-            "CES_DE_LDIRI",
-            "CES_DE_MOUROUM",
-            "CES_DE_SEDEK",
-            "CES_DE_YOLDEO",
-            "CES_DE_ZIMADO",
-            "CETIC_DE_BOGO",
-            "CETIC_DE_DARGALA",
-            "CETIC_DE_DOUBANE",
-            "CETIC_DE_GADOUA", 
-            //"CETIC_DE_GODOLA",
-            "CETIC_DE_MAKARY",
-            "COLLEGE_DE_LA_FRATERNITE",
-            "COLBIPPOLFOSH",
-            "ENIEG_DE_GUIDER",
-            "ENIEG_BILINGUE_DE_MAROUA", 
-            "GBHS_MINAWAO",
-            "GBTHS_MEWOULOU", 
-            "LB_BOGO",
-            //"LB_GUISSA",
-            //"LB_KARTOUA",
-            "LB_KOZA",
-            "LB_MAKALINGAI",
-            "LB_ZAMAI",
-            //"LT_BIDZAR",
-            "LT_DOUALARE",
-            "LT_GAZAWA",
-            "LT_KOZA",
-            "LT_LOGONE_BIRNI",
-            "LT_MERI",
-            "LT_MINDIF",
-            "LT_MORA",
-            "LYCEE_DE_BALAZA_ALCALI",
-            "LYCEE_CLASSIQUE_DE_MAROUA", 
-            //"LYCEE_DE_BIDZAR",
-            "LYCEE_DE_DOGBA",
-            "LYCEE_DE_DOMO",
-            "LYCEE_DE_DOUALARE",
-            "LYCEE_DE_GABOUA",
-            "LYCEE_DE_GODOLA",
-            "LYCEE_DE_GUIDER",
-            "LYCEE_DE_HARDE_MAROUA",
-            "LYCEE_DE_HOULA",
-            "LYCEE_DE_KAHEO",
-            "LYCEE_DE_KALLIAO",
-            "LYCEE_DE_KOTRABA",
-            "LYCEE_DE_LOGONE_BIRNI",
-            "LYCEE_DE_MAKABAYE",
-            "LYCEE_DE_MAROUA_SALAK",
-            "LYCEE_DE_MASSAKAL",
-            "LYCEE_DE_MOGOM",
-            //"LYCEE_DE_MEME",
-            "LYCEE_DE_MERI",
-            //"LYCEE_DE_MESKINE",
-            "LYCEE_DE_MOKIO",
-            "LYCEE_DE_PITOA",
-            "LYCEE_DE_WAZA", 
-            "TEST",
-            "TEST_PLAY"
+        //"CES_DE_DABAYE", 
+        //"CES_DE_KILWO",
+        "CES_DE_LDIRI",
+        "CES_DE_MOUROUM",
+        "CES_DE_SEDEK",
+        "CES_DE_YOLDEO",
+        "CES_DE_ZIMADO",
+        "CETIC_DE_BOGO",
+        "CETIC_DE_DARGALA",
+        "CETIC_DE_DOUBANE",
+        "CETIC_DE_GADOUA",
+        //"CETIC_DE_GODOLA",
+        "CETIC_DE_MAKARY",
+        "COLLEGE_DE_LA_FRATERNITE",
+        "COLBIPPOLFOSH",
+        "ENIEG_DE_GUIDER",
+        "ENIEG_BILINGUE_DE_MAROUA",
+        "GBHS_MINAWAO",
+        "GBTHS_MEWOULOU",
+        "LB_BOGO",
+        //"LB_GUISSA",
+        //"LB_KARTOUA",
+        "LB_KOZA",
+        "LB_MAKALINGAI",
+        "LB_ZAMAI",
+        //"LT_BIDZAR",
+        "LT_DOUALARE",
+        "LT_GAZAWA",
+        "LT_KOZA",
+        "LT_LOGONE_BIRNI",
+        "LT_MERI",
+        "LT_MINDIF",
+        "LT_MORA",
+        "LYCEE_DE_BALAZA_ALCALI",
+        "LYCEE_CLASSIQUE_DE_MAROUA",
+        //"LYCEE_DE_BIDZAR",
+        "LYCEE_DE_DOGBA",
+        "LYCEE_DE_DOMO",
+        "LYCEE_DE_DOUALARE",
+        "LYCEE_DE_GABOUA",
+        "LYCEE_DE_GODOLA",
+        "LYCEE_DE_GUIDER",
+        "LYCEE_DE_HARDE_MAROUA",
+        "LYCEE_DE_HOULA",
+        "LYCEE_DE_KAHEO",
+        "LYCEE_DE_KALLIAO",
+        "LYCEE_DE_KOTRABA",
+        "LYCEE_DE_LOGONE_BIRNI",
+        "LYCEE_DE_MAKABAYE",
+        "LYCEE_DE_MAROUA_SALAK",
+        "LYCEE_DE_MASSAKAL",
+        "LYCEE_DE_MOGOM",
+        //"LYCEE_DE_MEME",
+        "LYCEE_DE_MERI",
+        //"LYCEE_DE_MESKINE",
+        "LYCEE_DE_MOKIO",
+        "LYCEE_DE_PITOA",
+        "LYCEE_DE_WAZA",
+        "TEST",
+        "TEST_PLAY"
     );
-     
-        
-    public function getData(Request $request){
+
+
+    public function getData(Request $request)
+    {
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
@@ -91,20 +92,20 @@ class TestController extends Controller
         echo "Sent[$data_size]  <--> Received[$n]<br/><br/>";
         $k = 1;
         foreach ($stList as $st) {
-            $name = $st["name"]; 
+            $name = $st["name"];
             $id = $st["stud_id"];
             echo "[$k]  <--> name: $name   stud_id: $id<br/>";
             $k++;
         }
     }
-    
+
     public function test(Request $request)
     {
         $connection = $request->input("connection");
         //$year = $request->input("year");
         $sy_id = $request->input("sy_id");
         $classe_id = $request->input("classe_id");
-        $section_id = $request->input("section_id"); 
+        $section_id = $request->input("section_id");
         config(["database.default" => $connection]);
         /*
         echo "Conn: $connection -- Year: $year <br/>";
@@ -134,7 +135,7 @@ class TestController extends Controller
 
         /*$bool = MyHelper::validateStr("Hello");
         echo "BOOL: $bool";
-        */         
+        */
         //$res = MyHelper::deleteAClasse(  "$sy_id", $section_id, $classe_id);      
         //$res = MyHelper::getGroupesOfYearOfSection(5, 1);
         //$res = MySubjectHelper::getSubjectsOfYearOfSection(5, 1);
@@ -148,16 +149,16 @@ class TestController extends Controller
         $k = 1;
         foreach ($students as $student) {
             $stud_id = $student->stud_id; //$student["stud_id"];
-            $name = $student->name;//$students["name"];
+            $name = $student->name; //$students["name"];
             echo "$k --> $stud_id   $name <br/>";
             $k++;
         }
 
         echo "$res";
     }
-    
+
     public function lockTerms()
-    {        
+    {
         for ($k = 0; $k < count($this->schools); $k++) {
             $sy_id = 5;
             $connection = $this->schools[$k];
@@ -218,7 +219,7 @@ class TestController extends Controller
             echo " Done. <br/>";
         } //END MAIN FOR
     }
-    
+
     public function addCenseurToClasses()
     {
         for ($k = 0; $k < count($this->schools); $k++) {
@@ -236,12 +237,12 @@ class TestController extends Controller
                 echo "" . $e->getMessage() . "<br/><br/>";
             }
 
-             
- 
+
+
             echo " Done. <br/>";
         } //END MAIN FOR
     }
-    
+
     public function updateStudentClasseStructure()
     {
         for ($k = 0; $k < count($this->schools); $k++) {
@@ -273,7 +274,7 @@ class TestController extends Controller
                 echo "<br/> ERROR WHEN PROCESSING [$connection]<br/>";
                 echo "" . $e->getMessage() . "<br/><br/>";
             }
- 
+
             echo " Done. <br/>";
         } //END MAIN FOR
     }
@@ -287,14 +288,14 @@ class TestController extends Controller
             config(["database.default" => $connection]);
 
             try {
-                
+
                 DB::select("ALTER TABLE `classe_year` ADD `avgDismissalTh` FLOAT NOT NULL DEFAULT '7.5' COMMENT 'l\'élève exclu si moy. < avgDismissalTh' AFTER `vp_id`;");
                 DB::select("ALTER TABLE `classe_year` ADD `repeatUB` FLOAT NOT NULL DEFAULT '9' COMMENT 'l\'élève redouble si moy. dans[avgDismissalTh, repeatUB[' AFTER `avgDismissalTh`;");
                 DB::select("ALTER TABLE `classe_year` ADD `passMark` FLOAT NOT NULL DEFAULT '10' COMMENT 'l\'élève admis exceptionnelement si moy. dans[repeatUB, passMark[' AFTER `repeatUB`;");
-                
+
                 //DB::select("ALTER TABLE `classe_year` ADD `totalAbsTh` INT NOT NULL DEFAULT '40' COMMENT 'exclu si total abs. > totalAbsTh' AFTER `passMark`;");
                 //DB::select("ALTER TABLE `classe_year` ADD `totalExclusionTh` INT NOT NULL DEFAULT '8' COMMENT 'exclu si on totalise plus de \'totalExclusionTh(8)\' jours d\'exclusion' AFTER `totalAbsTh`;");
-                
+
                 //DB::select("ALTER TABLE `classe_year` DROP `avgDismissalTh`");
                 //DB::select("ALTER TABLE `classe_year` DROP `repeatUB`");
                 //DB::select("ALTER TABLE `classe_year` DROP `passMark`");
@@ -306,17 +307,16 @@ class TestController extends Controller
             echo " Done. <br/>";
         } //END MAIN FOR
     }
-    
+
     public function add2627()
     {
-        for ($k = 0; $k < count($this->schools); $k++) {            
+        for ($k = 0; $k < count($this->schools); $k++) {
             $connection = $this->schools[$k];
             echo ("processing '$connection' ..... ");
             config(["database.default" => $connection]);
 
             try {
                 DB::select("INSERT INTO `school_year` (`sy_id`, `year`, `description`, `is_current`) VALUES ('7', '2026/2027', '', '0')");
-                 
             } catch (Exception $e) {
                 echo "<br/> ERROR WHEN PROCESSING [$connection]<br/>";
                 echo "" . $e->getMessage() . "<br/><br/>";
@@ -325,8 +325,8 @@ class TestController extends Controller
             echo "Done. <br/>";
         } //END MAIN FOR
     }
-    
-    
+
+
     public static function findOptions($sy_id)
     {
         $res = DB::select("SELECT*FROM filiere_year where filiere_year.sy_id = $sy_id");
@@ -354,8 +354,8 @@ class TestController extends Controller
     {
         $res = DB::select("SELECT*FROM staff_year where staff_year.sy_id = $sy_id");
         return $res;
-    }  
-    
+    }
+
     public static function findGroups($sy_id)
     {
         $res = DB::select("SELECT*FROM groupe_year where groupe_year.sy_id = $sy_id");
@@ -379,19 +379,19 @@ class TestController extends Controller
         $res = DB::select("SELECT*FROM subject_competences where subject_competences.sy_id = $sy_id");
         return $res;
     }
-    
+
     public static function findAPC($sy_id)
     {
         $res = DB::select("SELECT*FROM apc_level where apc_level.sy_id = $sy_id");
         return $res;
     }
-    
+
     public static function findClassifiedParam($sy_id)
     {
         $res = DB::select("SELECT*FROM classifiedparam where classifiedparam.sy_id = $sy_id");
         return $res;
     }
-    
+
     public static function findSubjectClasseStaff($sy_id)
     {
         $res = DB::select("SELECT*FROM subject_classe_staff WHERE subject_classe_staff.subject_classe_id 
@@ -410,9 +410,10 @@ class TestController extends Controller
         return -1; //No staff taking that course
     }
 
-    public function findMatch($subjectClasseNew, $subject_id, $classe_id){
+    public function findMatch($subjectClasseNew, $subject_id, $classe_id)
+    {
         foreach ($subjectClasseNew as $sc) {
-            if($sc->subject_id == $subject_id && $sc->classe_id == $classe_id){
+            if ($sc->subject_id == $subject_id && $sc->classe_id == $classe_id) {
                 return $sc->subject_classe_id;
             }
         }
@@ -440,19 +441,19 @@ class TestController extends Controller
                 $apcOld = $this->findAPC($sy_id);
                 $classifiedParamOld = $this->findClassifiedParam($sy_id);
                 $scStaffOld = $this->findSubjectClasseStaff($sy_id);
-                
-                
+
+
                 echo count($optionsOld);
                 foreach ($optionsOld as $opt) {
                     DB::select("INSERT INTO filiere_year(sy_id, filiere_id, section_id) 
                     VALUES($sy_next_id, $opt->filiere_id, $opt->section_id)");
-                }                
+                }
                 echo count($spOld);
                 foreach ($spOld as $sp) {
                     DB::select("INSERT INTO speciality_year(speciality_id, sy_id, filiere_id, section_id) 
                     VALUES($sp->speciality_id, $sy_next_id, $sp->filiere_id, $sp->section_id)");
                 }
-                
+
                 echo count($sectionsOld);
                 foreach ($sectionsOld as $section) {
                     DB::select("INSERT INTO section_year(sy_id, section_id) 
@@ -461,55 +462,54 @@ class TestController extends Controller
                 echo count($classesOld);
                 foreach ($classesOld as $cl) {
                     DB::select("INSERT INTO classe_year(sy_id, classe_id, section_id, speciality_id, classe_master, sg_id, vp_id, avgDismissalTh, repeatUB, passMark, totalAbsTh, totalExclusionTh) 
-                    VALUES($sy_next_id, $cl->classe_id, ".(is_null($cl->section_id)?'NULL':$cl->section_id).", 
-                    ".(is_null($cl->speciality_id)?'NULL':$cl->speciality_id).", ".(is_null($cl->classe_master)?'NULL':$cl->classe_master).", 
-                    ".(is_null($cl->sg_id)?'NULL':$cl->sg_id).", ".(is_null($cl->vp_id)?'NULL':$cl->vp_id).", 
+                    VALUES($sy_next_id, $cl->classe_id, " . (is_null($cl->section_id) ? 'NULL' : $cl->section_id) . ", 
+                    " . (is_null($cl->speciality_id) ? 'NULL' : $cl->speciality_id) . ", " . (is_null($cl->classe_master) ? 'NULL' : $cl->classe_master) . ", 
+                    " . (is_null($cl->sg_id) ? 'NULL' : $cl->sg_id) . ", " . (is_null($cl->vp_id) ? 'NULL' : $cl->vp_id) . ", 
                     $cl->avgDismissalTh, $cl->repeatUB, $cl->passMark, $cl->totalAbsTh, $cl->totalExclusionTh)");
                 }
-                
+
                 echo count($staffOld);
                 foreach ($staffOld as $st) {
                     DB::select("INSERT INTO staff_year(staff_id, sy_id) 
                     VALUES($st->staff_id, $sy_next_id)");
                 }
-                
+
                 echo count($groupsOld);
                 foreach ($groupsOld as $grp) {
                     DB::select("INSERT INTO groupe_year(groupe_id, section_id, sy_id) 
-                    VALUES($grp->groupe_id, ".(is_null($grp->section_id)?'NULL':$grp->section_id).", $sy_next_id)");
+                    VALUES($grp->groupe_id, " . (is_null($grp->section_id) ? 'NULL' : $grp->section_id) . ", $sy_next_id)");
                 }
-                
+
                 echo count($subjectsOld);
                 foreach ($subjectsOld as $sub) {
                     DB::select("INSERT INTO subject_year(subject_id, section_id, sy_id) 
-                    VALUES($sub->subject_id, ".(is_null($sub->section_id)?'NULL':$sub->section_id).", $sy_next_id)");
+                    VALUES($sub->subject_id, " . (is_null($sub->section_id) ? 'NULL' : $sub->section_id) . ", $sy_next_id)");
                 }
-                
+
                 echo count($subjectClasseOld);
                 foreach ($subjectClasseOld as $sc) {
                     DB::select("INSERT INTO subject_classe(subject_id, section_id, sy_id, coef, classe_id, groupe_id) 
-                    VALUES($sc->subject_id, ".(is_null($sc->section_id)?'NULL':$sc->section_id).", $sy_next_id, $sc->coef, $sc->classe_id, $sc->groupe_id)");
+                    VALUES($sc->subject_id, " . (is_null($sc->section_id) ? 'NULL' : $sc->section_id) . ", $sy_next_id, $sc->coef, $sc->classe_id, $sc->groupe_id)");
                 }
-                
+
                 echo count($subjectCompetencesOld);
                 foreach ($subjectCompetencesOld as $sc) {
                     DB::select("INSERT INTO subject_competences(term_id, section_id, sy_id, classe_id, subject_id, competence_text) 
-                    VALUES($sc->term_id, ".(is_null($sc->section_id)?'NULL':$sc->section_id).", $sy_next_id, $sc->classe_id, $sc->subject_id, ?)", [$sc->competence_text]);
+                    VALUES($sc->term_id, " . (is_null($sc->section_id) ? 'NULL' : $sc->section_id) . ", $sy_next_id, $sc->classe_id, $sc->subject_id, ?)", [$sc->competence_text]);
                 }
-                
+
                 echo count($apcOld);
                 foreach ($apcOld as $apc) {
                     DB::select("INSERT INTO apc_level(`level`, activated, section_id, sy_id) 
-                    VALUES($apc->level, $apc->activated, ".(is_null($apc->section_id)?'NULL':$apc->section_id).", $sy_next_id)");
-                    
+                    VALUES($apc->level, $apc->activated, " . (is_null($apc->section_id) ? 'NULL' : $apc->section_id) . ", $sy_next_id)");
                 }
-                
+
                 echo count($classifiedParamOld);
                 foreach ($classifiedParamOld as $param) {
                     DB::select("INSERT INTO classifiedparam(sy_id, nb_matieres_rate, total_coef_rate, classified, class_specific, term_specific) 
                     VALUES($sy_next_id, $param->nb_matieres_rate, $param->total_coef_rate, $param->classified, $param->class_specific, $param->term_specific)");
                 }
-                
+
                 foreach ($subjectClasseOld as $scOld) {
                     $classe_id = $scOld->classe_id;
                     $subject_id = $scOld->subject_id;
@@ -521,9 +521,9 @@ class TestController extends Controller
                     VALUES($subject_classe_id_new, $staff_id)");
                     }
                 }
-                
+
                 echo "<br/>";
-            } catch (Exception  $e) {//(is_null($cl->sg_id)?'NULL':$cl->sg_id)
+            } catch (Exception  $e) { //(is_null($cl->sg_id)?'NULL':$cl->sg_id)
                 echo " ERROR<br/>";
                 //if($this->schools[$k] == "mysql"){
                 //    echo "[" . $e->getMessage() . "<br/><br/>";
@@ -532,13 +532,13 @@ class TestController extends Controller
             }
         }
     }
-    
+
     public function alterStaff()
     {
         for ($k = 0; $k < count($this->schools); $k++) {
             $connection = $this->schools[$k];
             echo ("processing '$connection' ..... ");
-            config(["database.default" => $connection]);             
+            config(["database.default" => $connection]);
             try {
                 //DB::select("ALTER TABLE `staff` ADD `grade` VARCHAR(100) NULL DEFAULT ' ' COMMENT 'PLEG, PLET..' AFTER `acc_id`;");
                 //DB::select("ALTER TABLE `staff` ADD `region` VARCHAR(100) NULL DEFAULT ' ' COMMENT 'region d\'origine' AFTER `grade`;");
@@ -552,28 +552,28 @@ class TestController extends Controller
                 //DB::select("ALTER TABLE `staff` ADD `dateEntree` VARCHAR(100) NULL DEFAULT ' ' COMMENT 'Date entrée à la fonction publique' AFTER `matiereEnseignee`;");
                 //DB::select("ALTER TABLE `staff` ADD `date1erePrise` VARCHAR(100) NULL DEFAULT ' ' COMMENT 'Date de premiere prise de service' AFTER `dateEntree`;");
                 DB::select("ALTER TABLE `staff` ADD `specilitee` VARCHAR(100) NULL DEFAULT ' ' COMMENT 'Specialitée de l\'enseignant' AFTER `date1erePrise`;");
-                
+
                 //DB::select("");
                 //DB::select(""); 
                 echo "Done with $connection";
-               } catch (Exception  $e) {  
-                echo " ERROR<br/>"; 
+            } catch (Exception  $e) {
+                echo " ERROR<br/>";
                 echo "[" . $e->getMessage() . "<br/><br/>";
             }
             echo "<br/>";
         }
     }
-    
+
     public function deleteStudClasse(Request $request)
     {
-        $connection = $request->input("connection"); 
+        $connection = $request->input("connection");
         $next_year = $request->input("next_year");
         $stud_id = $request->input("stud_id");
         $old_classe_id = $request->input("old_classe_id");
         config(["database.default" => $connection]);
-        try { 
+        try {
             $sy_next_id = MyHelper::getSchoolYearID($next_year);
-             
+
             DB::select("DELETE FROM student_classe 
                 WHERE student_classe.stud_id = $stud_id 
                     AND student_classe.sy_id = $sy_next_id  
@@ -584,20 +584,20 @@ class TestController extends Controller
             return;
         }
     }
-    
+
     public function deleteManyStudClasse(Request $request)
     {
         //echo "Starting...\n";
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $next_year = $request->input("next_year"); 
+        $next_year = $request->input("next_year");
 
         $stList = json_decode($data, true);
         $n = count($stList);
         //echo "DATA Lenght = $n [size transmitted is $data_size]<br/>";
         $allAffected = 1; //interpreted as true. 0-->false  
-        config(["database.default" => $connection]); 
+        config(["database.default" => $connection]);
         $sy_next_id = MyHelper::getSchoolYearID($next_year);
 
         //$count  = 1;
@@ -624,13 +624,13 @@ class TestController extends Controller
         $connection = $request->input("connection");
         $data = $request->input("data");
         $data_size = $request->input("data_size");
-        $next_year = $request->input("next_year"); 
+        $next_year = $request->input("next_year");
 
         $stList = json_decode($data, true);
         $n = count($stList);
         //echo "DATA Lenght = $n [size transmitted is $data_size]<br/>";
         $allAffected = 1; //interpreted as true. 0-->false  
-        config(["database.default" => $connection]); 
+        config(["database.default" => $connection]);
         $sy_next_id = MyHelper::getSchoolYearID($next_year);
 
         //$count  = 1;
@@ -650,16 +650,16 @@ class TestController extends Controller
         } //END FOR
         echo "$allAffected"; //1--> successfully  | 0--> Failed 
     }
-    
-    
+
+
     public function allPatients(Request $request)
     {
-        $connection = $request->input("connection"); 
-        config(["database.default" => $connection]); 
+        $connection = $request->input("connection");
+        config(["database.default" => $connection]);
         $patients = Patient::all();
         return response()->json($patients, 200);
     }
-    
+
 
     public function savePatient(Request $request)
     {
@@ -704,72 +704,81 @@ class TestController extends Controller
             config(["database.default" => $connection]);
 
             try {
-                DB::select("CREATE TABLE IF NOT EXISTS tt_config(
+                DB::select("CREATE TABLE tt_config(
                     tt_config_id INT AUTO_INCREMENT PRIMARY KEY,
-                    start_time varchar(5) NOT NULL DEFAULT '07h30',
-                    duration_break1 int(11) NOT NULL DEFAULT 15,
-                    duration_break2 int(11) NOT NULL DEFAULT 30,
-                    period_duration int(11) NOT NULL DEFAULT 60,
-                    number_of_period_before_break1_start int(11) NOT NULL DEFAULT 3,
-                    number_of_period_before_break2_start int(11) NOT NULL DEFAULT 2,
+                    `start_time` varchar(5) NOT NULL DEFAULT '07h30' COMMENT 'The time classe start every working day.Format xxhyy, ex: 07h30. xx ∈ {07,08,09,10}, yy ∈ [00..59] xx reprensent hours and yy represents minutes',
+                    `duration_break1` int(11) NOT NULL DEFAULT 15 COMMENT 'The duration of first break in terms of minutes',
+                    `duration_break2` int(11) NOT NULL DEFAULT 30 COMMENT 'duration of second break in terms of minutes',
+                    `period_duration` int(11) NOT NULL DEFAULT 60 COMMENT 'The duration of a period in terms of minutes. A period last for 60min (an hour) maximum. Minimum duration of a period is 30minutes',
+                    `number_of_period_before_break1_start` int(11) NOT NULL DEFAULT 3 COMMENT 'Here is to determine the time break on starts given the start_time and period duration. Example: if start_time is 07h30, period_duration is 60(minutes) and number_of_period_before_break1_start is 3 then break1 must start at 10h30',
+                    `number_of_period_before_break2_start` int(11) NOT NULL COMMENT 'Will be used to compute break2 start time. If break1 ends at 10h45 for instance and number_of_period_before_break2_start is 2, and period_duration is 60(minutes), then break2 will start at  12h45 ',
                     sy_id int,
                     FOREIGN KEY (sy_id) REFERENCES school_year(sy_id)
-                )");
+                    );
+                ");
             } catch (Exception $e) {
                 echo "<br/> ERROR creating tt_config on [$connection]: " . $e->getMessage() . "<br/>";
             }
 
             try {
-                DB::select("CREATE TABLE IF NOT EXISTS jours (
+                DB::select("CREATE TABLE jours (
                     jour_id INT AUTO_INCREMENT PRIMARY KEY,
                     label VARCHAR(20) UNIQUE,
-                    num INT UNIQUE,
+                    num INT UNIQUE COMMENT 'num représente le jour de la semaine: lundi = 1; mardi = 2; mercredi -> = 3;  jeudi=4; vendredi=5',
                     number_of_periods INT DEFAULT 18,
                     sy_id INT NOT NULL,
                     FOREIGN KEY (sy_id) REFERENCES school_year(sy_id)
-                )");
+                    );
+                ");
             } catch (Exception $e) {
                 echo "<br/> ERROR creating jours on [$connection]: " . $e->getMessage() . "<br/>";
             }
 
             try {
-                DB::select("ALTER TABLE `staff_year` ADD `max_periods_per_week` INT NOT NULL DEFAULT '18' AFTER `sy_id`");
+                DB::select("INSERT INTO `jours` (`jour_id`, `label`, `num`, `number_of_periods`, `sy_id`) 
+                    VALUES (NULL, 'lundi', '1', '7', '6'), 
+                        (NULL, 'mardi', '2', '7', '6'), 
+                        (NULL, 'mercredi', '3', '4', '6'), 
+                        (NULL, 'jeudi', '4', '7', '6'), 
+                        (NULL, 'vendredi', '5', '7', '6');
+                ");
+            } catch (Exception $e) {
+                echo "<br/> ERROR inserting jours on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+
+            try {
+                DB::select("ALTER TABLE `staff_year` ADD `max_periods_per_week` INT NOT NULL DEFAULT '18' COMMENT 'This determines the maximum number of periods per week. We may calculate number of hours per week for any teacher using this field and tt_config.period_duration' AFTER `sy_id`;");
             } catch (Exception $e) {
                 echo "<br/> ERROR altering staff_year on [$connection]: " . $e->getMessage() . "<br/>";
             }
 
             try {
-                DB::select("ALTER TABLE `subject_classe` ADD `weight` INT NOT NULL DEFAULT 2");
+                DB::select("ALTER TABLE `subject_classe` 
+                    ADD `weight` INT NOT NULL DEFAULT '2' COMMENT 'The weight here tell us about how to give priority to a subject to be likely programmed in the very first periods. We want weight to be in {1,2,3}.Example if francais weight= 2 and Mathematiques weight = 3; Then on time table except some schedule issue, math appears first (Very first periods) before french appears. This issue all handle by comparing subjects coeficient to give more priority to subejects with higher coeficients' AFTER `section_id`, 
+                    ADD `numnber_of_period_per_week` INT NOT NULL DEFAULT '2' COMMENT 'Each course have number periods per week in a given classe' AFTER `weight`, 
+                    ADD `commoncourse` INT NOT NULL DEFAULT '0' COMMENT '0 -> the course in that classe is not a common. 1-> it is a common course. Can be thaught at the same time in many classe of same level' AFTER `numnber_of_period_per_week`;
+                ");
             } catch (Exception $e) {
-                echo "<br/> ERROR adding subject_classe.weight on [$connection]: " . $e->getMessage() . "<br/>";
-            }
-            try {
-                DB::select("ALTER TABLE `subject_classe` ADD `numnber_of_period_per_week` INT NOT NULL DEFAULT 2");
-            } catch (Exception $e) {
-                echo "<br/> ERROR adding subject_classe.numnber_of_period_per_week on [$connection]: " . $e->getMessage() . "<br/>";
-            }
-            try {
-                DB::select("ALTER TABLE `subject_classe` ADD `commoncourse` INT NOT NULL DEFAULT 0");
-            } catch (Exception $e) {
-                echo "<br/> ERROR adding subject_classe.commoncourse on [$connection]: " . $e->getMessage() . "<br/>";
+                echo "<br/> ERROR fields to subject_classe on [$connection]: " . $e->getMessage() . "<br/>";
             }
 
+
             try {
-                DB::select("CREATE TABLE IF NOT EXISTS classe_period (
+                DB::select("CREATE TABLE classe_period (
                     classe_period_id INT AUTO_INCREMENT PRIMARY KEY,
-                    jour_id INT NOT NULL,
-                    period_number INT NOT NULL,
+                    jour_id INT,
+                    period_number INT COMMENT 'We use this field to find out where subject_tile (we can obtain the title from subject_id fk) and teacher_name will be place in the time table of classe (classe_id). for the  corresponding day (jour_id fk). NB if jour_id has for example 5 periods (jours.number_of_periods) then actual classe_period.period_number must be in{1,2,3,4,5}, cannot be 6 because the day it is referencing has 5 period (considering the example)',     
                     sy_id INT NOT NULL,
-                    subject_id INT NOT NULL,
-                    staff_id INT NULL,
-                    classe_id INT NOT NULL,
+                    subject_id int, 
+                    staff_id int,
+                    classe_id int NOT NULL,
                     FOREIGN KEY (jour_id) REFERENCES jours(jour_id),
                     FOREIGN KEY (sy_id) REFERENCES school_year(sy_id),
-                    FOREIGN KEY (subject_id) REFERENCES subject(subject_id),
+                    FOREIGN KEY (subject_id) REFERENCES subject(subject_id), 
                     FOREIGN KEY (classe_id) REFERENCES classe(classe_id),
                     FOREIGN KEY (staff_id) REFERENCES staff(staff_id),
-                    UNIQUE KEY uniq_classe_slot (classe_id, jour_id, period_number)
-                )");
+                    unique (period_number, jour_id, classe_id, sy_id));
+                ");
             } catch (Exception $e) {
                 echo "<br/> ERROR creating classe_period on [$connection]: " . $e->getMessage() . "<br/>";
             }
@@ -777,5 +786,4 @@ class TestController extends Controller
             echo " Done. <br/>";
         } //END MAIN FOR
     }
-
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TeacherTimetableMail;
 
 class TimetableController extends Controller
 {
@@ -333,7 +335,7 @@ class TimetableController extends Controller
             $request->validate([
                 'connection' => 'required|string',
                 'subject_classe_id' => 'required|integer|min:1',
-                'weight' => 'required|integer|min:1|max:10',
+                'weight' => 'required|integer|min:1|max:5',
                 'numnber_of_period_per_week' => 'required|integer|min:0|max:20',
                 'commoncourse' => 'required|integer|min:0|max:1',
             ]);
@@ -770,6 +772,175 @@ class TimetableController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to generate time table: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------
+    // SEND EACH TEACHER THEIR INDIVIDUAL TIME TABLE BY EMAIL - reads the already-generated
+    // classe_period rows (never generates anything itself), groups them per teacher, and emails
+    // each one their own weekly grid. A teacher with no email on their account, or whose send fails
+    // (bad SMTP config, invalid address, ...), is skipped and reported back rather than aborting the
+    // whole batch - one bad address must not block everyone else's email.
+    //--------------------------------------------------------------------------------------------
+
+    // Mirrors src/utils/timetableTime.ts's computeDayTimeline() (period start/end only, breaks just
+    // shift the running clock) so the emailed grid's times match what the admin sees on screen.
+    private function computePeriodTimes($ttConfig, int $maxPeriods): array
+    {
+        $times = [];
+        if (is_null($ttConfig) || $maxPeriods <= 0) {
+            return $times;
+        }
+        if (!preg_match('/^(\d{2})h(\d{2})$/', $ttConfig->start_time, $m)) {
+            return $times;
+        }
+        $t = ((int)$m[1]) * 60 + (int)$m[2];
+        $format = function (int $minutes) {
+            $h = intdiv($minutes, 60) % 24;
+            $mi = $minutes % 60;
+            return sprintf('%02dH%02d', $h, $mi);
+        };
+        for ($p = 1; $p <= $maxPeriods; $p++) {
+            $start = $t;
+            $t += (int)$ttConfig->period_duration;
+            $times[$p] = ['start' => $format($start), 'end' => $format($t)];
+            if ($p === (int)$ttConfig->number_of_period_before_break1_start) {
+                $t += (int)$ttConfig->duration_break1;
+            } elseif ($p - (int)$ttConfig->number_of_period_before_break1_start === (int)$ttConfig->number_of_period_before_break2_start) {
+                $t += (int)$ttConfig->duration_break2;
+            }
+        }
+        return $times;
+    }
+
+    public function sendTeacherEmails(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return $this->validationError($th);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+
+            $cellRows = DB::select(
+                "SELECT classe_period.jour_id, classe_period.period_number, classe_period.staff_id,
+                        subject.subject_title, classe.classe_name
+                 FROM classe_period
+                 JOIN subject ON subject.subject_id = classe_period.subject_id
+                 JOIN classe ON classe.classe_id = classe_period.classe_id
+                 WHERE classe_period.sy_id = ? AND classe_period.staff_id IS NOT NULL",
+                [$sy_id]
+            );
+
+            if (count($cellRows) === 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No time table has been generated yet for this year.',
+                ], 422);
+            }
+
+            $jours = DB::select("SELECT jour_id, label, num, number_of_periods FROM jours ORDER BY num ASC");
+            $maxPeriods = 0;
+            foreach ($jours as $j) {
+                $maxPeriods = max($maxPeriods, (int)$j->number_of_periods);
+            }
+
+            $configRows = DB::select(
+                "SELECT start_time, duration_break1, duration_break2, period_duration,
+                        number_of_period_before_break1_start, number_of_period_before_break2_start
+                 FROM tt_config WHERE sy_id = ?",
+                [$sy_id]
+            );
+            $timeOf = $this->computePeriodTimes(count($configRows) > 0 ? $configRows[0] : null, $maxPeriods);
+
+            $byStaff = []; // [staff_id][ "jour_id-period_number" ] = ['subject_title'=>, 'classe_name'=>]
+            foreach ($cellRows as $row) {
+                $byStaff[$row->staff_id][$row->jour_id . '-' . $row->period_number] = [
+                    'subject_title' => $row->subject_title,
+                    'classe_name' => $row->classe_name,
+                ];
+            }
+
+            $staffIds = array_keys($byStaff);
+            $placeholders = implode(',', array_fill(0, count($staffIds), '?'));
+            $teachers = DB::select(
+                "SELECT staff.staff_id, staff.name, staff.surname, account.email
+                 FROM staff
+                 JOIN account ON account.acc_id = staff.acc_id
+                 WHERE staff.staff_id IN ($placeholders)",
+                $staffIds
+            );
+
+            $days = [];
+            foreach ($jours as $j) {
+                $days[] = [
+                    'jour_id' => (int)$j->jour_id,
+                    'label' => $j->label,
+                    'number_of_periods' => (int)$j->number_of_periods,
+                ];
+            }
+            $periods = [];
+            for ($p = 1; $p <= $maxPeriods; $p++) {
+                $periods[] = [
+                    'number' => $p,
+                    'start' => $timeOf[$p]['start'] ?? null,
+                    'end' => $timeOf[$p]['end'] ?? null,
+                ];
+            }
+
+            $sentCount = 0;
+            $noEmail = [];
+            $sendFailed = [];
+
+            foreach ($teachers as $teacher) {
+                $teacherName = trim($teacher->name . ' ' . $teacher->surname);
+                if (empty($teacher->email)) {
+                    $noEmail[] = ['staff_name' => $teacherName];
+                    continue;
+                }
+
+                $grid = [];
+                foreach ($periods as $period) {
+                    foreach ($days as $day) {
+                        $key = $day['jour_id'] . '-' . $period['number'];
+                        if (isset($byStaff[$teacher->staff_id][$key])) {
+                            $grid[$period['number']][$day['jour_id']] = $byStaff[$teacher->staff_id][$key];
+                        }
+                    }
+                }
+
+                try {
+                    Mail::to($teacher->email)->send(
+                        new TeacherTimetableMail($teacherName, $year, $days, $periods, $grid)
+                    );
+                    $sentCount++;
+                } catch (\Throwable $e) {
+                    $sendFailed[] = ['staff_name' => $teacherName];
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Time table emails sent.',
+                'sentCount' => $sentCount,
+                'warnings' => [
+                    'noEmail' => $noEmail,
+                    'sendFailed' => $sendFailed,
+                ],
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to send time table emails: ' . $e->getMessage(),
             ], 500);
         }
     }
