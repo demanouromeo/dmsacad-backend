@@ -164,9 +164,11 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
 
     //==> ADMIN ON TIMETABLE
-    Route::get('/timetable/getTtConfig', [TimetableController::class, 'getTtConfig']);
+    // getTtConfig/getJours moved to the ANY CONNECTED USER group below - MyTimetableManager
+    // (TEACHER/SG/CENSEUR) needs to read the school's day/period config to render "My Timetable"
+    // too, not just the ADMIN settings screens (same "read is shared, write stays ADMIN" precedent
+    // as classifiedParamOfYear).
     Route::post('/timetable/saveTtConfig', [TimetableController::class, 'saveTtConfig']);
-    Route::get('/timetable/getJours', [TimetableController::class, 'getJours']);
     Route::post('/timetable/saveJour', [TimetableController::class, 'saveJour']);
     Route::post('/timetable/deleteJour', [TimetableController::class, 'deleteJour']);
     Route::get('/timetable/getStaffMaxPeriods', [TimetableController::class, 'getStaffMaxPeriods']);
@@ -215,12 +217,24 @@ Route::middleware(['jwt.auth', 'role:ADMIN,SG,CENSEUR'])->group(function () {
 });
 //===================================================================== END ADMIN + SG + CENSEUR ROUTES =====================================================================================================
 
-
+//******* TEACHER + SG + CENSEUR ROUTES
+// "My time table" - a staff member's own individual weekly time table, scoped server-side to
+// auth_payload->user_id inside the controller (see TimetableController::getMyCells's own comment) -
+// unlike every /timetable/* route above, this one deliberately isn't role:ADMIN since ADMIN accounts
+// have no staff_id to scope against.
+Route::middleware(['jwt.auth', 'role:TEACHER,SG,CENSEUR'])->group(function () {
+    Route::get('/timetable/getMyCells', [TimetableController::class, 'getMyCells']);
+});
+//===================================================================== END TEACHER + SG + CENSEUR ROUTES =====================================================================================================
 
 
 
 //******** ANY CONNECTED USER ROUTES
 Route::middleware(['jwt.auth'])->group(function () {
+    //==> ANY CONNECTED USER ON TIMETABLE (read-only - writes stay ADMIN-only above)
+    Route::get('/timetable/getTtConfig', [TimetableController::class, 'getTtConfig']);
+    Route::get('/timetable/getJours', [TimetableController::class, 'getJours']);
+
     //==> ON SCHOOL CONFIG
     Route::get('/configs/allSchoolConfig', [SchoolInfoController::class, 'allSchoolConfig']); //ok
     Route::get('/configs/getSchoolYearID', [SchoolInfoController::class, 'getSchoolYearID']); //ok

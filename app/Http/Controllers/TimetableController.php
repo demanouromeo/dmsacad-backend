@@ -494,6 +494,47 @@ class TimetableController extends Controller
     }
 
     //--------------------------------------------------------------------------------------------
+    // MY TIMETABLE - a staff member's own cells across every class they teach (unlike getClasseCells,
+    // not scoped by classe_id). staff_id is deliberately read from auth_payload->user_id (the JWT
+    // claim AccountController::connect already sets to the staff table's id for staff-type accounts,
+    // same one RoleMiddleware/AccountController's own self-service endpoints trust) rather than a
+    // client-supplied param, since this is a genuine "give me only my own data" endpoint - a
+    // deliberate departure from this app's usual convention of returning a broader list and letting
+    // the frontend filter client-side (see SG/CENSEUR classe scoping elsewhere in this codebase).
+    //--------------------------------------------------------------------------------------------
+
+    public function getMyCells(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return $this->validationError($th);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+            $staff_id = (int) $request->attributes->get('auth_payload')->user_id;
+            $rows = DB::select(
+                "SELECT classe_period.jour_id, classe_period.period_number, classe_period.subject_id,
+                        subject.subject_title, classe_period.classe_id, classe.classe_name
+                 FROM classe_period
+                 JOIN subject ON subject.subject_id = classe_period.subject_id
+                 JOIN classe ON classe.classe_id = classe_period.classe_id
+                 WHERE classe_period.sy_id = ? AND classe_period.staff_id = ?",
+                [$sy_id, $staff_id]
+            );
+            return response()->json($rows, 200);
+        } catch (Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------
     // GENERATE - builds the whole school's timetable for one year from scratch.
     //--------------------------------------------------------------------------------------------
 
