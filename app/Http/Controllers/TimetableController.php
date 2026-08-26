@@ -438,7 +438,7 @@ class TimetableController extends Controller
             }
 
             $assignment = DB::select(
-                "SELECT subject_classe_id FROM subject_classe WHERE sy_id = ? AND classe_id = ? AND subject_id = ?",
+                "SELECT subject_classe_id, commoncourse FROM subject_classe WHERE sy_id = ? AND classe_id = ? AND subject_id = ?",
                 [$sy_id, $classe_id, $subject_id]
             );
             if (count($assignment) === 0) {
@@ -449,22 +449,40 @@ class TimetableController extends Controller
             }
 
             if (!is_null($staff_id)) {
-                $conflict = DB::select(
-                    "SELECT classe.classe_name, subject.subject_title
+                // A teacher may legitimately appear at the same day/period in more than one class for
+                // the SAME subject only when it's a genuine combined/joint session - i.e.
+                // subject_classe.commoncourse=1 on BOTH this class's and the other class's assignment
+                // row for that subject. A different subject at the same slot is always a conflict, and
+                // so is the same subject when commoncourse isn't set on every classe_id involved.
+                $otherRows = DB::select(
+                    "SELECT classe_period.classe_id, classe.classe_name, classe_period.subject_id, subject.subject_title
                      FROM classe_period
                      JOIN classe ON classe.classe_id = classe_period.classe_id
                      JOIN subject ON subject.subject_id = classe_period.subject_id
                      WHERE classe_period.sy_id = ? AND classe_period.jour_id = ? AND classe_period.period_number = ?
-                       AND classe_period.staff_id = ? AND classe_period.subject_id <> ?
+                       AND classe_period.staff_id = ?
                        AND NOT (classe_period.classe_id = ? AND classe_period.jour_id = ? AND classe_period.period_number = ?)",
-                    [$sy_id, $jour_id, $period_number, $staff_id, $subject_id, $classe_id, $jour_id, $period_number]
+                    [$sy_id, $jour_id, $period_number, $staff_id, $classe_id, $jour_id, $period_number]
                 );
-                if (count($conflict) > 0) {
-                    $other = $conflict[0];
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'This teacher is already teaching "' . $other->subject_title . '" in ' . $other->classe_name . ' at this day/period.',
-                    ], 409);
+
+                if (count($otherRows) > 0) {
+                    $selfIsCommon = (int)$assignment[0]->commoncourse === 1;
+                    foreach ($otherRows as $other) {
+                        $isValidCombined = false;
+                        if ($selfIsCommon && (int)$other->subject_id === (int)$subject_id) {
+                            $otherAssignment = DB::select(
+                                "SELECT commoncourse FROM subject_classe WHERE sy_id = ? AND classe_id = ? AND subject_id = ?",
+                                [$sy_id, $other->classe_id, $subject_id]
+                            );
+                            $isValidCombined = count($otherAssignment) > 0 && (int)$otherAssignment[0]->commoncourse === 1;
+                        }
+                        if (!$isValidCombined) {
+                            return response()->json([
+                                'status' => false,
+                                'message' => 'This teacher is already teaching "' . $other->subject_title . '" in ' . $other->classe_name . ' at this day/period.',
+                            ], 409);
+                        }
+                    }
                 }
             }
 
@@ -592,6 +610,14 @@ class TimetableController extends Controller
                 $teacherOf[$t->subject_classe_id] = (int)$t->staff_id;
             }
 
+            // "classeId-subjectId" => commoncourse flag, so both phases below can tell whether a
+            // teacher legitimately appearing twice at the same day/period (once per class) is a real
+            // combined/joint session or a scheduling conflict - see the same rule enforced in updateCell().
+            $commonOf = [];
+            foreach ($scRows as $row) {
+                $commonOf[$row->classe_id . '-' . $row->subject_id] = (int)$row->commoncourse;
+            }
+
             $maxPeriodsRows = DB::select("SELECT staff_id, max_periods_per_week FROM staff_year WHERE sy_id = $sy_id");
             $maxPeriodsOf = [];
             foreach ($maxPeriodsRows as $m) {
@@ -599,12 +625,36 @@ class TimetableController extends Controller
             }
 
             $usedSlot = [];       // [classe_id][ "jour-period" ] = true
-            $teacherBusy = [];    // [staff_id][ "jour-period" ] = subject_id
+            $teacherBusy = [];    // [staff_id][ "jour-period" ] = ['subject_id' => id, 'classes' => [classe_id => true, ...]]
             $teacherLoad = [];    // [staff_id] = count
             $subjectDayCount = []; // [classe_id][subject_id][jour_id] = count
 
             $slotKey = function ($jour_id, $period_number) {
                 return $jour_id . '-' . $period_number;
+            };
+
+            // Can $row (a classe_id/subject_id pair) join teacher $teacherId at slot $key, given
+            // whatever is already placed there for that teacher? Free if nothing's there yet; if
+            // something is, only a same-subject combined session where EVERY class already at that
+            // slot (and this one) has commoncourse=1 for that subject is allowed - anything else,
+            // including a same-subject class with commoncourse=0 on either side, is a conflict.
+            $canPlaceWithTeacher = function ($teacherId, $key, $row) use (&$teacherBusy, $commonOf) {
+                if (!isset($teacherBusy[$teacherId][$key])) {
+                    return true;
+                }
+                $busyEntry = $teacherBusy[$teacherId][$key];
+                if ((int)$busyEntry['subject_id'] !== (int)$row->subject_id) {
+                    return false;
+                }
+                if (($commonOf[$row->classe_id . '-' . $row->subject_id] ?? 0) !== 1) {
+                    return false;
+                }
+                foreach (array_keys($busyEntry['classes']) as $existingClasseId) {
+                    if (($commonOf[$existingClasseId . '-' . $row->subject_id] ?? 0) !== 1) {
+                        return false;
+                    }
+                }
+                return true;
             };
 
             $maxOf = function ($staff_id) use ($maxPeriodsOf) {
@@ -720,7 +770,12 @@ class TimetableController extends Controller
                     }
                     if ($useTeachers) {
                         foreach ($distinctTeacherIds as $tid) {
-                            $teacherBusy[$tid][$key] = $groupRows[0]->subject_id;
+                            if (!isset($teacherBusy[$tid][$key])) {
+                                $teacherBusy[$tid][$key] = ['subject_id' => $groupRows[0]->subject_id, 'classes' => []];
+                            }
+                            foreach ($memberClasseIds as $cid) {
+                                $teacherBusy[$tid][$key]['classes'][$cid] = true;
+                            }
                             $teacherLoad[$tid] = ($teacherLoad[$tid] ?? 0) + 1;
                         }
                     }
@@ -764,9 +819,8 @@ class TimetableController extends Controller
                     } else {
                         foreach ($free as $slot) {
                             $key = $slotKey($slot['jour_id'], $slot['period_number']);
-                            $busy = isset($teacherBusy[$teacherId][$key]) && $teacherBusy[$teacherId][$key] !== $row->subject_id;
                             $overCap = ($teacherLoad[$teacherId] ?? 0) >= $maxOf($teacherId);
-                            if (!$busy && !$overCap) {
+                            if ($canPlaceWithTeacher($teacherId, $key, $row) && !$overCap) {
                                 $chosen = $slot;
                                 $chosenStaff = $teacherId;
                                 break;
@@ -781,7 +835,10 @@ class TimetableController extends Controller
                     $place($row, $chosen['jour_id'], $chosen['period_number'], $chosenStaff);
                     if (!is_null($chosenStaff)) {
                         $key = $slotKey($chosen['jour_id'], $chosen['period_number']);
-                        $teacherBusy[$chosenStaff][$key] = $row->subject_id;
+                        if (!isset($teacherBusy[$chosenStaff][$key])) {
+                            $teacherBusy[$chosenStaff][$key] = ['subject_id' => $row->subject_id, 'classes' => []];
+                        }
+                        $teacherBusy[$chosenStaff][$key]['classes'][$row->classe_id] = true;
                         $teacherLoad[$chosenStaff] = ($teacherLoad[$chosenStaff] ?? 0) + 1;
                     }
                 }
