@@ -553,6 +553,43 @@ class TimetableController extends Controller
     }
 
     //--------------------------------------------------------------------------------------------
+    // MY STAFF INFO - the same auth-scoped staff member's own HR record + weekly load, backing the
+    // official "individual time table" PDF/Excel export (My Timetable) alongside getMyCells above -
+    // same staff_id-from-auth_payload scoping, same reason.
+    //--------------------------------------------------------------------------------------------
+
+    public function getMyStaffInfo(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return $this->validationError($th);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+            $staff_id = (int) $request->attributes->get('auth_payload')->user_id;
+            $rows = DB::select(
+                "SELECT staff.staff_id, staff.name, staff.surname, staff.function, staff.status,
+                        staff.grade, staff.diplome, staff.specilitee, staff.matiereEnseignee, staff.longivity,
+                        COALESCE(staff_year.max_periods_per_week, 18) AS max_periods_per_week
+                 FROM staff
+                 LEFT JOIN staff_year ON staff_year.staff_id = staff.staff_id AND staff_year.sy_id = $sy_id
+                 WHERE staff.staff_id = ?",
+                [$staff_id]
+            );
+            return response()->json($rows[0] ?? null, 200);
+        } catch (Exception $e) {
+            return response()->json(null, 500);
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------
     // GENERATE - builds the whole school's timetable for one year from scratch.
     //--------------------------------------------------------------------------------------------
 

@@ -30,6 +30,7 @@ class StaffController extends Controller
                 'diplome' => 'nullable|string',
                 'specilitee' => 'nullable|string',
                 'matiereEnseignee' => 'nullable|string',
+                'longivity' => 'nullable|integer',
                 'dateEntree' => 'nullable|string',
                 'date1erePrise' => 'nullable|string',
                 'matricule' => 'nullable|string',
@@ -56,6 +57,7 @@ class StaffController extends Controller
         $diplome = $request->input("diplome");
         $specilitee = $request->input("specilitee");
         $matiereEnseignee = $request->input("matiereEnseignee");
+        $longivity = $request->input("longivity");
         $dateEntree = $request->input("dateEntree");
         $date1erePrise = $request->input("date1erePrise");
 
@@ -66,14 +68,27 @@ class StaffController extends Controller
 
         config(["database.default" => $connection]);
         try {
-
-            DB::select("UPDATE staff SET grade = '$grade', region = '$region', department = '$department',
-            arrodissement = '$arrodissement', numeroRecrutement = '$numeroRecrutement', provenantDe = '$provenantDe',
-            dateReprise = '$dateReprise', diplome = '$diplome', specilitee = '$specilitee', matiereEnseignee = '$matiereEnseignee', 
-            dateEntree = '$dateEntree', date1erePrise = '$date1erePrise',
-            matricule = '$matricule', dob = '$dob', pob = '$pob',
-            posting_decision = '$posting_decision' 
-            WHERE staff_id  = $staff_id");
+            // Parameterized (was raw string interpolation before this feature went live on the
+            // frontend for the first time - a SQL-injection hole, and it also broke on any value
+            // containing a single quote, e.g. a name like "N'Diaye").
+            DB::update(
+                "UPDATE staff SET grade = ?, region = ?, department = ?,
+                arrodissement = ?, numeroRecrutement = ?, provenantDe = ?,
+                dateReprise = ?, diplome = ?, specilitee = ?, matiereEnseignee = ?, longivity = ?,
+                dateEntree = ?, date1erePrise = ?,
+                matricule = ?, dob = ?, pob = ?,
+                posting_decision = ?
+                WHERE staff_id = ?",
+                [
+                    $grade, $region, $department,
+                    $arrodissement, $numeroRecrutement, $provenantDe,
+                    $dateReprise, $diplome, $specilitee, $matiereEnseignee, $longivity,
+                    $dateEntree, $date1erePrise,
+                    $matricule, $dob, $pob,
+                    $posting_decision,
+                    $staff_id,
+                ]
+            );
             return response()->json([
                 'status' => true,
                 'message' => 'Staff updated successfully',
@@ -1016,7 +1031,7 @@ class StaffController extends Controller
                             account.type, account.email, staff.dob, staff.pob, staff.matricule, staff.posting_decision,
                             staff.grade, staff.region, staff.department, staff.arrodissement, staff.numeroRecrutement,
                             staff.provenantDe, staff.dateReprise, staff.diplome, staff.specilitee, staff.matiereEnseignee,
-                            staff.dateEntree, staff.date1erePrise, staff.matricule
+                            staff.longivity, staff.dateEntree, staff.date1erePrise, staff.matricule
                             FROM 
                                 `staff`, account, staff_year 
                                 WHERE 

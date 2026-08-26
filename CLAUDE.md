@@ -5,9 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project overview
 
 Laravel 11 REST API backend for a multi-school academic management system (DMS ACAD). It serves CRUD
-operations for schools, staff, students, classes, subjects, marks, absences, etc. The app is served by
-XAMPP/Apache at `http://localhost/dmsacad_backend_dev`, with all routes prefixed under `/api` (see
-`routes/api.php`, mounted via `bootstrap/app.php`).
+operations for schools, staff, students, classes, subjects, marks, absences, etc. The app is served
+directly out of this repo's own root (`index.php`/`.htaccess` live here, not under `public/` - a flattened
+deployment) by XAMPP/Apache at `http://localhost/dmsacad-react/backend`, with all routes prefixed under
+`/api` (see `routes/api.php`, mounted via `bootstrap/app.php`). **`http://localhost/dmsacad_backend_dev` is
+a stale, unrelated leftover folder in `htdocs`** (confirmed 2026-08-26: empty except an orphaned
+`storage/logs/laravel.log`) from an older deployment layout - don't target it, and if you see it referenced
+elsewhere assume it's stale too. The frontend's local target URL is itself overridable via
+`frontend/.env.local` (see frontend `CLAUDE.md`'s "Backend base URL" section) in case this repo lives at a
+different path under `htdocs` on your machine.
 
 Security hardening (JWT auth + role-based access) is in progress and currently only covers a couple of
 endpoints — treat most routes in `routes/api.php` as still unprotected legacy endpoints when asked to add
@@ -42,7 +48,7 @@ npm install && npm run dev      # vite, front-end assets only — this is an API
 Reproduce/debug a specific API endpoint directly with curl (mirrors what Postman does) rather than guessing:
 
 ```bash
-curl -s -i "http://localhost/dmsacad_backend_dev/api/<route>?connection=mysql" \
+curl -s -i "http://localhost/dmsacad-react/backend/api/<route>?connection=mysql" \
   -H "Authorization: Bearer <token>"
 ```
 

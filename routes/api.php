@@ -90,7 +90,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     //==> ADMIN ON STAFF
     Route::post('/staffs/saveStaff', [StaffController::class, 'saveStaff']); //OK
     Route::post('/staffs/saveManyStaffs', [StaffController::class, 'saveManyStaffs']); //OK
-    Route::post('/staffs/modifyStaff', [StaffController::class, 'modifyStaff']); //OK - TO BE REVIEWED LATE TO ENABLE UPDATE all STAFF INFO. So that it could be used on client side to update staff profil/details.
+    Route::post('/staffs/modifyStaff', [StaffController::class, 'modifyStaff']); //OK - wired to StaffManager's "more info" dialog (StaffDetailsDialog.tsx); updates the extended HR profile fields only, not core identity/account fields (those go through updateManyStaffs).
     Route::post('/staffs/updateManyStaffs', [StaffController::class, 'updateManyStaffs']); //OK
     Route::post('/staffs/deleteManyStaffs', [StaffController::class, 'deleteManyStaffs']); //OK
     Route::post('/staffs/assignACourse', [StaffController::class, 'assignACourse']); //OK
@@ -224,6 +224,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN,SG,CENSEUR'])->group(function () {
 // have no staff_id to scope against.
 Route::middleware(['jwt.auth', 'role:TEACHER,SG,CENSEUR'])->group(function () {
     Route::get('/timetable/getMyCells', [TimetableController::class, 'getMyCells']);
+    Route::get('/timetable/getMyStaffInfo', [TimetableController::class, 'getMyStaffInfo']);
 });
 //===================================================================== END TEACHER + SG + CENSEUR ROUTES =====================================================================================================
 
