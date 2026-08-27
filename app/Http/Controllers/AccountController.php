@@ -248,7 +248,8 @@ class AccountController extends Controller
                 if (!$staff) {
                     $user_name = "PERSONNEL"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
                 } else {
-                    $user_name = $staff->name . ' ' . $staff->surname;
+                    $civility = trim((string) $staff->civility);
+                    $user_name = ($civility !== '' ? $civility . ' ' : '') . $staff->name . ' ' . $staff->surname;
                     $user_name = trim($user_name);
                     $user_id = $staff->staff_id;
                 }
@@ -465,7 +466,8 @@ class AccountController extends Controller
                 if (!$staff) {
                     $user_name = "PERSONNEL"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
                 } else {
-                    $user_name = $staff->name . ' ' . $staff->surname;
+                    $civility = trim((string) $staff->civility);
+                    $user_name = ($civility !== '' ? $civility . ' ' : '') . $staff->name . ' ' . $staff->surname;
                     $user_name = trim($user_name);
                     $user_id = $staff->staff_id;
                 }
