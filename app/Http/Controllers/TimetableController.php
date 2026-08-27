@@ -590,6 +590,78 @@ class TimetableController extends Controller
     }
 
     //--------------------------------------------------------------------------------------------
+    // ALL STAFF TIMETABLES (ADMIN) - bulk equivalents of getMyCells/getMyStaffInfo above, backing
+    // the Time table hub's "print/export every staff member's individual time table at once"
+    // feature. Not staff_id-scoped (ADMIN has no staff_id of its own to scope against, same reason
+    // getMyCells/getMyStaffInfo stay outside the ADMIN role group) - two requests return every
+    // staff member's data for the whole school in one shot, instead of looping the single-staff
+    // endpoints above once per staff member (2xN requests).
+    //--------------------------------------------------------------------------------------------
+
+    public function getAllStaffCells(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return $this->validationError($th);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+            $rows = DB::select(
+                "SELECT classe_period.staff_id, classe_period.jour_id, classe_period.period_number,
+                        classe_period.subject_id, subject.subject_title, classe_period.classe_id, classe.classe_name
+                 FROM classe_period
+                 JOIN subject ON subject.subject_id = classe_period.subject_id
+                 JOIN classe ON classe.classe_id = classe_period.classe_id
+                 WHERE classe_period.sy_id = ? AND classe_period.staff_id IS NOT NULL",
+                [$sy_id]
+            );
+            return response()->json($rows, 200);
+        } catch (Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+    public function getAllStaffInfo(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return $this->validationError($th);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+            // LEFT JOIN + COALESCE (not allStaffs1's inner join on staff_year) so a staff member
+            // with no staff_year row for this year still gets an individual timetable page
+            // (defaulting max_periods_per_week to 18), same convention as getMyStaffInfo/
+            // getStaffMaxPeriods above.
+            $rows = DB::select(
+                "SELECT staff.staff_id, staff.name, staff.surname, staff.function, staff.status,
+                        staff.grade, staff.diplome, staff.specilitee, staff.matiereEnseignee, staff.longivity,
+                        COALESCE(staff_year.max_periods_per_week, 18) AS max_periods_per_week
+                 FROM staff
+                 LEFT JOIN staff_year ON staff_year.staff_id = staff.staff_id AND staff_year.sy_id = $sy_id
+                 ORDER BY staff.name ASC, staff.surname ASC"
+            );
+            return response()->json($rows, 200);
+        } catch (Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------
     // GENERATE - builds the whole school's timetable for one year from scratch.
     //--------------------------------------------------------------------------------------------
 

@@ -179,6 +179,12 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/timetable/getClasseCells', [TimetableController::class, 'getClasseCells']);
     Route::post('/timetable/updateCell', [TimetableController::class, 'updateCell']);
     Route::post('/timetable/sendTeacherEmails', [TimetableController::class, 'sendTeacherEmails']);
+    // Bulk "every staff" equivalents of getMyCells/getMyStaffInfo below (TEACHER+SG+CENSEUR group) -
+    // ADMIN-gated here since ADMIN has no staff_id of its own, same reason those two stay outside
+    // this group; backs the Time table hub's "print/export every staff member's individual time
+    // table at once" feature.
+    Route::get('/timetable/getAllStaffCells', [TimetableController::class, 'getAllStaffCells']);
+    Route::get('/timetable/getAllStaffInfo', [TimetableController::class, 'getAllStaffInfo']);
 
     // One-off cross-tenant schema rollout for the Time table module (see
     // TestController::createTimetableSchema's own docblock) - ADMIN-gated, unlike the legacy /test/*
