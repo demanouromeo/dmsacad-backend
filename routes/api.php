@@ -179,6 +179,11 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/timetable/getClasseCells', [TimetableController::class, 'getClasseCells']);
     Route::post('/timetable/updateCell', [TimetableController::class, 'updateCell']);
     Route::post('/timetable/sendTeacherEmails', [TimetableController::class, 'sendTeacherEmails']);
+    // "Change or Assign teacher" in the period-edit dialog - preview the collisions a bulk
+    // subject-classe teacher reassignment would create across every already-placed period, then
+    // commit it once the admin has decided which collisions to override.
+    Route::get('/timetable/previewAssignTeacher', [TimetableController::class, 'previewAssignTeacher']);
+    Route::post('/timetable/assignTeacherToSubjectClasse', [TimetableController::class, 'assignTeacherToSubjectClasse']);
     // Bulk "every staff" equivalents of getMyCells/getMyStaffInfo below (TEACHER+SG+CENSEUR group) -
     // ADMIN-gated here since ADMIN has no staff_id of its own, same reason those two stay outside
     // this group; backs the Time table hub's "print/export every staff member's individual time

@@ -368,6 +368,275 @@ class TimetableController extends Controller
     }
 
     //--------------------------------------------------------------------------------------------
+    // ASSIGN / CHANGE THE TEACHER OF A SUBJECT IN A CLASSE (bulk across every already-placed period)
+    // Backs TimetableGridView's "Change or Assign teacher" button in the period-edit dialog: instead
+    // of editing one classe_period cell at a time, this reassigns subject_classe_staff for the whole
+    // (classe, subject) pair AND every classe_period row already carrying that subject in that classe,
+    // so the timetable doesn't end up out of sync with the "official" teacher of that subject.
+    //--------------------------------------------------------------------------------------------
+
+    // For every classe_period row of (sy_id, classe_id, subject_id), checks whether $staff_id can be
+    // placed there without a real conflict elsewhere - same commoncourse-aware rule updateCell() already
+    // enforces for a single cell (a teacher may legitimately appear twice at the same day/period only
+    // when it's a genuine combined session: same subject_id, and subject_classe.commoncourse=1 on BOTH
+    // classes involved). Returns null if the subject isn't assigned to this classe for this year.
+    private function buildTeacherAssignmentPlan($sy_id, $classe_id, $subject_id, $staff_id)
+    {
+        $scRows = DB::select(
+            "SELECT subject_classe_id, commoncourse FROM subject_classe WHERE sy_id = ? AND classe_id = ? AND subject_id = ?",
+            [$sy_id, $classe_id, $subject_id]
+        );
+        if (count($scRows) === 0) {
+            return null;
+        }
+        $subjectClasseId = $scRows[0]->subject_classe_id;
+        $selfCommon = (int)$scRows[0]->commoncourse === 1;
+
+        $periods = DB::select(
+            "SELECT classe_period_id, jour_id, period_number
+             FROM classe_period
+             WHERE sy_id = ? AND classe_id = ? AND subject_id = ?
+             ORDER BY jour_id ASC, period_number ASC",
+            [$sy_id, $classe_id, $subject_id]
+        );
+
+        $labelOf = [];
+        foreach (DB::select("SELECT jour_id, label FROM jours") as $j) {
+            $labelOf[$j->jour_id] = $j->label;
+        }
+
+        $plan = [];
+        foreach ($periods as $p) {
+            $others = DB::select(
+                "SELECT classe_period.classe_period_id, classe_period.classe_id, classe.classe_name,
+                        classe_period.subject_id, subject.subject_title
+                 FROM classe_period
+                 JOIN classe ON classe.classe_id = classe_period.classe_id
+                 JOIN subject ON subject.subject_id = classe_period.subject_id
+                 WHERE classe_period.sy_id = ? AND classe_period.jour_id = ? AND classe_period.period_number = ?
+                   AND classe_period.staff_id = ? AND classe_period.classe_id != ?",
+                [$sy_id, $p->jour_id, $p->period_number, $staff_id, $classe_id]
+            );
+
+            $collision = null;
+            foreach ($others as $other) {
+                $isValidCombined = false;
+                if ($selfCommon && (int)$other->subject_id === (int)$subject_id) {
+                    $otherSc = DB::select(
+                        "SELECT commoncourse FROM subject_classe WHERE sy_id = ? AND classe_id = ? AND subject_id = ?",
+                        [$sy_id, $other->classe_id, $subject_id]
+                    );
+                    $isValidCombined = count($otherSc) > 0 && (int)$otherSc[0]->commoncourse === 1;
+                }
+                if (!$isValidCombined) {
+                    $collision = [
+                        'other_classe_period_id' => (int)$other->classe_period_id,
+                        'other_classe_id' => (int)$other->classe_id,
+                        'other_classe_name' => $other->classe_name,
+                        'other_subject_id' => (int)$other->subject_id,
+                        'other_subject_title' => $other->subject_title,
+                    ];
+                    break; // one blocking collision is enough to flag this period
+                }
+            }
+
+            $plan[] = [
+                'classe_period_id' => (int)$p->classe_period_id,
+                'jour_id' => (int)$p->jour_id,
+                'jour_label' => $labelOf[$p->jour_id] ?? '',
+                'period_number' => (int)$p->period_number,
+                'collision' => $collision,
+            ];
+        }
+
+        return ['subject_classe_id' => $subjectClasseId, 'periods' => $plan];
+    }
+
+    public function previewAssignTeacher(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'classe_id' => 'required|integer|min:1',
+                'subject_id' => 'required|integer|min:1',
+                'staff_id' => 'required|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return $this->validationError($th);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        $classe_id = $request->input('classe_id');
+        $subject_id = $request->input('subject_id');
+        $staff_id = $request->input('staff_id');
+        config(["database.default" => $connection]);
+
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+
+            $plan = $this->buildTeacherAssignmentPlan($sy_id, $classe_id, $subject_id, $staff_id);
+            if (is_null($plan)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'That subject is not assigned to this class for this year.',
+                ], 422);
+            }
+
+            $currentRows = DB::select(
+                "SELECT staff.staff_id, staff.name, staff.surname
+                 FROM subject_classe_staff
+                 JOIN staff ON staff.staff_id = subject_classe_staff.staff_id
+                 WHERE subject_classe_staff.subject_classe_id = ?
+                 LIMIT 1",
+                [$plan['subject_classe_id']]
+            );
+
+            $collisions = [];
+            $freeCount = 0;
+            foreach ($plan['periods'] as $p) {
+                if ($p['collision']) {
+                    $collisions[] = [
+                        'jour_id' => $p['jour_id'],
+                        'jour_label' => $p['jour_label'],
+                        'period_number' => $p['period_number'],
+                        'other_classe_id' => $p['collision']['other_classe_id'],
+                        'other_classe_name' => $p['collision']['other_classe_name'],
+                        'other_subject_id' => $p['collision']['other_subject_id'],
+                        'other_subject_title' => $p['collision']['other_subject_title'],
+                    ];
+                } else {
+                    $freeCount++;
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'current_staff_id' => count($currentRows) > 0 ? (int)$currentRows[0]->staff_id : null,
+                'current_staff_name' => count($currentRows) > 0
+                    ? trim($currentRows[0]->name . ' ' . $currentRows[0]->surname) : null,
+                'total_periods' => count($plan['periods']),
+                'free_periods' => $freeCount,
+                'collisions' => $collisions,
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to preview teacher assignment: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function assignTeacherToSubjectClasse(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'classe_id' => 'required|integer|min:1',
+                'subject_id' => 'required|integer|min:1',
+                'staff_id' => 'required|integer|min:1',
+                'overrides' => 'nullable|array',
+                'overrides.*.jour_id' => 'required_with:overrides|integer|min:1',
+                'overrides.*.period_number' => 'required_with:overrides|integer|min:1',
+            ]);
+        } catch (\Throwable $th) {
+            return $this->validationError($th);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        $classe_id = $request->input('classe_id');
+        $subject_id = $request->input('subject_id');
+        $staff_id = $request->input('staff_id');
+        $overrideKeys = [];
+        foreach (($request->input('overrides') ?? []) as $o) {
+            $overrideKeys[$o['jour_id'] . '-' . $o['period_number']] = true;
+        }
+        config(["database.default" => $connection]);
+
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+
+            // Recomputed fresh here (never trusting the client's earlier preview snapshot) so a stale
+            // collision list from a preview the admin sat on for a while can't apply overrides against
+            // periods that have since changed underneath it.
+            $plan = $this->buildTeacherAssignmentPlan($sy_id, $classe_id, $subject_id, $staff_id);
+            if (is_null($plan)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'That subject is not assigned to this class for this year.',
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            DB::delete("DELETE FROM subject_classe_staff WHERE subject_classe_id = ?", [$plan['subject_classe_id']]);
+            DB::insert(
+                "INSERT INTO subject_classe_staff (subject_classe_id, staff_id) VALUES (?, ?)",
+                [$plan['subject_classe_id'], $staff_id]
+            );
+
+            $assignedCount = 0;
+            $freedCount = 0;
+            $skippedCount = 0;
+
+            foreach ($plan['periods'] as $p) {
+                if (!$p['collision']) {
+                    DB::update(
+                        "UPDATE classe_period SET staff_id = ? WHERE classe_period_id = ?",
+                        [$staff_id, $p['classe_period_id']]
+                    );
+                    $assignedCount++;
+                    continue;
+                }
+
+                $key = $p['jour_id'] . '-' . $p['period_number'];
+                if (isset($overrideKeys[$key])) {
+                    // Admin approved freeing the selected teacher from the other classe's conflicting
+                    // period so they can be used here instead.
+                    DB::update(
+                        "UPDATE classe_period SET staff_id = NULL WHERE classe_period_id = ?",
+                        [$p['collision']['other_classe_period_id']]
+                    );
+                    DB::update(
+                        "UPDATE classe_period SET staff_id = ? WHERE classe_period_id = ?",
+                        [$staff_id, $p['classe_period_id']]
+                    );
+                    $assignedCount++;
+                    $freedCount++;
+                } else {
+                    // Declined: the subject's official teacher just changed, so leaving the old
+                    // teacher's name on this period would misrepresent who now teaches it - clear it
+                    // instead, same as a manual "no teacher" edit via updateCell().
+                    DB::update(
+                        "UPDATE classe_period SET staff_id = NULL WHERE classe_period_id = ?",
+                        [$p['classe_period_id']]
+                    );
+                    $skippedCount++;
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Teacher assignment updated successfully.',
+                'assigned_count' => $assignedCount,
+                'freed_count' => $freedCount,
+                'skipped_count' => $skippedCount,
+            ], 200);
+        } catch (Exception $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to assign teacher: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------
     // GENERATED GRID (read one classe) + MANUAL CELL EDIT
     //--------------------------------------------------------------------------------------------
 
