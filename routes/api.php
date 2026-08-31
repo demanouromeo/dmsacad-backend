@@ -184,6 +184,9 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     // commit it once the admin has decided which collisions to override.
     Route::get('/timetable/previewAssignTeacher', [TimetableController::class, 'previewAssignTeacher']);
     Route::post('/timetable/assignTeacherToSubjectClasse', [TimetableController::class, 'assignTeacherToSubjectClasse']);
+    // "More options" floating menu on the Time table hub - whole-school report of every (classe,
+    // subject) pair with at least one unassigned-teacher period.
+    Route::get('/timetable/getUnassignedTeacherSubjects', [TimetableController::class, 'getUnassignedTeacherSubjects']);
     // Bulk "every staff" equivalents of getMyCells/getMyStaffInfo below (TEACHER+SG+CENSEUR group) -
     // ADMIN-gated here since ADMIN has no staff_id of its own, same reason those two stay outside
     // this group; backs the Time table hub's "print/export every staff member's individual time

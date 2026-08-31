@@ -637,6 +637,57 @@ class TimetableController extends Controller
     }
 
     //--------------------------------------------------------------------------------------------
+    // UNASSIGNED-TEACHER REPORT - backs TimetableHub's "More options" floating menu: every
+    // (classe, subject) pair of the WHOLE SCHOOL (both sections - see below) that has at least one
+    // already-placed classe_period with no teacher, whatever the reason (subject never had a teacher
+    // assigned at all, or the generate() algorithm/a manual edit couldn't place the assigned teacher
+    // there without a conflict) - so an admin can spot every gap at a glance, without flipping
+    // through every class one by one. Returns one row PER MISSING PERIOD (not pre-aggregated) so the
+    // frontend can list which day/period each gap falls on, not just a count - grouping into one
+    // (classe, subject) line with a formatted period list is done client-side.
+    //--------------------------------------------------------------------------------------------
+
+    public function getUnassignedTeacherSubjects(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return $this->validationError($th);
+        }
+        $connection = $request->input('connection');
+        $year = $request->input('year');
+        config(["database.default" => $connection]);
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+            // Deliberately NOT scoped to useAuth().section, same precedent as EffectifsManager's
+            // "Effectifs par classe" report - a school-wide gap report shouldn't silently come back
+            // empty just because a different section happens to be selected in the top banner at the
+            // moment the admin opens this menu.
+            $rows = DB::select(
+                "SELECT classe.classe_id, classe.classe_name, classe.level, section.section_name,
+                        subject.subject_id, subject.subject_title,
+                        classe_period.jour_id, jours.label AS jour_label, classe_period.period_number
+                 FROM classe_period
+                 JOIN classe ON classe.classe_id = classe_period.classe_id
+                 JOIN classe_year ON classe_year.classe_id = classe.classe_id AND classe_year.sy_id = classe_period.sy_id
+                 JOIN section ON section.section_id = classe_year.section_id
+                 JOIN subject ON subject.subject_id = classe_period.subject_id
+                 JOIN jours ON jours.jour_id = classe_period.jour_id
+                 WHERE classe_period.sy_id = ? AND classe_period.staff_id IS NULL
+                 ORDER BY section.section_name ASC, classe.level ASC, classe.classe_name ASC, subject.subject_title ASC,
+                          jours.num ASC, classe_period.period_number ASC",
+                [$sy_id]
+            );
+            return response()->json($rows, 200);
+        } catch (Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------
     // GENERATED GRID (read one classe) + MANUAL CELL EDIT
     //--------------------------------------------------------------------------------------------
 
