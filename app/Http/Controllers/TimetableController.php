@@ -1176,15 +1176,12 @@ class TimetableController extends Controller
                         }
                     }
 
+                    // A teacher already at/over their weekly cap can still join a combined session -
+                    // the cap is informational (feeds "heures supplementaires" in the staff hours
+                    // report) rather than a hard placement gate, so a genuinely collision-free slot
+                    // is used instead of being hidden behind "Sans enseignant" (see the same
+                    // relaxation in PHASE B below).
                     $useTeachers = $teachersFree;
-                    if ($useTeachers) {
-                        foreach ($distinctTeacherIds as $tid) {
-                            if (($teacherLoad[$tid] ?? 0) >= $maxOf($tid)) {
-                                $useTeachers = false;
-                                break;
-                            }
-                        }
-                    }
 
                     foreach ($groupRows as $r) {
                         $staffForRow = null;
@@ -1246,13 +1243,31 @@ class TimetableController extends Controller
                     if (is_null($teacherId)) {
                         $chosen = $free[0];
                     } else {
+                        // Pass 1: prefer a slot that keeps the teacher within their configured
+                        // weekly cap (staff_year.max_periods_per_week).
                         foreach ($free as $slot) {
                             $key = $slotKey($slot['jour_id'], $slot['period_number']);
-                            $overCap = ($teacherLoad[$teacherId] ?? 0) >= $maxOf($teacherId);
-                            if ($canPlaceWithTeacher($teacherId, $key, $row) && !$overCap) {
+                            $withinCap = ($teacherLoad[$teacherId] ?? 0) < $maxOf($teacherId);
+                            if ($canPlaceWithTeacher($teacherId, $key, $row) && $withinCap) {
                                 $chosen = $slot;
                                 $chosenStaff = $teacherId;
                                 break;
+                            }
+                        }
+                        // Pass 2: no slot kept them within cap - this teacher has been assigned too
+                        // many courses across their classes. Place them anyway in any genuinely
+                        // collision-free slot (producing "heures supplementaires", surfaced in the
+                        // staff hours report) rather than hiding a real assignment behind "Sans
+                        // enseignant". Only a genuine day/period conflict (canPlaceWithTeacher false
+                        // everywhere) still falls through to unassigned below.
+                        if (is_null($chosen)) {
+                            foreach ($free as $slot) {
+                                $key = $slotKey($slot['jour_id'], $slot['period_number']);
+                                if ($canPlaceWithTeacher($teacherId, $key, $row)) {
+                                    $chosen = $slot;
+                                    $chosenStaff = $teacherId;
+                                    break;
+                                }
                             }
                         }
                         if (is_null($chosen)) {
