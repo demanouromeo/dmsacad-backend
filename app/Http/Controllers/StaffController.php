@@ -193,23 +193,22 @@ class StaffController extends Controller
     // Assign teacher" action. These two helpers keep classe_period in sync automatically instead.
     //--------------------------------------------------------------------------------------------
 
-    // Fills every already-placed, still-EMPTY period of (sy_id, classe_id, subject_id) with the
-    // newly attributed teacher - never overwrites a period that already shows a teacher (Course
-    // assignment allows more than one teacher to be attributed to the same subject+classe at once;
-    // swapping who's actually shown on the timetable stays the grid's own explicit "Change or Assign
-    // teacher" action, not this best-effort fill). Same same-subject/commoncourse-aware conflict
-    // rule as TimetableController::updateCell()/buildTeacherAssignmentPlan() - a slot where this
-    // teacher is already busy elsewhere with a genuinely different session is silently skipped
-    // rather than left in an inconsistent state.
+    // Places this teacher on EVERY already-placed period of (sy_id, classe_id, subject_id) -
+    // overwriting whoever (if anyone, including a different teacher) was shown there before, since
+    // attributing this course to them makes them the current teacher of that subject in that class.
+    // A period where they're already busy elsewhere with a genuinely different session is cleared to
+    // "Sans enseignant" (staff_id NULL) instead of keeping the previous, now-wrong name. Same
+    // same-subject/commoncourse-aware conflict rule as
+    // TimetableController::updateCell()/buildTeacherAssignmentPlan().
     private function syncClassePeriodOnAssign($sy_id, $classe_id, $subject_id, $staff_id)
     {
-        $emptySlots = DB::select(
+        $periods = DB::select(
             "SELECT classe_period_id, jour_id, period_number
              FROM classe_period
-             WHERE sy_id = ? AND classe_id = ? AND subject_id = ? AND staff_id IS NULL",
+             WHERE sy_id = ? AND classe_id = ? AND subject_id = ?",
             [$sy_id, $classe_id, $subject_id]
         );
-        if (count($emptySlots) === 0) {
+        if (count($periods) === 0) {
             return;
         }
 
@@ -219,13 +218,13 @@ class StaffController extends Controller
         );
         $selfCommon = count($scRows) > 0 && (int)$scRows[0]->commoncourse === 1;
 
-        foreach ($emptySlots as $slot) {
+        foreach ($periods as $period) {
             $others = DB::select(
                 "SELECT classe_period.classe_id, classe_period.subject_id
                  FROM classe_period
                  WHERE classe_period.sy_id = ? AND classe_period.jour_id = ? AND classe_period.period_number = ?
                    AND classe_period.staff_id = ? AND classe_period.classe_id != ?",
-                [$sy_id, $slot->jour_id, $slot->period_number, $staff_id, $classe_id]
+                [$sy_id, $period->jour_id, $period->period_number, $staff_id, $classe_id]
             );
 
             $conflict = false;
@@ -244,12 +243,10 @@ class StaffController extends Controller
                 }
             }
 
-            if (!$conflict) {
-                DB::update(
-                    "UPDATE classe_period SET staff_id = ? WHERE classe_period_id = ?",
-                    [$staff_id, $slot->classe_period_id]
-                );
-            }
+            DB::update(
+                "UPDATE classe_period SET staff_id = ? WHERE classe_period_id = ?",
+                [$conflict ? null : $staff_id, $period->classe_period_id]
+            );
         }
     }
 
