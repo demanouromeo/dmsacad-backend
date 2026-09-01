@@ -220,6 +220,19 @@ class MyHelper extends Controller
 	                        WHERE subject_classe.sy_id = $sy_id
 	                            AND subject_classe.section_id = $section_id)
 	                            AND subject_classe_staff.staff_id = $staff_id");
+
+            // Keep the already-generated timetable (classe_period, see TimetableController) in sync -
+            // this staff is no longer attributed to anything in this section+year, so clear them from
+            // every already-placed period of theirs there too rather than leaving a stale teacher
+            // name showing.
+            DB::update("UPDATE classe_period
+                    SET staff_id = NULL
+                    WHERE classe_period.sy_id = $sy_id
+                        AND classe_period.staff_id = $staff_id
+                        AND classe_period.classe_id IN (
+                            SELECT classe_year.classe_id FROM classe_year
+                            WHERE classe_year.sy_id = $sy_id AND classe_year.section_id = $section_id
+                        )");
             return 1;
         } catch (Exception $e) {
             die('<br/>MyHelper.getSchoolYearID(): ERROR: ' . $e->getMessage() . '<br/>');

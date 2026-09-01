@@ -185,6 +185,86 @@ class StaffController extends Controller
         }
     }
 
+    //--------------------------------------------------------------------------------------------
+    // TIME TABLE SYNC - an already-generated timetable (classe_period, see TimetableController) is
+    // a separate snapshot from this screen's own subject_classe_staff assignments, so attributing
+    // or removing a course here would otherwise leave a stale/wrong teacher name showing on the
+    // timetable until someone happened to notice and manually fix it via the grid's own "Change or
+    // Assign teacher" action. These two helpers keep classe_period in sync automatically instead.
+    //--------------------------------------------------------------------------------------------
+
+    // Fills every already-placed, still-EMPTY period of (sy_id, classe_id, subject_id) with the
+    // newly attributed teacher - never overwrites a period that already shows a teacher (Course
+    // assignment allows more than one teacher to be attributed to the same subject+classe at once;
+    // swapping who's actually shown on the timetable stays the grid's own explicit "Change or Assign
+    // teacher" action, not this best-effort fill). Same same-subject/commoncourse-aware conflict
+    // rule as TimetableController::updateCell()/buildTeacherAssignmentPlan() - a slot where this
+    // teacher is already busy elsewhere with a genuinely different session is silently skipped
+    // rather than left in an inconsistent state.
+    private function syncClassePeriodOnAssign($sy_id, $classe_id, $subject_id, $staff_id)
+    {
+        $emptySlots = DB::select(
+            "SELECT classe_period_id, jour_id, period_number
+             FROM classe_period
+             WHERE sy_id = ? AND classe_id = ? AND subject_id = ? AND staff_id IS NULL",
+            [$sy_id, $classe_id, $subject_id]
+        );
+        if (count($emptySlots) === 0) {
+            return;
+        }
+
+        $scRows = DB::select(
+            "SELECT commoncourse FROM subject_classe WHERE sy_id = ? AND classe_id = ? AND subject_id = ?",
+            [$sy_id, $classe_id, $subject_id]
+        );
+        $selfCommon = count($scRows) > 0 && (int)$scRows[0]->commoncourse === 1;
+
+        foreach ($emptySlots as $slot) {
+            $others = DB::select(
+                "SELECT classe_period.classe_id, classe_period.subject_id
+                 FROM classe_period
+                 WHERE classe_period.sy_id = ? AND classe_period.jour_id = ? AND classe_period.period_number = ?
+                   AND classe_period.staff_id = ? AND classe_period.classe_id != ?",
+                [$sy_id, $slot->jour_id, $slot->period_number, $staff_id, $classe_id]
+            );
+
+            $conflict = false;
+            foreach ($others as $other) {
+                $isValidCombined = false;
+                if ($selfCommon && (int)$other->subject_id === (int)$subject_id) {
+                    $otherSc = DB::select(
+                        "SELECT commoncourse FROM subject_classe WHERE sy_id = ? AND classe_id = ? AND subject_id = ?",
+                        [$sy_id, $other->classe_id, $subject_id]
+                    );
+                    $isValidCombined = count($otherSc) > 0 && (int)$otherSc[0]->commoncourse === 1;
+                }
+                if (!$isValidCombined) {
+                    $conflict = true;
+                    break;
+                }
+            }
+
+            if (!$conflict) {
+                DB::update(
+                    "UPDATE classe_period SET staff_id = ? WHERE classe_period_id = ?",
+                    [$staff_id, $slot->classe_period_id]
+                );
+            }
+        }
+    }
+
+    // Clears this teacher from every already-placed period of (sy_id, classe_id, subject_id) they
+    // were showing on - they're no longer attributed to that subject in that class, so the
+    // timetable must go back to "Sans enseignant" there rather than keep displaying a stale name.
+    private function syncClassePeriodOnRemove($sy_id, $classe_id, $subject_id, $staff_id)
+    {
+        DB::update(
+            "UPDATE classe_period SET staff_id = NULL
+             WHERE sy_id = ? AND classe_id = ? AND subject_id = ? AND staff_id = ?",
+            [$sy_id, $classe_id, $subject_id, $staff_id]
+        );
+    }
+
     public function removeALLCourses(Request $request)
     {
         try {
@@ -279,6 +359,7 @@ class StaffController extends Controller
 
                 try {
                     $ref = SubjectClasseStaff::find($id)->delete();
+                    $this->syncClassePeriodOnRemove($sy_id, $classe_id, $subject_id, $staff_id);
                 } catch (\Throwable $e) {
                     //"<br/>" . $e->getMessage() . "<br/>"; //Fatal error, since id has to exist according to above DB::select()
                     $result = -1;
@@ -349,6 +430,7 @@ class StaffController extends Controller
             );
             if (count($res1) > 0) {
                 //DO NOTHING THE SUBJECT IS ALREADY ASSIGNED TO THAT TEACHER
+                $this->syncClassePeriodOnAssign($sy_id, $classe_id, $subject_id, $staff_id);
             } else {
                 //IT IS NO YET ASSIGNED, LET'S DO IT NOW
                 $sc = SubjectClasse::where("subject_id", $subject_id)
@@ -363,6 +445,7 @@ class StaffController extends Controller
                     $scStaff->staff_id = $staff_id;
                     try {
                         $scStaff->save();
+                        $this->syncClassePeriodOnAssign($sy_id, $classe_id, $subject_id, $staff_id);
                     } catch (\Throwable $e) {
                         $errMsg = $e->getMessage();
                         $result = -1;
@@ -442,6 +525,7 @@ class StaffController extends Controller
                 );
                 if (count($res1) > 0) {
                     //DO NOTHING THE SUBJECT IS ALREADY ASSIGNED TO THAT TEACHER
+                    $this->syncClassePeriodOnAssign($sy_id, $classe_id, $subject_id, $staff_id);
                 } else {
                     //IT IS NO YET ASSIGNED, LET'S DO IT NOW
                     $sc = SubjectClasse::where("subject_id", $subject_id)
@@ -456,6 +540,7 @@ class StaffController extends Controller
                         $scStaff->staff_id = $staff_id;
                         try {
                             $scStaff->save();
+                            $this->syncClassePeriodOnAssign($sy_id, $classe_id, $subject_id, $staff_id);
                         } catch (\Throwable $e) {
                             //"<br/>" . $e->getMessage() . "<br/>";
                             $k = -1;
@@ -547,6 +632,7 @@ class StaffController extends Controller
                     //echo "<br/>id=$id";
                     try {
                         $ref = SubjectClasseStaff::find($id)->delete();
+                        $this->syncClassePeriodOnRemove($sy_id, $classe_id, $subject_id, $staff_id);
                     } catch (\Throwable $e) {
                         //"<br/>" . $e->getMessage() . "<br/>"; //Fatal error, since id has to exist according to above DB::select()
                         $k = -1;
