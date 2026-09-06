@@ -35,16 +35,12 @@ return [
         ],
     ],
 
-    // Resolved once here (bootstrap-time config loading) rather than via a raw env('JWT_SECRET')
-    // call at each of the 5 places that verify/sign a token (AccountController::login/refresh/
-    // logout, JwtMiddleware, RoleMiddleware) - on this XAMPP/Windows setup (Apache mpm_winnt, a
-    // threaded MPM) calling env() directly mid-request intermittently returned something that
-    // wasn't a string, throwing "Key material must be a string..." out of firebase/php-jwt's Key
-    // constructor and 500ing whichever request hit it - reproduced directly by hammering
-    // /api/accounts/refresh in a loop (~1 in 20 requests failed). getenv()/putenv() are documented
-    // as not thread-safe under concurrent requests on a threaded SAPI; routing every read through
-    // config('services.jwt_secret') instead keeps the env() call to Laravel's own single
-    // bootstrap-time config resolution rather than repeating it ad hoc later in the request.
+    // Single resolution point for the JWT secret - every sign/verify site (AccountController,
+    // JwtMiddleware, RoleMiddleware) reads config('services.jwt_secret') rather than env() directly.
+    // Note this alone did not stop the intermittent "Key material must be a string" 401s under
+    // concurrent requests on XAMPP's threaded Apache: config isn't cached, so this env() call still
+    // ran per request through the thread-unsafe putenv/getenv adapter. The actual fix is
+    // Env::disablePutenv() in bootstrap/app.php.
     'jwt_secret' => env('JWT_SECRET'),
 
 ];
