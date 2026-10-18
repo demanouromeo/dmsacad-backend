@@ -2708,6 +2708,7 @@ class StudentController extends Controller
                                     AND student_classe.classe_id = classe.classe_id
                                     AND student_classe.classe_id = classe_year.classe_id
                                     AND student_classe.sy_id = $sy_id
+                                    AND classe_year.sy_id = $sy_id
                                     AND classe_year.section_id = $section_id
                         ORDER BY classe.`level`, classe.classe_name"
             );
