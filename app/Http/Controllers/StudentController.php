@@ -2751,9 +2751,8 @@ class StudentController extends Controller
             $rows = DB::select(
                 "SELECT classe.classe_id, classe.classe_name, classe.`level`,
                         subject_classe.subject_id, subject.subject_title, dbseq.dbsequence,
-                        (SELECT COUNT(*) FROM student_classe
-                            WHERE student_classe.classe_id = classe.classe_id AND student_classe.sy_id = $sy_id) AS roster_count,
-                        COUNT(student_subject.student_subject_id) AS filled_count
+                        COALESCE(r.roster_count, 0) AS roster_count,
+                        COALESCE(f.filled_count, 0) AS filled_count
                     FROM classe
                         INNER JOIN classe_year ON classe_year.classe_id = classe.classe_id AND classe_year.sy_id = $sy_id
                         INNER JOIN subject_classe ON subject_classe.classe_id = classe.classe_id
@@ -2761,14 +2760,18 @@ class StudentController extends Controller
                         INNER JOIN subject ON subject.subject_id = subject_classe.subject_id
                         CROSS JOIN (SELECT 1 AS dbsequence UNION ALL SELECT 2 UNION ALL SELECT 3
                                     UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6) dbseq
-                        LEFT JOIN student_subject ON student_subject.subject_id = subject_classe.subject_id
-                            AND student_subject.sy_id = $sy_id AND student_subject.sequence = dbseq.dbsequence
-                            AND student_subject.isEmpty = 0
-                            AND student_subject.stud_id IN (SELECT stud_id FROM student_classe
-                                WHERE student_classe.classe_id = classe.classe_id AND student_classe.sy_id = $sy_id)
+                        LEFT JOIN (SELECT classe_id, COUNT(*) AS roster_count FROM student_classe
+                                   WHERE sy_id = $sy_id GROUP BY classe_id) r ON r.classe_id = classe.classe_id
+                        LEFT JOIN (SELECT sc.classe_id, ss.subject_id, ss.`sequence` AS dbsequence,
+                                          COUNT(DISTINCT ss.student_subject_id) AS filled_count
+                                   FROM student_classe sc
+                                       INNER JOIN student_subject ss ON ss.stud_id = sc.stud_id
+                                           AND ss.sy_id = $sy_id AND ss.isEmpty = 0
+                                   WHERE sc.sy_id = $sy_id
+                                   GROUP BY sc.classe_id, ss.subject_id, ss.`sequence`) f
+                            ON f.classe_id = classe.classe_id AND f.subject_id = subject_classe.subject_id
+                            AND f.dbsequence = dbseq.dbsequence
                     WHERE classe_year.section_id = $section_id
-                    GROUP BY classe.classe_id, classe.classe_name, classe.`level`,
-                             subject_classe.subject_id, subject.subject_title, dbseq.dbsequence
                     ORDER BY classe.`level`, classe.classe_name, subject.subject_title, dbseq.dbsequence"
             );
             return response()->json($rows, 200);
