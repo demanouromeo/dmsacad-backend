@@ -205,6 +205,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN,!SUBADMIN'])->prefix('subadmins')->gr
     Route::get('/all', [AccountController::class, 'allSubAdmins']);
     Route::post('/save', [AccountController::class, 'saveSubAdmin']);
     Route::post('/updatePassword', [AccountController::class, 'updateSubAdminPassword']);
+    Route::post('/updateLogin', [AccountController::class, 'updateSubAdminLogin']);
     Route::post('/delete', [AccountController::class, 'deleteSubAdmin']);
 });
 

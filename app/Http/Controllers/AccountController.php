@@ -675,6 +675,40 @@ class AccountController extends Controller
         }
     }
 
+    public function updateSubAdminLogin(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'acc_id' => 'required|integer',
+                'login' => 'required|string|min:4|max:50',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'message' => 'Validation failed: ' . $th->getMessage()], 422);
+        }
+        config(["database.default" => $request->input("connection")]);
+        $acc_id = $request->input("acc_id");
+        $login = trim($request->input("login"));
+
+        try {
+            $account = Account::where('acc_id', $acc_id)->where('type', 9)->first();
+            if (is_null($account)) {
+                return response()->json(['status' => false, 'message' => 'Subadmin not found'], 404);
+            }
+            if (Account::where('login', $login)->where('acc_id', '!=', $acc_id)->exists()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Login already exists. Login is unique for each account. Please choose another login.',
+                ], 400);
+            }
+            $account->login = $login;
+            $account->update();
+            return response()->json(['status' => true, 'message' => 'Login updated successfully'], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function updateSubAdminPassword(Request $request)
     {
         try {
