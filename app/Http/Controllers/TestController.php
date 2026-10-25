@@ -786,4 +786,24 @@ class TestController extends Controller
             echo " Done. <br/>";
         } //END MAIN FOR
     }
+    
+    
+    public function insertTopManagement(Request $request)
+    {
+        for ($k = 0; $k < count($this->schools); $k++) {
+            $connection = $this->schools[$k];
+            echo ("processing '$connection' ..... ");
+            config(["database.default" => $connection]);
+
+            try {
+                DB::select(" 
+                    INSERT INTO `account` (`acc_id`, `login`, `pwd`, `type`, `email`, `str1`, `str2`, `val1`, `val2`, `created_at`, `updated_at`) 
+                    VALUES (NULL, 'admin2', 'admin2', '9', 'narcotrop2@gmail.com', NULL, NULL, NULL, NULL, '2026-10-24 21:42:47', '2026-10-24 21:42:49');
+                ");
+            } catch (Exception $e) {
+                echo "<br/> ERROR creating tt_config on [$connection]: " . $e->getMessage() . "<br/>";
+            }
+        }//END FOR
+    }//END of FUNCTION
+    
 }
