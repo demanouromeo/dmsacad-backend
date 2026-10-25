@@ -1214,7 +1214,8 @@ class MyHelper extends Controller
             5-Teacher(Simple enseignant) | 
             6-Parent | 
             7-Student | 
-            8-Censeur
+            8-Censeur | 
+            9-SubAdmin (all ADMIN rights except adding/deleting students)
         */
         switch ($type) {
             case 1:
@@ -1233,6 +1234,8 @@ class MyHelper extends Controller
                 return "STUDENT";
             case 8:
                 return "CENSEUR";
+            case 9:
+                return "SUBADMIN";
             default:
                 return "Unknown";
         }

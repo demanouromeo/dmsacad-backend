@@ -57,7 +57,14 @@ class RoleMiddleware
     {
         $payload = $request->attributes->get('auth_payload');
 
-        if (!$payload || !in_array($payload->role, $roles, true)) {
+        // SUBADMIN (account.type=9) has every ADMIN right: it passes any group that allows ADMIN,
+        // unless the group lists "!SUBADMIN" (e.g. adding/deleting students).
+        $role = $payload->role ?? null;
+        if ($role === "SUBADMIN" && in_array("ADMIN", $roles, true) && !in_array("!SUBADMIN", $roles, true)) {
+            $role = "ADMIN";
+        }
+
+        if (!$payload || !in_array($role, $roles, true)) {
             return response()->json(['status' => false, 'message' => 'Forbidden: insufficient permissions'], 403);
         } 
         return $next($request);

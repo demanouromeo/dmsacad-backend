@@ -224,10 +224,10 @@ class AccountController extends Controller
             $role = MyHelper::findRole($account->type);
             $user_name = "";
             $user_id = 1;
-            if ($account->type == 1) { //ADMINISTRATOR 
+            if ($account->type == 1 || $account->type == 9) { //ADMINISTRATOR or SUBADMIN 
                 $admin = Administrateur::where('acc_id', $account->acc_id)->first();
                 if (!$admin) {
-                    $user_name = "ADMINISTRATEUR"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
+                    $user_name = $account->type == 9 ? "SOUS-ADMINISTRATEUR" : "ADMINISTRATEUR"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
                 } else {
                     $user_name = $admin->nom . ' ' . $admin->prenom;
                     $user_name = trim($user_name);
@@ -442,10 +442,10 @@ class AccountController extends Controller
             $role = MyHelper::findRole($account->type);
             $user_name = "";
             $user_id = 1;
-            if ($account->type == 1) { //ADMINISTRATOR 
+            if ($account->type == 1 || $account->type == 9) { //ADMINISTRATOR or SUBADMIN 
                 $admin = Administrateur::where('acc_id', $account->acc_id)->first();
                 if (!$admin) {
-                    $user_name = "ADMINISTRATEUR"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
+                    $user_name = $account->type == 9 ? "SOUS-ADMINISTRATEUR" : "ADMINISTRATEUR"; // --> BD INCONSISTENT, CAR C'EST PAS UTILE DE LAISSER UN COMPTE QUAND L'UTILISATEUR EST SUPPRIMÉ DE LA TABLE ADMINISTRATEUR
                 } else {
                     $user_name = $admin->nom . ' ' . $admin->prenom;
                     $user_name = trim($user_name);

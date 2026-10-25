@@ -213,10 +213,17 @@ Route::middleware(['jwt.auth', 'role:ADMIN,CENSEUR'])->group(function () {
     Route::post('/subjects/saveManySC', [SubjectController::class, 'saveManySC']); //OK
     Route::delete('/subjects/deleteASubjectOfAClasseYearAndSection', [SubjectController::class, 'deleteASubjectOfAClasseYearAndSection']); //OK
     Route::get('/subjects/calquerSubjects', [SubjectController::class, 'calquerSubjects']); //OK
+});
 
+// Adding/deleting students: ADMIN only - SUBADMIN and CENSEUR are excluded.
+Route::middleware(['jwt.auth', 'role:ADMIN,!SUBADMIN'])->group(function () {
     Route::post('/students/deleteStudents', [StudentController::class, 'deleteStudents']);
     Route::post('/students/saveStudents', [StudentController::class, 'saveStudents']);
     Route::post('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
+});
+
+// Editing a student (update, photo) stays open to SUBADMIN.
+Route::middleware(['jwt.auth', 'role:ADMIN,CENSEUR'])->group(function () {
     Route::post('/students/updateStudents', [StudentController::class, 'updateStudents']);
     Route::post('/students/uploadStudentPhoto', [StudentController::class, 'uploadStudentPhoto']);
 });

@@ -94,7 +94,7 @@ controller's catch block.
   roles passed as middleware args, e.g. `role:ADMIN,TOP_MANAGEMENT`. It must run **after** `jwt.auth` in the
   same middleware group/stack (it does not decode the token itself).
 - Account `type` (int) → role string mapping lives in `MyHelper::findRole()`: `1=ADMIN, 2=TOP_MANAGEMENT,
-  3=SG, 4=BURSAR, 5=TEACHER, 6=PARENT, 7=STUDENT, 8=CENSEUR`.
+  3=SG, 4=BURSAR, 5=TEACHER, 6=PARENT, 7=STUDENT, 8=CENSEUR, 9=SUBADMIN`. SUBADMIN passes any `role:` group that lists ADMIN (RoleMiddleware), except groups that also list `!SUBADMIN` (adding/deleting students).
 
 To protect a new route, wrap it the same way the one existing example in `routes/api.php` does:
 
