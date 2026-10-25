@@ -162,6 +162,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     Route::get('/students/removeStudentFromClass', [StudentController::class, 'removeStudentFromClass']);
     Route::post('/students/setFatherMother', [StudentController::class, 'setFatherMother']);
     Route::get('/students/addStudentToClass', [StudentController::class, 'addStudentToClass']);
+    Route::post('/students/changeStudentClasse', [StudentController::class, 'changeStudentClasse']);
 
     //==> ADMIN ON TIMETABLE
     // getTtConfig/getJours moved to the ANY CONNECTED USER group below - MyTimetableManager

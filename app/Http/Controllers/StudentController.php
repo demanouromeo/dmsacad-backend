@@ -289,6 +289,190 @@ class StudentController extends Controller
         }
     }
 
+    /**
+     * Moves a student from one classe to another within the same school year (POST, ADMIN).
+     *
+     * The student_classe row is deleted from the old classe and re-created in the new one (keeping
+     * repeating/cas_social). Marks are keyed by (stud_id, subject_id) - not by classe - so for a
+     * subject that is the same row in both classes (same subject_id) they already follow the student.
+     * Where the target classe uses a *different* subject row with the same title, the student's
+     * student_subject marks are copied onto it. Competence marks (stud_comp_mark) are keyed by a
+     * classe-specific subject_competence_id, so they are copied to the target classe's competence
+     * with the same (term, subject title, competence text). Nothing is copied for subjects the
+     * target classe doesn't have. Everything runs in one transaction.
+     */
+    public function changeStudentClasse(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'year' => 'required|string',
+                'stud_id' => 'required|integer|min:1',
+                'classe_id_old' => 'required|integer|min:1',
+                'classe_id_new' => 'required|integer|min:1|different:classe_id_old',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        $connection = $request->input("connection");
+        $year = $request->input("year");
+        $stud_id = (int) $request->input("stud_id");
+        $old = (int) $request->input("classe_id_old");
+        $new = (int) $request->input("classe_id_new");
+
+        config(["database.default" => $connection]);
+
+        try {
+            $sy_id = MyHelper::getSchoolYearID($year);
+
+            $current = DB::select("SELECT repeating, cas_social FROM student_classe
+                WHERE sy_id = $sy_id AND stud_id = $stud_id AND classe_id = $old LIMIT 1");
+            if (count($current) === 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'The student is not enrolled in the current classe.',
+                ], 404);
+            }
+            $already = DB::select("SELECT student_classe_id FROM student_classe
+                WHERE sy_id = $sy_id AND stud_id = $stud_id AND classe_id = $new LIMIT 1");
+            if (count($already) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'The student is already enrolled in the target classe.',
+                ], 409);
+            }
+
+            $copiedSubjects = 0;
+            $copiedCompetences = 0;
+
+            DB::transaction(function () use (
+                $sy_id, $stud_id, $old, $new, $current, &$copiedSubjects, &$copiedCompetences
+            ) {
+                // Subjects of each classe for this year, keyed by normalized title.
+                $titleMap = function (int $classe_id) use ($sy_id): array {
+                    $rows = DB::select("SELECT subject.subject_id, subject.subject_title
+                        FROM subject_classe JOIN subject ON subject.subject_id = subject_classe.subject_id
+                        WHERE subject_classe.sy_id = $sy_id AND subject_classe.classe_id = $classe_id");
+                    $map = [];
+                    foreach ($rows as $r) {
+                        $map[mb_strtolower(trim($r->subject_title))] = (int) $r->subject_id;
+                    }
+                    return $map;
+                };
+                $oldSubjects = $titleMap($old);
+                $newSubjects = $titleMap($new);
+
+                // 1) Enrollment
+                DB::select("DELETE FROM student_classe WHERE sy_id = $sy_id
+                    AND stud_id = $stud_id AND classe_id = $old");
+                $sc = new StudentClasse();
+                $sc->stud_id = $stud_id;
+                $sc->sy_id = $sy_id;
+                $sc->repeating = $current[0]->repeating;
+                $sc->cas_social = $current[0]->cas_social;
+                $sc->classe_id = $new;
+                $sc->save();
+
+                foreach ($oldSubjects as $title => $oldSubjectId) {
+                    if (!isset($newSubjects[$title])) {
+                        continue;
+                    }
+                    $newSubjectId = $newSubjects[$title];
+
+                    // 2) Sequence marks - only needs copying when the subject rows differ.
+                    if ($newSubjectId !== $oldSubjectId) {
+                        $marks = DB::select("SELECT sequence, mark, isEmpty FROM student_subject
+                            WHERE sy_id = $sy_id AND stud_id = $stud_id AND subject_id = $oldSubjectId");
+                        foreach ($marks as $m) {
+                            $seq = (int) $m->sequence;
+                            $existing = StudentSubject::where("stud_id", $stud_id)
+                                ->where("subject_id", $newSubjectId)
+                                ->where("sy_id", $sy_id)
+                                ->where("sequence", $seq)
+                                ->first();
+                            if (is_null($existing)) {
+                                $existing = new StudentSubject();
+                                $existing->stud_id = $stud_id;
+                                $existing->subject_id = $newSubjectId;
+                                $existing->sy_id = $sy_id;
+                                $existing->sequence = $seq;
+                            }
+                            $existing->mark = $m->mark;
+                            $existing->isEmpty = $m->isEmpty;
+                            $existing->save();
+                        }
+                        $copiedSubjects += count($marks) > 0 ? 1 : 0;
+                    }
+
+                    // 3) Competence marks - competence ids are classe-specific, so map by
+                    // (term, competence text) between the two classes for this subject.
+                    $oldComps = DB::select("SELECT subject_competence_id, term_id, competence_text
+                        FROM subject_competences
+                        WHERE sy_id = $sy_id AND classe_id = $old AND subject_id = $oldSubjectId");
+                    if (count($oldComps) === 0) {
+                        continue;
+                    }
+                    $newComps = DB::select("SELECT subject_competence_id, term_id, competence_text
+                        FROM subject_competences
+                        WHERE sy_id = $sy_id AND classe_id = $new AND subject_id = $newSubjectId");
+                    $newCompByKey = [];
+                    foreach ($newComps as $c) {
+                        $newCompByKey[((int) $c->term_id) . '|' . mb_strtolower(trim($c->competence_text))]
+                            = (int) $c->subject_competence_id;
+                    }
+                    foreach ($oldComps as $oc) {
+                        $key = ((int) $oc->term_id) . '|' . mb_strtolower(trim($oc->competence_text));
+                        if (!isset($newCompByKey[$key])) {
+                            continue;
+                        }
+                        $newCompId = $newCompByKey[$key];
+                        $oldCompId = (int) $oc->subject_competence_id;
+                        $term_id = (int) $oc->term_id;
+                        $compMarks = DB::select("SELECT mark, isEmpty FROM stud_comp_mark
+                            WHERE sy_id = $sy_id AND stud_id = $stud_id AND term_id = $term_id
+                            AND subject_id = $oldSubjectId AND subject_competence_id = $oldCompId");
+                        foreach ($compMarks as $cm) {
+                            $existing = StudCompMark::where("sy_id", $sy_id)
+                                ->where("stud_id", $stud_id)
+                                ->where("term_id", $term_id)
+                                ->where("subject_id", $newSubjectId)
+                                ->where("subject_competence_id", $newCompId)
+                                ->first();
+                            if (is_null($existing)) {
+                                $existing = new StudCompMark();
+                                $existing->sy_id = $sy_id;
+                                $existing->stud_id = $stud_id;
+                                $existing->term_id = $term_id;
+                                $existing->subject_id = $newSubjectId;
+                                $existing->subject_competence_id = $newCompId;
+                            }
+                            $existing->mark = $cm->mark;
+                            $existing->isEmpty = $cm->isEmpty;
+                            $existing->save();
+                            $copiedCompetences++;
+                        }
+                    }
+                }
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Student moved to the new classe successfully.',
+                'copied_subjects' => $copiedSubjects,
+                'copied_competence_marks' => $copiedCompetences,
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to change classe: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function resetPromotionInfo(Request $request)
     {
         try {
