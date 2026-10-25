@@ -1309,8 +1309,8 @@ class StaffController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
 
             $staff = DB::select(
-                "SELECT staff.staff_id, staff.name, staff.surname FROM `staff`
-                WHERE staff.function = 0                
+                "SELECT staff.staff_id, staff.name, staff.surname, staff.civility FROM `staff`
+                WHERE staff.function = 0
                     AND staff_id IN(SELECT staff_year.staff_id FROM staff_year 
 		                WHERE staff_year.sy_id = $sy_id)
                     ORDER BY staff.name;" // 0==>Enseignant; 2==>Censeur; 1==>Sg; 6==>Chef of work
