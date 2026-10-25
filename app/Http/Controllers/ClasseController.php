@@ -921,6 +921,7 @@ class ClasseController extends Controller
 	                        speciality.speciality_id, speciality.speciality_name,
 	                        classe_year.classe_master AS classe_master_id, 
 	                        staff.name AS classe_master_name, 
+	                        staff.civility AS classe_master_civility,
 	                        classe_year.sg_id, 'sg' AS sg_name,	 
 	                        0 AS nb_girls, 0 AS nb_boys, 0 As nb_repeating, 0 As nb_solvable, 0 As num
                             FROM 
@@ -1430,6 +1431,7 @@ class ClasseController extends Controller
 	                        speciality.speciality_id, speciality.speciality_name,
 	                        classe_year.classe_master AS classe_master_id, 
 	                        staff.name AS classe_master_name, 
+	                        staff.civility AS classe_master_civility,
 	                        classe_year.sg_id, classe_year.vp_id, 'sg' AS sg_name,	 
 	                        0 AS nb_girls, 0 AS nb_boys, 0 As nb_repeating, 0 As nb_solvable, 0 As num,
                             classe_year.avgDismissalTh, classe_year.repeatUB, classe_year.passMark, 
@@ -1491,6 +1493,7 @@ class ClasseController extends Controller
 	                        speciality.speciality_id, speciality.speciality_name,
 	                        classe_year.classe_master AS classe_master_id, 
 	                        staff.name AS classe_master_name, 
+	                        staff.civility AS classe_master_civility,
 	                        classe_year.sg_id, classe_year.vp_id, 'sg' AS sg_name,	 
 	                        0 AS nb_girls, 0 AS nb_boys, 0 As nb_repeating, 0 As nb_solvable, 0 As num,
                             classe_year.avgDismissalTh, classe_year.repeatUB, classe_year.passMark, 

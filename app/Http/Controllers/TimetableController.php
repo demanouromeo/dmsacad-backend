@@ -311,7 +311,7 @@ class TimetableController extends Controller
             $rows = DB::select(
                 "SELECT subject_classe.subject_classe_id, subject_classe.subject_id, subject.subject_title,
                         subject_classe.weight, subject_classe.numnber_of_period_per_week, subject_classe.commoncourse,
-                        teacher.staff_id AS staff_id, teacher.name AS staff_name, teacher.surname AS staff_surname
+                        teacher.staff_id AS staff_id, teacher.name AS staff_name, teacher.surname AS staff_surname, teacher.civility AS staff_civility
                  FROM subject_classe
                  JOIN subject ON subject.subject_id = subject_classe.subject_id
                  LEFT JOIN (
@@ -710,7 +710,7 @@ class TimetableController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
             $rows = DB::select(
                 "SELECT classe_period.jour_id, classe_period.period_number, classe_period.subject_id,
-                        subject.subject_title, classe_period.staff_id, staff.name AS staff_name, staff.surname AS staff_surname
+                        subject.subject_title, classe_period.staff_id, staff.name AS staff_name, staff.surname AS staff_surname, staff.civility AS staff_civility
                  FROM classe_period
                  JOIN subject ON subject.subject_id = classe_period.subject_id
                  LEFT JOIN staff ON staff.staff_id = classe_period.staff_id
@@ -895,7 +895,7 @@ class TimetableController extends Controller
             $sy_id = MyHelper::getSchoolYearID($year);
             $staff_id = (int) $request->attributes->get('auth_payload')->user_id;
             $rows = DB::select(
-                "SELECT staff.staff_id, staff.name, staff.surname, staff.function, staff.status,
+                "SELECT staff.staff_id, staff.name, staff.surname, staff.civility, staff.function, staff.status,
                         staff.grade, staff.diplome, staff.specilitee, staff.matiereEnseignee, staff.longivity,
                         COALESCE(staff_year.max_periods_per_week, 18) AS max_periods_per_week
                  FROM staff
@@ -968,7 +968,7 @@ class TimetableController extends Controller
             // (defaulting max_periods_per_week to 18), same convention as getMyStaffInfo/
             // getStaffMaxPeriods above.
             $rows = DB::select(
-                "SELECT staff.staff_id, staff.name, staff.surname, staff.function, staff.status,
+                "SELECT staff.staff_id, staff.name, staff.surname, staff.civility, staff.function, staff.status,
                         staff.grade, staff.diplome, staff.specilitee, staff.matiereEnseignee, staff.longivity,
                         COALESCE(staff_year.max_periods_per_week, 18) AS max_periods_per_week
                  FROM staff
