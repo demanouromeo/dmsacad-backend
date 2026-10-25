@@ -622,6 +622,109 @@ class AccountController extends Controller
         }
     }
 
+    //======================= SUBADMIN MANAGEMENT (account.type = 9)
+    // Reachable only by the real ADMIN (route group role:ADMIN,!SUBADMIN): a SUBADMIN account has no
+    // record besides its row in `account`, so these four endpoints only ever touch type=9 rows.
+
+    public function allSubAdmins(Request $request)
+    {
+        try {
+            $request->validate(['connection' => 'required|string']);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'message' => 'Validation failed: ' . $th->getMessage()], 422);
+        }
+        config(["database.default" => $request->input("connection")]);
+
+        try {
+            $rows = DB::select("SELECT acc_id, login FROM account WHERE type = 9 ORDER BY login");
+            return response()->json($rows, 200);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function saveSubAdmin(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'login' => 'required|string|min:4|max:50',
+                'pwd' => 'required|string|min:4|max:50',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'message' => 'Validation failed: ' . $th->getMessage()], 422);
+        }
+        config(["database.default" => $request->input("connection")]);
+        $login = trim($request->input("login"));
+
+        try {
+            if (Account::where('login', $login)->exists()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Login already exists. Login is unique for each account. Please choose another login.',
+                ], 400);
+            }
+            $account = new Account();
+            $account->login = $login;
+            $account->pwd = $request->input("pwd");
+            $account->type = 9;
+            $account->save();
+            return response()->json(['status' => true, 'message' => 'Subadmin saved successfully', 'acc_id' => $account->acc_id], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateSubAdminPassword(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'acc_id' => 'required|integer',
+                'new_pwd' => 'required|string|min:4|max:50',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'message' => 'Validation failed: ' . $th->getMessage()], 422);
+        }
+        config(["database.default" => $request->input("connection")]);
+
+        try {
+            $account = Account::where('acc_id', $request->input("acc_id"))->where('type', 9)->first();
+            if (is_null($account)) {
+                return response()->json(['status' => false, 'message' => 'Subadmin not found'], 404);
+            }
+            $account->pwd = $request->input("new_pwd");
+            $account->update();
+            return response()->json(['status' => true, 'message' => 'Password updated successfully'], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteSubAdmin(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'acc_id' => 'required|integer',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'message' => 'Validation failed: ' . $th->getMessage()], 422);
+        }
+        config(["database.default" => $request->input("connection")]);
+
+        try {
+            $account = Account::where('acc_id', $request->input("acc_id"))->where('type', 9)->first();
+            if (is_null($account)) {
+                return response()->json(['status' => false, 'message' => 'Subadmin not found'], 404);
+            }
+            $account->delete();
+            return response()->json(['status' => true, 'message' => 'Subadmin deleted successfully'], 200);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function index()
     {
         $Accounts = Account::all();

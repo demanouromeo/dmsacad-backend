@@ -200,6 +200,14 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
     // against production, then comment back out again - same lifecycle as every other /test/* method.
     // Route::get('/test/createTimetableSchema', [TestController::class, 'createTimetableSchema']);
 });
+// Sub-administrator management: the real ADMIN only (SUBADMIN excluded).
+Route::middleware(['jwt.auth', 'role:ADMIN,!SUBADMIN'])->prefix('subadmins')->group(function () {
+    Route::get('/all', [AccountController::class, 'allSubAdmins']);
+    Route::post('/save', [AccountController::class, 'saveSubAdmin']);
+    Route::post('/updatePassword', [AccountController::class, 'updateSubAdminPassword']);
+    Route::post('/delete', [AccountController::class, 'deleteSubAdmin']);
+});
+
 //===================================================================== END ADMIN ROUTES =====================================================================================================
 
 //******* ADMIN + CENSEUR (VP) ROUTES
