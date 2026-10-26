@@ -299,7 +299,10 @@ class StudentController extends Controller
      * student_subject marks are copied onto it. Competence marks (stud_comp_mark) are keyed by a
      * classe-specific subject_competence_id, so they are copied to the target classe's competence
      * with the same (term, subject title, competence text). Nothing is copied for subjects the
-     * target classe doesn't have. Everything runs in one transaction.
+     * target classe doesn't have. Absence/discipline data (the `discipline` table) is keyed by
+     * (sy_id, stud_id, term) with no classe column - a classe's discipline list is derived through
+     * student_classe - so it follows the student automatically and needs no copy.
+     * Everything runs in one transaction.
      */
     public function changeStudentClasse(Request $request)
     {
@@ -350,7 +353,13 @@ class StudentController extends Controller
             $copiedCompetences = 0;
 
             DB::transaction(function () use (
-                $sy_id, $stud_id, $old, $new, $current, &$copiedSubjects, &$copiedCompetences
+                $sy_id,
+                $stud_id,
+                $old,
+                $new,
+                $current,
+                &$copiedSubjects,
+                &$copiedCompetences
             ) {
                 // Subjects of each classe for this year, keyed by normalized title.
                 $titleMap = function (int $classe_id) use ($sy_id): array {
