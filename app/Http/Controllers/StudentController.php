@@ -2395,24 +2395,53 @@ class StudentController extends Controller
                 $matricule = null; //MATRICULE CAN BE NULL
             }
 
-            $stud = new Student();
-            $stud->name = $name;
-            $stud->surname = $surname;
-            $stud->bday = $bday;
-            $stud->bplace = $bplace;
-            $stud->sexe = $sexe;
-            $stud->matricule = $matricule;
-            $stud->handicape = $handicape;
             try {
-                //BEFORE SAVING STUDENT, LET'S MAKE SURE NO OTHER STUDENT HAS THE SAME MATRICULE
-                $studTmp = Student::all()
-                    ->where("matricule", $matricule)
-                    ->first();
-                if (!is_null($studTmp)) { //au moins un élève porte ce matricule et c'est une erreur fatale
-                    $stud->matricule  = null; //to avoid duplicate
+                //A student already known by this matricule (any year, section or classe) is reused,
+                //never duplicated: only its enrolment for the current year is moved/created.
+                $existing = is_null($matricule)
+                    ? null
+                    : Student::where("matricule", $matricule)->first();
+
+                if (!is_null($existing)) {
+                    $existing->bday = $bday;
+                    $existing->bplace = $bplace;
+                    $existing->sexe = $sexe;
+                    $existing->handicape = $handicape;
+                    $existing->save();
+
+                    //Already enrolled in the current classe this year (override off): just refresh it
+                    $inCurrent = DB::select(
+                        "SELECT stud_id FROM student_classe
+                         WHERE stud_id = ? AND sy_id = ? AND classe_id = ?",
+                        [$existing->stud_id, $sy_id, $classe_id]
+                    );
+                    if (count($inCurrent) > 0) {
+                        DB::update(
+                            "UPDATE student_classe SET repeating = ?, cas_social = ?
+                             WHERE stud_id = ? AND sy_id = ? AND classe_id = ?",
+                            [$red, $cas_social, $existing->stud_id, $sy_id, $classe_id]
+                        );
+                        continue;
+                    }
+
+                    //Enrolled in another classe this year: leave it (marks stay with the student)
+                    DB::delete(
+                        "DELETE FROM student_classe WHERE stud_id = ? AND sy_id = ?",
+                        [$existing->stud_id, $sy_id]
+                    );
+                    $stud = $existing;
+                } else {
+                    $stud = new Student();
+                    $stud->name = $name;
+                    $stud->surname = $surname;
+                    $stud->bday = $bday;
+                    $stud->bplace = $bplace;
+                    $stud->sexe = $sexe;
+                    $stud->matricule = $matricule;
+                    $stud->handicape = $handicape;
+                    $stud->save();
                 }
 
-                $stud->save();
                 $sc = new StudentClasse();
                 $sc->stud_id = $stud->stud_id;
                 $sc->sy_id = $sy_id;
