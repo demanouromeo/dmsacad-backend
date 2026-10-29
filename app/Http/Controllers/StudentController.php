@@ -483,6 +483,67 @@ class StudentController extends Controller
     }
 
     /**
+     * Finds students by matricule and/or name across the whole school: every school year and every
+     * section (GET, ADMIN). `q` is split on whitespace and every word must match the matricule, name
+     * or surname (case-insensitive substring), so "abdou 6" or "ABDOU MAMA" both narrow the result.
+     * One row per enrollment (a student enrolled in several years appears once per year); a student
+     * with no enrollment still appears, with empty year/section/classe. `repeating` is that enrollment's own flag (per year). Capped at
+     * 200 rows.
+     */
+    public function searchStudents(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+                'q' => 'required|string|min:2|max:100',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        config(["database.default" => $request->input("connection")]);
+        $words = preg_split('/\s+/', trim($request->input("q")), -1, PREG_SPLIT_NO_EMPTY);
+
+        $where = [];
+        $bindings = [];
+        foreach ($words as $word) {
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $word) . '%';
+            $where[] = "(student.matricule LIKE ? OR student.name LIKE ? OR student.surname LIKE ?)";
+            array_push($bindings, $like, $like, $like);
+        }
+
+        try {
+            $rows = DB::select(
+                "SELECT student.stud_id, student.matricule, student.name, student.surname,
+                        student.sexe, student.bday, student.bplace,
+                        student_classe.repeating AS repeating,
+                        school_year.year AS year, section.section_name AS section,
+                        classe.classe_name AS classe_name
+                 FROM student
+                 LEFT JOIN student_classe ON student_classe.stud_id = student.stud_id
+                 LEFT JOIN classe ON classe.classe_id = student_classe.classe_id
+                 LEFT JOIN school_year ON school_year.sy_id = student_classe.sy_id
+                 LEFT JOIN classe_year ON classe_year.classe_id = student_classe.classe_id
+                                       AND classe_year.sy_id = student_classe.sy_id
+                 LEFT JOIN section ON section.section_id = classe_year.section_id
+                 WHERE " . implode(" AND ", $where) . "
+                 ORDER BY student.name, student.surname, school_year.year DESC
+                 LIMIT 200",
+                $bindings
+            );
+            return response()->json($rows, 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to search students: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Strips the time part from birth dates stored as a full ISO datetime
      * ("2013-08-23T00:00:00.000Z" becomes "2013-08-23") for every student of the school
      * (POST, ADMIN). The student table has no year column, so this is school-wide. Only values
