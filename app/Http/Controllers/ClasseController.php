@@ -33,7 +33,9 @@ class ClasseController extends Controller
         $year = $request->input("year");
         $level = $request->input("level");
         $section = $request->input("section");
-        $activated = $request->input("activated");
+        // A JSON `false` interpolated into the raw SQL below becomes an empty string
+        // ("SET activated = WHERE ..." -> syntax error), so normalize to 0/1 first.
+        $activated = $request->boolean("activated") ? 1 : 0;
 
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
