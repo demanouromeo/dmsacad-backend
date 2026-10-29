@@ -230,6 +230,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN,!SUBADMIN'])->group(function () {
     Route::post('/students/deleteStudents', [StudentController::class, 'deleteStudents']);
     Route::post('/students/saveStudents', [StudentController::class, 'saveStudents']);
     Route::post('/students/saveAStudent', [StudentController::class, 'saveAStudent']);
+    Route::post('/students/cleanBirthDates', [StudentController::class, 'cleanBirthDates']);
 });
 
 // Editing a student (update, photo) stays open to SUBADMIN.

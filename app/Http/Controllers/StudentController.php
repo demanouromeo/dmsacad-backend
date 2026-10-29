@@ -482,6 +482,45 @@ class StudentController extends Controller
         }
     }
 
+    /**
+     * Strips the time part from birth dates stored as a full ISO datetime
+     * ("2013-08-23T00:00:00.000Z" becomes "2013-08-23") for every student of the school
+     * (POST, ADMIN). The student table has no year column, so this is school-wide. Only values
+     * matching exactly that datetime shape are touched; any other free-form bday is left as is.
+     */
+    public function cleanBirthDates(Request $request)
+    {
+        try {
+            $request->validate([
+                'connection' => 'required|string',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed: ' . $th->getMessage(),
+            ], 422);
+        }
+
+        config(["database.default" => $request->input("connection")]);
+
+        try {
+            $affected = DB::update(
+                "UPDATE student SET bday = LEFT(bday, 10)
+                 WHERE bday REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}T'"
+            );
+            return response()->json([
+                'status' => true,
+                'message' => 'Birth dates cleaned successfully.',
+                'updated' => $affected,
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to clean birth dates: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function resetPromotionInfo(Request $request)
     {
         try {
