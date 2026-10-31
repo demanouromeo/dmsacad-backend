@@ -2720,6 +2720,85 @@ class StudentController extends Controller
             }
 
             $stud = Student::find($stud_id);
+
+            //The matricule is unique: check whether another student already holds it
+            if ($matricule !== null && $matricule !== $stud->matricule) {
+                $other = Student::where("matricule", $matricule)->where("stud_id", "!=", $stud_id)->first();
+                if ($other) {
+                    $otherName = trim($other->name . " " . $other->surname);
+                    $enrol = DB::select(
+                        "SELECT c.classe_name FROM student_classe sc, classe c
+                         WHERE sc.classe_id = c.classe_id AND sc.stud_id = ? AND sc.sy_id = ?",
+                        [$other->stud_id, $sy_id]
+                    );
+                    if (count($enrol) > 0) {
+                        //Already enrolled in the current year: can't be reassigned
+                        return response()->json([
+                            'status' => false,
+                            'code' => 'MATRICULE_IN_USE',
+                            'student_name' => $otherName,
+                            'classe_name' => $enrol[0]->classe_name,
+                            'message' => 'Matricule already assigned to ' . $otherName . ' in ' . $enrol[0]->classe_name,
+                        ], 409);
+                    }
+                    $years = DB::select(
+                        "SELECT DISTINCT sy.year FROM student_classe sc, school_year sy
+                         WHERE sc.sy_id = sy.sy_id AND sc.stud_id = ? ORDER BY sy.year",
+                        [$other->stud_id]
+                    );
+                    $yearList = implode(", ", array_map(fn($y) => $y->year, $years));
+                    $classes = DB::select(
+                        "SELECT DISTINCT c.classe_name FROM student_classe sc, classe c
+                         WHERE sc.classe_id = c.classe_id AND sc.stud_id = ?",
+                        [$other->stud_id]
+                    );
+                    $classList = implode(", ", array_map(fn($c) => $c->classe_name, $classes));
+                    if ($request->input("replace") != "1") {
+                        return response()->json([
+                            'status' => false,
+                            'code' => 'MATRICULE_OTHER_YEAR',
+                            'student_name' => $otherName,
+                            'classe_name' => $classList,
+                            'year' => $yearList,
+                            'message' => 'Matricule exists in another school year',
+                        ], 409);
+                    }
+                    //Confirmed: the student of the current year is replaced by the one owning the matricule
+                    try {
+                        $sc0 = StudentClasse::where("stud_id", "=", $stud_id)
+                            ->where("sy_id", "=", $sy_id)
+                            ->first();
+                        if (!$sc0) {
+                            $msg .= "<br/>Student not enrolled in the current year<br/>";
+                            $allAffected = 0;
+                            continue;
+                        }
+                        $classe_id0 = $sc0->classe_id;
+                        MyHelper::deleteAStudent($sy_id, $stud_id);
+
+                        $other->name = $name;
+                        $other->surname = $surname;
+                        $other->bday = $bday;
+                        $other->bplace = $bplace;
+                        $other->sexe = $sexe;
+                        $other->handicape = $handicape;
+                        $other->update();
+
+                        $newSc = new StudentClasse();
+                        $newSc->stud_id = $other->stud_id;
+                        $newSc->sy_id = $sy_id;
+                        $newSc->repeating = $red;
+                        $newSc->cas_social = $cas_social;
+                        $newSc->classe_id = $classe_id0;
+                        $newSc->save();
+                    } catch (\Throwable $e4) {
+                        $msg .= "<br/>Failed to replace student" . $e4->getMessage() . "<br/>";
+                        $allAffected = 0;
+                    }
+                    continue;
+                }
+            }
+
             $stud->name = $name;
             $stud->surname = $surname;
             $stud->bday = $bday;
