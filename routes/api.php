@@ -148,8 +148,7 @@ Route::middleware(['jwt.auth', 'role:ADMIN'])->group(function () {
 
     //==> ADMIN ON STUDENT
     Route::get('/students/updateStudentClasse2PromotionInfo', [StudentController::class, 'updateStudentClasse2PromotionInfo']);
-    Route::post('/students/saveSeqMarks', [StudentController::class, 'saveSeqMarks']);
-    Route::post('/students/saveCompMarks', [StudentController::class, 'saveCompMarks']);
+    // saveSeqMarks/saveCompMarks moved to the ADMIN + SG + CENSEUR + TEACHER group below.
     Route::get('/students/copyCompMarks', [StudentController::class, 'copyCompMarks']);
     Route::get('/students/copySeqMarks', [StudentController::class, 'copySeqMarks']);
     Route::get('/students/copyCompMarks2', [StudentController::class, 'copyCompMarks2']);
@@ -249,6 +248,15 @@ Route::middleware(['jwt.auth', 'role:ADMIN,SG,CENSEUR'])->group(function () {
     Route::post('/students/saveOrUpdateABS', [StudentController::class, 'saveOrUpdateABS']);
 });
 //===================================================================== END ADMIN + SG + CENSEUR ROUTES =====================================================================================================
+
+//******* ADMIN + SG + CENSEUR + TEACHER ROUTES
+// Mark entry (/admin/mark-entry) is open to these roles in the frontend (App.tsx), but the two save
+// routes used to sit in the ADMIN-only group, so every save by a teacher/SG/CENSEUR got a 403
+// ("Echec de l'enregistrement d'au moins une note").
+Route::middleware(['jwt.auth', 'role:ADMIN,SG,CENSEUR,TEACHER'])->group(function () {
+    Route::post('/students/saveSeqMarks', [StudentController::class, 'saveSeqMarks']);
+    Route::post('/students/saveCompMarks', [StudentController::class, 'saveCompMarks']);
+});
 
 //******* TEACHER + SG + CENSEUR ROUTES
 // "My time table" - a staff member's own individual weekly time table, scoped server-side to
