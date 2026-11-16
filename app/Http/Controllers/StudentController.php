@@ -2517,7 +2517,7 @@ class StudentController extends Controller
         //already enrolled in ANY classe (this one included) of the same school year, and say which.
         if (!is_null($matricule) && trim($matricule) !== "") {
             $holder = DB::select(
-                "SELECT classe.classe_name FROM student
+                "SELECT classe.classe_name, student.name, student.surname FROM student
                  JOIN student_classe ON student_classe.stud_id = student.stud_id AND student_classe.sy_id = ?
                  JOIN classe ON classe.classe_id = student_classe.classe_id
                  WHERE student.matricule = ? LIMIT 1",
@@ -2528,7 +2528,8 @@ class StudentController extends Controller
                     'status' => false,
                     'code' => 'matricule_exists',
                     'classe_name' => $holder[0]->classe_name,
-                    'message' => "A student with this matricule already exists in the same school year (classe: " . $holder[0]->classe_name . ").",
+                    'student_name' => trim($holder[0]->name . " " . ($holder[0]->surname ?? "")),
+                    'message' => "A student with this matricule already exists in the same school year (classe: " . $holder[0]->classe_name . ", name: " . trim($holder[0]->name . " " . ($holder[0]->surname ?? "")) . ").",
                 ], 409);
             }
         }
