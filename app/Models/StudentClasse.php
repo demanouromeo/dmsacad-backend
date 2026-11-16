@@ -83,6 +83,27 @@ class StudentClasse extends Model
 		'val4'
 	];
 
+	// Business rule: a student (stud_id - one row per matricule, see StudentController::saveStudents)
+	// is enrolled in at most ONE classe per school year; the same student may of course appear in
+	// different classes in different years. Every enrolment path (add student, import, change
+	// classe, promotion, repeaters, basculement...) creates its row through this model, so the rule
+	// is enforced here once instead of in each controller. Callers that move a student delete the old
+	// row first; any other attempt now throws and surfaces as that caller's own "failed" result
+	// instead of silently creating a second enrolment.
+	protected static function booted()
+	{
+		static::creating(function (StudentClasse $sc) {
+			$exists = static::where('stud_id', $sc->stud_id)
+				->where('sy_id', $sc->sy_id)
+				->exists();
+			if ($exists) {
+				throw new \RuntimeException(
+					"Student {$sc->stud_id} is already enrolled in a classe for this school year (sy_id {$sc->sy_id})."
+				);
+			}
+		});
+	}
+
 	public function student()
 	{
 		return $this->belongsTo(Student::class, 'stud_id');

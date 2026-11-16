@@ -2513,6 +2513,25 @@ class StudentController extends Controller
         config(["database.default" => $connection]);
         $sy_id = MyHelper::getSchoolYearID($year);
 
+        //A matricule identifies ONE student: reject the add if a student with this matricule is
+        //already enrolled in ANY classe (this one included) of the same school year, and say which.
+        if (!is_null($matricule) && trim($matricule) !== "") {
+            $holder = DB::select(
+                "SELECT classe.classe_name FROM student
+                 JOIN student_classe ON student_classe.stud_id = student.stud_id AND student_classe.sy_id = ?
+                 JOIN classe ON classe.classe_id = student_classe.classe_id
+                 WHERE student.matricule = ? LIMIT 1",
+                [$sy_id, trim($matricule)]
+            );
+            if (count($holder) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'code' => 'matricule_exists',
+                    'classe_name' => $holder[0]->classe_name,
+                    'message' => "A student with this matricule already exists in the same school year (classe: " . $holder[0]->classe_name . ").",
+                ], 409);
+            }
+        }
 
         $stud = new Student();
         $stud->name = $name;
