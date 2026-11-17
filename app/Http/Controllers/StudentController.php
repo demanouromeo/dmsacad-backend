@@ -519,7 +519,7 @@ class StudentController extends Controller
             $rows = DB::select(
                 "SELECT student.stud_id, student.matricule, student.name, student.surname,
                         student.sexe, student.bday, student.bplace,
-                        student_classe.repeating AS repeating,
+                        student_classe.repeating AS repeating, student_classe.classe_id AS classe_id,
                         school_year.year AS year, section.section_name AS section,
                         classe.classe_name AS classe_name
                  FROM student
