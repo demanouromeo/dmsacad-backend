@@ -2488,6 +2488,9 @@ class StudentController extends Controller
                 'matricule' => 'nullable|string',
                 'handicape' => 'nullable|boolean',
                 'cas_social' => 'nullable|boolean',
+                // Answer to the "matricule already known from another school year" question:
+                // use = enrol the existing student as is, update = refresh his info first.
+                'existing_action' => 'nullable|string|in:use,update',
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -2531,6 +2534,59 @@ class StudentController extends Controller
                     'student_name' => trim($holder[0]->name . " " . ($holder[0]->surname ?? "")),
                     'message' => "A student with this matricule already exists in the same school year (classe: " . $holder[0]->classe_name . ", name: " . trim($holder[0]->name . " " . ($holder[0]->surname ?? "")) . ").",
                 ], 409);
+            }
+        }
+
+        //The matricule is known from ANOTHER school year (not enrolled in the current one): never
+        //create a second student for it. Ask the caller what to do, then enrol the existing student.
+        if (!is_null($matricule) && trim($matricule) !== "") {
+            $known = Student::where("matricule", trim($matricule))->first();
+            if (!is_null($known)) {
+                $action = $request->input("existing_action");
+                $knownName = trim($known->name . " " . ($known->surname ?? ""));
+                if ($action !== "use" && $action !== "update") {
+                    return response()->json([
+                        'status' => false,
+                        'code' => 'matricule_exists_other_year',
+                        'student_name' => $knownName,
+                        'existing' => [
+                            'name' => $known->name,
+                            'surname' => $known->surname,
+                            'bday' => $known->bday,
+                            'bplace' => $known->bplace,
+                            'sexe' => $known->sexe,
+                            'handicape' => $known->handicape ? 1 : 0,
+                        ],
+                        'message' => "A student with this matricule already exists in the system ($knownName).",
+                    ], 409);
+                }
+                try {
+                    if ($action === "update") {
+                        $known->name = $name;
+                        $known->surname = $surname;
+                        $known->bday = $bday;
+                        $known->bplace = $bplace;
+                        $known->sexe = $sexe;
+                        $known->handicape = $handicape;
+                        $known->save();
+                    }
+                    $sc = new StudentClasse();
+                    $sc->stud_id = $known->stud_id;
+                    $sc->sy_id = $sy_id;
+                    $sc->repeating = $repeating;
+                    $sc->cas_social = $cas_social;
+                    $sc->classe_id = $classe_id;
+                    $sc->save();
+                } catch (Throwable $e) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Failed to enrol existing student: ' . $e->getMessage(),
+                    ], 500);
+                }
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Existing student enrolled successfully.',
+                ], 200);
             }
         }
 
